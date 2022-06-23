@@ -1,0 +1,136 @@
+---
+title: "UUT Cohen's Kappa"
+author: "Milla Pihlajamaki"
+date: "20 7 2021"
+output: html_document
+---
+
+# File Outline
+
+This file contains calculations for Kappa for inter-rater reliability for the Unusual Uses Task (UUT) for the ~50 pilot participants. Ratings by MP & HJ.
+
+
+```{r Loading Data, include=FALSE}
+
+#Remember to set working directory that includes the csv file!
+#Session, set working directory, choose directory etc
+
+#these packages were downloaded, found to the right under "packages"
+library(vcd)
+library(psych)
+
+#for some reason the folder wasn't registered, did 1 up and not it works
+UUT <- read.csv("UUT_scoring_COMBINED_REVISED_Rcsv.csv", sep = ";") 
+#UUT <- read.csv("UUT_scoring_COMBINED_fixattempt_Rcsv_norow.csv", sep = ";")
+
+#check the working directory
+print(getwd())
+
+#summary(x) - produces a summary of a given object
+summary(UUT)
+summary(UUT$X) #Not needed, this includes comments, removing it from df
+UUT <- UUT[1:5048,1:9] #relevance?
+
+class(UUT$PartID) #this should be factor as it is categorical technically
+UUT$PartID <- factor(UUT$PartID)
+head(UUT$PartID)
+
+class(UUT$Response) #should be factor
+UUT$Item <- factor(UUT$Response)
+head(UUT$Response)
+
+#Initialize variables
+#UUT$S.Fluency <- NA  
+#UUT$S.Flex <- NA  
+#UUT$K.Fluency <- NA  
+#UUT$K.Flex <- NA  
+
+range(UUT[1:5048,4:7]) #This is correct, there are no outliers
+UUT$S.Fluency <- factor(UUT$S.Fluency) #change into factor for the analysis
+UUT$S.Flex <- factor(UUT$S.Flex)
+UUT$K.Fluency <- factor(UUT$K.Fluency)
+UUT$K.Flex <- factor(UUT$K.Flex)
+
+summary(UUT)
+
+```
+
+## Data Explanation
+
+The data look fine, we have one categorical variable for the participant ID number and one categorical variable for the item in question. We also have a character column for participants' answers. 
+
+The important columns are columns 4 to 7, which include scores for each answer (categorical, 1=yes/accepted and 0=no/not accepted). Fluency and flexibility were rated separately, and participants got 1 point if the raters (MP & HJ) considered the answer to exhibit fluency/flexibility (separate columns for these). 
+
+
+```{r Data into Contingency Table, echo=TRUE}
+
+#We need the data in a contingency table for the analysis
+
+#Fluency
+nrow(UUT[UUT$S.Fluency == "1" & UUT$K.Fluency == "1",]) #extracting the contingencies
+nrow(UUT[UUT$S.Fluency == "0" & UUT$K.Fluency == "1",])
+nrow(UUT[UUT$S.Fluency == "1" & UUT$K.Fluency == "0",])
+nrow(UUT[UUT$S.Fluency == "0" & UUT$K.Fluency == "0",])
+
+UUT_Fluency <- as.table(rbind(c(nrow(UUT[UUT$S.Fluency == "1" & UUT$K.Fluency == "1",]),nrow(UUT[UUT$S.Fluency == "0" & UUT$K.Fluency == "1",])), c(nrow(UUT[UUT$S.Fluency == "1" & UUT$K.Fluency == "0",]),nrow(UUT[UUT$S.Fluency == "0" & UUT$K.Fluency == "0",]))))
+
+categories <- c("Yes", "No")
+dimnames(UUT_Fluency) <- list(K = categories, S = categories)
+UUT_Fluency
+
+
+#Flexibility
+nrow(UUT[UUT$S.Flex == "1" & UUT$K.Flex == "1",])
+nrow(UUT[UUT$S.Flex == "0" & UUT$K.Flex == "1",])
+nrow(UUT[UUT$S.Flex == "1" & UUT$K.Flex == "0",])
+nrow(UUT[UUT$S.Flex == "0" & UUT$K.Flex == "0",])
+
+UUT_Flexibility <- as.table(rbind(c(nrow(UUT[UUT$S.Flex == "1" & UUT$K.Flex == "1",]),nrow(UUT[UUT$S.Flex == "0" & UUT$K.Flex == "1",])), c(nrow(UUT[UUT$S.Flex == "1" & UUT$K.Flex == "0",]),nrow(UUT[UUT$S.Flex == "0" & UUT$K.Flex == "0",]))))
+
+categories2 <- c("Yes", "No")
+dimnames(UUT_Flexibility) <- list(K = categories2, S = categories2)
+UUT_Flexibility
+
+
+```
+
+
+## Kappa Assumptions
+
+https://www.datanovia.com/en/lessons/cohens-kappa-in-r-for-two-categorical-variables/
+
+Your data should met the following assumptions for computing Cohen’s Kappa.
+
+* You have two outcome categorical variables, which can be ordinal or nominal variables.  
+* The two outcome variables should have exactly the same categories.  
+* You have paired observations; each subject is categorized twice by two independent raters or methods.  
+* The same two raters are used for all participants.  
+
+These apply in the present data set.
+
+
+
+## Kappa Calculations
+
+```{r Kappa for Fluency and Flexibility, echo=TRUE}
+
+#Fluency
+Kappa_Fluency <- Kappa(UUT_Fluency)
+Kappa_Fluency
+confint(Kappa_Fluency)
+
+
+#Flexibility
+Kappa_Flexibility <- Kappa(UUT_Flexibility)
+Kappa_Flexibility
+confint(Kappa_Flexibility)
+
+```
+
+
+## Results
+
+The **unweighted** Kappa values demonstrate that the inter-rater reliability is almost perfect (>.90 for both). Importantly, it was expected that it would be slightly higher for fluency as this is more 'straightforward', whereas flexibility is more dependent on the rater. 95% CIs are .95-1 for fluency and .88-.95 for flexibility.
+
+
+
