@@ -2,496 +2,570 @@
 title: "Data Processing"
 author: "Milla Pihlajamaki and Caitlin Dawson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+output: pdf_document
 ---
 
 # Notes: 
-Last edited 23.6.2022 by Caitlin
-takes data downloaded from Gorilla **blinded, semicolon separater, csv format, short form**
-cleans and processes data for the study 'Scientific thinking and decision-making in everyday life'
+* takes data downloaded from Gorilla **blinded, semicolon separated, csv format, short form, versions 22-25**
+* cleans and processes data for the study 'Scientific thinking and decision-making in everyday life'
 
 Version history: 
-*version 22: Links fixed in information and consent
-*version 23: HJ updated the experiment (source deleted from CI task--only 5 sources because of trouble getting a stable URL; Viiskunta source was taken down)
-*version 24: HJ updated CI task to include all 6 sources again, one of them as image
-*version 25: HJ. Word adult taken off from Study Information and Content
-
+* version 22: Links fixed in information and consent
+* version 23: HJ updated the experiment (source deleted from CI task--only 5 sources because of trouble getting a stable URL; Viiskunta source was taken down)
+* version 24: HJ updated CI task to include all 6 sources again, one of them as image
+* version 25: HJ. Word adult taken off from Study Information and Content
 
 # Loading packages
 
 ```{r Loading packages, include = FALSE}
 
-library(tidyverse)
-library(psych)
-library(lavaan)
+# library(car)
 library(dplyr)
-library(ggplot2)
-library(psycho)
-library(tidyr)
-library(GPArotation)
-library(car)
+# library(ggplot2)
+# library(GPArotation)
+# library(lavaan)
+# library(psych)
+# library(psycho)
+# library(tidyr)
+# library(tidyverse)
 
 ```
-
 
 # Loading data 
 
-```{r Loading data,  include = FALSE}
+```{r Loading data, include = FALSE}
 
-# Versions 22-25 are included
-data_epistemicQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-2wlk.csv', sep = ";")
-data_heuristicQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-79hv.csv', sep = ";")
-data_openminded.thinkingQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-7qsg.csv', sep = ";")
-data_validityQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-81k4.csv', sep = ";")
-data_demographicsQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-c7cw.csv', sep = ";")
-data_science.attitudesQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-cl1u.csv', sep = ";")
-data_need.cognitionQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-eygv.csv', sep = ";")
-data_science.curiosityQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-go4a.csv', sep = ";")
-data_need.closureQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-mz16.csv', sep = ";")
-data_studyinfoQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-o43u.csv', sep = ";")
-data_randomness.probabilityQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-otb8.csv', sep = ";")
-data_intellectual.humilityQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-oyla.csv', sep = ";")
-data_big5Q_v22 <- read.csv('data_exp_55551-v22_questionnaire-w8n1.csv', sep = ";")
-data_unusual.usesT_v22 <- read.csv('data_exp_55551-v22_task-7mar.csv', sep = ";")
-data_NavonT_v22 <- read.csv('data_exp_55551-v22_task-8mu5.csv', sep = ";")
-data_NeckerT_v22 <- read.csv('data_exp_55551-v22_task-9nll.csv', sep = ";")
-data_go.nogoT_v22 <- read.csv('data_exp_55551-v22_task-n8ns.csv', sep = ";")
-data_matrix.reasoningT_v22 <- read.csv('data_exp_55551-v22_task-tg12.csv', sep = ";")
-data_citizen.initiativeT_v22 <- read.csv('data_exp_55551-v22_task-zryk.csv', sep = ";")
+# Versions 22-25
+data_epiQ_v22 <- read.csv("data_exp_55551-v22_questionnaire-2wlk.csv", 
+             sep = ";")
+data_heurQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-79hv.csv', 
+              sep = ";")
+data_openQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-7qsg.csv', 
+              sep = ";")
+data_validQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-81k4.csv', 
+              sep = ";")
+data_demoQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-c7cw.csv', 
+              sep = ";")
+data_sciattQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-cl1u.csv', 
+               sep = ";")
+data_needcogQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-eygv.csv', 
+               sep = ";")
+data_scicurQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-go4a.csv', 
+               sep = ";")
+data_needcloQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-mz16.csv', 
+               sep = ";")
+data_infoQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-o43u.csv', 
+              sep = ";")
+data_rpQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-otb8.csv', 
+             sep = ";")
+data_inthumQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-oyla.csv', 
+               sep = ";")
+data_big5Q_v22 <- read.csv('data_exp_55551-v22_questionnaire-w8n1.csv', 
+              sep = ";")
+data_uutT_v22 <- read.csv('data_exp_55551-v22_task-7mar.csv', 
+             sep = ";")
+data_NavonT_v22 <- read.csv('data_exp_55551-v22_task-8mu5.csv', 
+              sep = ";")
+data_NeckerT_v22 <- read.csv('data_exp_55551-v22_task-9nll.csv', 
+               sep = ";")
+data_nogoT_v22 <- read.csv('data_exp_55551-v22_task-n8ns.csv', 
+              sep = ";")
+data_matreasT_v22 <- read.csv('data_exp_55551-v22_task-tg12.csv', 
+               sep = ";")
+data_citiT_v22 <- read.csv('data_exp_55551-v22_task-zryk.csv', 
+              sep = ";")
 
-data_epistemicQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-2wlk.csv', sep = ";")
-data_heuristicQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-79hv.csv', sep = ";")
-data_openminded.thinkingQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-7qsg.csv', sep = ";")
-data_validityQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-81k4.csv', sep = ";")
-data_demographicsQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-c7cw.csv', sep = ";")
-data_science.attitudesQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-cl1u.csv', sep = ";")
-data_need.cognitionQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-eygv.csv', sep = ";")
-data_science.curiosityQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-go4a.csv', sep = ";")
-data_need.closureQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-mz16.csv', sep = ";")
-data_studyinfoQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-o43u.csv', sep = ";")
-data_randomness.probabilityQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-otb8.csv', sep = ";")
-data_intellectual.humilityQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-oyla.csv', sep = ";")
-data_big5Q_v23 <- read.csv('data_exp_55551-v23_questionnaire-w8n1.csv', sep = ";")
-data_unusual.usesT_v23 <- read.csv('data_exp_55551-v23_task-7mar.csv', sep = ";")
-data_NavonT_v23 <- read.csv('data_exp_55551-v23_task-8mu5.csv', sep = ";")
-data_NeckerT_v23 <- read.csv('data_exp_55551-v23_task-9nll.csv', sep = ";")
-data_go.nogoT_v23 <- read.csv('data_exp_55551-v23_task-n8ns.csv', sep = ";")
-data_matrix.reasoningT_v23 <- read.csv('data_exp_55551-v23_task-tg12.csv', sep = ";")
-data_citizen.initiativeT_v23 <- read.csv('data_exp_55551-v23_task-zryk.csv', sep = ";")
+data_epiQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-2wlk.csv', 
+             sep = ";")
+data_heurQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-79hv.csv', 
+              sep = ";")
+data_openQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-7qsg.csv', 
+              sep = ";")
+data_validQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-81k4.csv', 
+              sep = ";")
+data_demoQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-c7cw.csv', 
+              sep = ";")
+data_sciattQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-cl1u.csv', 
+               sep = ";")
+data_needcogQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-eygv.csv', 
+               sep = ";")
+data_scicurQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-go4a.csv', 
+               sep = ";")
+data_needcloQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-mz16.csv', 
+               sep = ";")
+data_infoQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-o43u.csv', 
+              sep = ";")
+data_rpQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-otb8.csv', 
+             sep = ";")
+data_inthumQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-oyla.csv', 
+               sep = ";")
+data_big5Q_v23 <- read.csv('data_exp_55551-v23_questionnaire-w8n1.csv', 
+              sep = ";")
+data_uutT_v23 <- read.csv('data_exp_55551-v23_task-7mar.csv', 
+             sep = ";")
+data_NavonT_v23 <- read.csv('data_exp_55551-v23_task-8mu5.csv', 
+              sep = ";")
+data_NeckerT_v23 <- read.csv('data_exp_55551-v23_task-9nll.csv', 
+               sep = ";")
+data_nogoT_v23 <- read.csv('data_exp_55551-v23_task-n8ns.csv', 
+              sep = ";")
+data_matreasT_v23 <- read.csv('data_exp_55551-v23_task-tg12.csv', 
+               sep = ";")
+data_citiT_v23 <- read.csv('data_exp_55551-v23_task-zryk.csv', 
+              sep = ";")
 
-data_epistemicQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-2wlk.csv', sep = ";")
-data_heuristicQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-79hv.csv', sep = ";")
-data_openminded.thinkingQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-7qsg.csv', sep = ";")
-data_validityQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-81k4.csv', sep = ";")
-data_demographicsQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-c7cw.csv', sep = ";")
-data_science.attitudesQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-cl1u.csv', sep = ";")
-data_need.cognitionQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-eygv.csv', sep = ";")
-data_science.curiosityQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-go4a.csv', sep = ";")
-data_need.closureQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-mz16.csv', sep = ";")
-data_studyinfoQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-o43u.csv', sep = ";")
-data_randomness.probabilityQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-otb8.csv', sep = ";")
-data_intellectual.humilityQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-oyla.csv', sep = ";")
-data_big5Q_v24 <- read.csv('data_exp_55551-v24_questionnaire-w8n1.csv', sep = ";")
-data_unusual.usesT_v24 <- read.csv('data_exp_55551-v24_task-7mar.csv', sep = ";")
-data_NavonT_v24 <- read.csv('data_exp_55551-v24_task-8mu5.csv', sep = ";")
-data_NeckerT_v24 <- read.csv('data_exp_55551-v24_task-9nll.csv', sep = ";")
-data_go.nogoT_v24 <- read.csv('data_exp_55551-v24_task-n8ns.csv', sep = ";")
-data_matrix.reasoningT_v24 <- read.csv('data_exp_55551-v24_task-tg12.csv', sep = ";")
-data_citizen.initiativeT_v24 <- read.csv('data_exp_55551-v24_task-zryk.csv', sep = ";")
+data_epiQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-2wlk.csv', 
+             sep = ";")
+data_heurQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-79hv.csv', 
+              sep = ";")
+data_openQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-7qsg.csv', 
+              sep = ";")
+data_validQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-81k4.csv', 
+              sep = ";")
+data_demoQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-c7cw.csv', 
+              sep = ";")
+data_sciattQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-cl1u.csv', 
+               sep = ";")
+data_needcogQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-eygv.csv', 
+               sep = ";")
+data_scicurQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-go4a.csv', 
+               sep = ";")
+data_needcloQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-mz16.csv', 
+               sep = ";")
+data_infoQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-o43u.csv', 
+              sep = ";")
+data_rpQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-otb8.csv', 
+             sep = ";")
+data_inthumQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-oyla.csv', 
+               sep = ";")
+data_big5Q_v24 <- read.csv('data_exp_55551-v24_questionnaire-w8n1.csv', 
+              sep = ";")
+data_uutT_v24 <- read.csv('data_exp_55551-v24_task-7mar.csv', 
+             sep = ";")
+data_NavonT_v24 <- read.csv('data_exp_55551-v24_task-8mu5.csv', 
+              sep = ";")
+data_NeckerT_v24 <- read.csv('data_exp_55551-v24_task-9nll.csv', 
+               sep = ";")
+data_nogoT_v24 <- read.csv('data_exp_55551-v24_task-n8ns.csv', 
+              sep = ";")
+data_matreasT_v24 <- read.csv('data_exp_55551-v24_task-tg12.csv', 
+               sep = ";")
+data_citiT_v24 <- read.csv('data_exp_55551-v24_task-zryk.csv', 
+              sep = ";")
 
-data_epistemicQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-2wlk.csv', sep = ";")
-data_heuristicQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-79hv.csv', sep = ";")
-data_openminded.thinkingQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-7qsg.csv', sep = ";")
-data_validityQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-81k4.csv', sep = ";")
-data_demographicsQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-c7cw.csv', sep = ";")
-data_science.attitudesQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-cl1u.csv', sep = ";")
-data_need.cognitionQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-eygv.csv', sep = ";")
-data_science.curiosityQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-go4a.csv', sep = ";")
-data_need.closureQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-mz16.csv', sep = ";")
-data_studyinfoQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-o43u.csv', sep = ";")
-data_randomness.probabilityQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-otb8.csv', sep = ";")
-data_intellectual.humilityQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-oyla.csv', sep = ";")
-data_big5Q_v25 <- read.csv('data_exp_55551-v25_questionnaire-w8n1.csv', sep = ";")
-data_unusual.usesT_v25 <- read.csv('data_exp_55551-v25_task-7mar.csv', sep = ";")
-data_NavonT_v25 <- read.csv('data_exp_55551-v25_task-8mu5.csv', sep = ";")
-data_NeckerT_v25 <- read.csv('data_exp_55551-v25_task-9nll.csv', sep = ";")
-data_go.nogoT_v25 <- read.csv('data_exp_55551-v25_task-n8ns.csv', sep = ";")
-data_matrix.reasoningT_v25 <- read.csv('data_exp_55551-v25_task-tg12.csv', sep = ";")
-data_citizen.initiativeT_v25 <- read.csv('data_exp_55551-v25_task-zryk.csv', sep = ";")
+data_epiQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-2wlk.csv', 
+             sep = ";")
+data_heurQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-79hv.csv', 
+              sep = ";")
+data_openQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-7qsg.csv', 
+              sep = ";")
+data_validQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-81k4.csv', 
+              sep = ";")
+data_demoQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-c7cw.csv', 
+              sep = ";")
+data_sciattQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-cl1u.csv', 
+               sep = ";")
+data_needcogQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-eygv.csv', 
+               sep = ";")
+data_scicurQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-go4a.csv', 
+               sep = ";")
+data_needcloQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-mz16.csv', 
+               sep = ";")
+data_infoQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-o43u.csv', 
+              sep = ";")
+data_rpQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-otb8.csv', 
+             sep = ";")
+data_inthumQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-oyla.csv', sep = ";")
+data_big5Q_v25 <- read.csv('data_exp_55551-v25_questionnaire-w8n1.csv', 
+              sep = ";")
+data_uutT_v25 <- read.csv('data_exp_55551-v25_task-7mar.csv', 
+             sep = ";")
+data_NavonT_v25 <- read.csv('data_exp_55551-v25_task-8mu5.csv', 
+              sep = ";")
+data_NeckerT_v25 <- read.csv('data_exp_55551-v25_task-9nll.csv', 
+               sep = ";")
+data_nogoT_v25 <- read.csv('data_exp_55551-v25_task-n8ns.csv', 
+              sep = ";")
+data_matreasT_v25 <- read.csv('data_exp_55551-v25_task-tg12.csv', 
+               sep = ";")
+data_citiT_v25 <- read.csv('data_exp_55551-v25_task-zryk.csv', 
+              sep = ";")
 
 ```
 
+# Create questionnaire dataframe
 
-# Creating questionnaire dataframe
+This series of chunks computes the necessary data cleaning to merge the questionnaire dataframes and merges them.
 
-This series of chunks loads in each dataset, cleans up general rows and columns, and merges the questionnaire datasets
+## Omit experiment-general columns
 
-NB: most task datasets are also loaded in and versions merged here, they will be used later
+The first chunk omits experiment-general columns (i.e., columns that take the same value in each task/questionnaire dataframe)
 
-NB: when merging, ALWAYS ADD the argument all = TRUE, this allows for missing data from some datasets. Otherwise the merge deletes incomplete rows. 
+```{r Omit experiment-general columns, include = FALSE}
 
-```{r Anonymising data, include = FALSE}
-
-# Omitting experiment-general columns from all files (except for participant ID)
+# Omit experiment-general columns from all files (except for participant ID)
 data_big5Q_v22 <- data_big5Q_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citizen.initiativeT_v22 <- data_citizen.initiativeT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citizen.initiativeT_v22))
-data_demographicsQ_v22 <- data_demographicsQ_v22 %>%
+data_citiT_v22 <- data_citiT_v22 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v22))
+data_demoQ_v22 <- data_demoQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epistemicQ_v22 <- data_epistemicQ_v22 %>%
+data_epiQ_v22 <- data_epiQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_go.nogoT_v22 <- data_go.nogoT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_go.nogoT_v22))
-data_heuristicQ_v22 <- data_heuristicQ_v22 %>%
+data_nogoT_v22 <- data_nogoT_v22 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v22))
+data_heurQ_v22 <- data_heurQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_intellectual.humilityQ_v22 <- data_intellectual.humilityQ_v22 %>%
+data_inthumQ_v22 <- data_inthumQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matrix.reasoningT_v22 <- data_matrix.reasoningT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matrix.reasoningT_v22))
+data_matreasT_v22 <- data_matreasT_v22 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v22))
 data_NavonT_v22 <- data_NavonT_v22 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v22))
 data_NeckerT_v22 <- data_NeckerT_v22 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v22))
-data_need.closureQ_v22 <- data_need.closureQ_v22 %>%
+data_needcloQ_v22 <- data_needcloQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_need.cognitionQ_v22 <- data_need.cognitionQ_v22 %>%
+data_needcogQ_v22 <- data_needcogQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openminded.thinkingQ_v22 <- data_openminded.thinkingQ_v22 %>%
+data_openQ_v22 <- data_openQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_randomness.probabilityQ_v22 <- data_randomness.probabilityQ_v22 %>%
+data_rpQ_v22 <- data_rpQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.attitudesQ_v22 <- data_science.attitudesQ_v22 %>%
+data_sciattQ_v22 <- data_sciattQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.curiosityQ_v22 <- data_science.curiosityQ_v22 %>%
+data_scicurQ_v22 <- data_scicurQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_studyinfoQ_v22 <- data_studyinfoQ_v22 %>%
+data_infoQ_v22 <- data_infoQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_unusual.usesT_v22 <- data_unusual.usesT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_unusual.usesT_v22))
-data_validityQ_v22 <- data_validityQ_v22 %>%
+data_uutT_v22 <- data_uutT_v22 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v22))
+data_validQ_v22 <- data_validQ_v22 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
 
 data_big5Q_v23 <- data_big5Q_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citizen.initiativeT_v23 <- data_citizen.initiativeT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citizen.initiativeT_v23))
-data_demographicsQ_v23 <- data_demographicsQ_v23 %>%
+data_citiT_v23 <- data_citiT_v23 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v23))
+data_demoQ_v23 <- data_demoQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epistemicQ_v23 <- data_epistemicQ_v23 %>%
+data_epiQ_v23 <- data_epiQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_go.nogoT_v23 <- data_go.nogoT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_go.nogoT_v23))
-data_heuristicQ_v23 <- data_heuristicQ_v23 %>%
+data_nogoT_v23 <- data_nogoT_v23 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v23))
+data_heurQ_v23 <- data_heurQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_intellectual.humilityQ_v23 <- data_intellectual.humilityQ_v23 %>%
+data_inthumQ_v23 <- data_inthumQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matrix.reasoningT_v23 <- data_matrix.reasoningT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matrix.reasoningT_v23))
+data_matreasT_v23 <- data_matreasT_v23 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v23))
 data_NavonT_v23 <- data_NavonT_v23 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v23))
 data_NeckerT_v23 <- data_NeckerT_v23 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v23))
-data_need.closureQ_v23 <- data_need.closureQ_v23 %>%
+data_needcloQ_v23 <- data_needcloQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_need.cognitionQ_v23 <- data_need.cognitionQ_v23 %>%
+data_needcogQ_v23 <- data_needcogQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openminded.thinkingQ_v23 <- data_openminded.thinkingQ_v23 %>%
+data_openQ_v23 <- data_openQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_randomness.probabilityQ_v23 <- data_randomness.probabilityQ_v23 %>%
+data_rpQ_v23 <- data_rpQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.attitudesQ_v23 <- data_science.attitudesQ_v23 %>%
+data_sciattQ_v23 <- data_sciattQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.curiosityQ_v23 <- data_science.curiosityQ_v23 %>%
+data_scicurQ_v23 <- data_scicurQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_studyinfoQ_v23 <- data_studyinfoQ_v23 %>%
+data_infoQ_v23 <- data_infoQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_unusual.usesT_v23 <- data_unusual.usesT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_unusual.usesT_v23))
-data_validityQ_v23 <- data_validityQ_v23 %>%
+data_uutT_v23 <- data_uutT_v23 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v23))
+data_validQ_v23 <- data_validQ_v23 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
 
 data_big5Q_v24 <- data_big5Q_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citizen.initiativeT_v24 <- data_citizen.initiativeT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citizen.initiativeT_v24))
-data_demographicsQ_v24 <- data_demographicsQ_v24 %>%
+data_citiT_v24 <- data_citiT_v24 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v24))
+data_demoQ_v24 <- data_demoQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epistemicQ_v24 <- data_epistemicQ_v24 %>%
+data_epiQ_v24 <- data_epiQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_go.nogoT_v24 <- data_go.nogoT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_go.nogoT_v24))
-data_heuristicQ_v24 <- data_heuristicQ_v24 %>%
+data_nogoT_v24 <- data_nogoT_v24 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v24))
+data_heurQ_v24 <- data_heurQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_intellectual.humilityQ_v24 <- data_intellectual.humilityQ_v24 %>%
+data_inthumQ_v24 <- data_inthumQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matrix.reasoningT_v24 <- data_matrix.reasoningT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matrix.reasoningT_v24))
+data_matreasT_v24 <- data_matreasT_v24 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v24))
 data_NavonT_v24 <- data_NavonT_v24 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v24))
 data_NeckerT_v24 <- data_NeckerT_v24 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v24))
-data_need.closureQ_v24 <- data_need.closureQ_v24 %>%
+data_needcloQ_v24 <- data_needcloQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_need.cognitionQ_v24 <- data_need.cognitionQ_v24 %>%
+data_needcogQ_v24 <- data_needcogQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openminded.thinkingQ_v24 <- data_openminded.thinkingQ_v24 %>%
+data_openQ_v24 <- data_openQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_randomness.probabilityQ_v24 <- data_randomness.probabilityQ_v24 %>%
+data_rpQ_v24 <- data_rpQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.attitudesQ_v24 <- data_science.attitudesQ_v24 %>%
+data_sciattQ_v24 <- data_sciattQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.curiosityQ_v24 <- data_science.curiosityQ_v24 %>%
+data_scicurQ_v24 <- data_scicurQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_studyinfoQ_v24 <- data_studyinfoQ_v24 %>%
+data_infoQ_v24 <- data_infoQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_unusual.usesT_v24 <- data_unusual.usesT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_unusual.usesT_v24))
-data_validityQ_v24 <- data_validityQ_v24 %>%
+data_uutT_v24 <- data_uutT_v24 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v24))
+data_validQ_v24 <- data_validQ_v24 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
 
 data_big5Q_v25 <- data_big5Q_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citizen.initiativeT_v25 <- data_citizen.initiativeT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citizen.initiativeT_v25))
-data_demographicsQ_v25 <- data_demographicsQ_v25 %>%
+data_citiT_v25 <- data_citiT_v25 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v25))
+data_demoQ_v25 <- data_demoQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epistemicQ_v25 <- data_epistemicQ_v25 %>%
+data_epiQ_v25 <- data_epiQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_go.nogoT_v25 <- data_go.nogoT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_go.nogoT_v25))
-data_heuristicQ_v25 <- data_heuristicQ_v25 %>%
+data_nogoT_v25 <- data_nogoT_v25 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v25))
+data_heurQ_v25 <- data_heurQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_intellectual.humilityQ_v25 <- data_intellectual.humilityQ_v25 %>%
+data_inthumQ_v25 <- data_inthumQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matrix.reasoningT_v25 <- data_matrix.reasoningT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matrix.reasoningT_v25))
+data_matreasT_v25 <- data_matreasT_v25 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v25))
 data_NavonT_v25 <- data_NavonT_v25 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v25))
 data_NeckerT_v25 <- data_NeckerT_v25 %>%
   select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v25))
-data_need.closureQ_v25 <- data_need.closureQ_v25 %>%
+data_needcloQ_v25 <- data_needcloQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_need.cognitionQ_v25 <- data_need.cognitionQ_v25 %>%
+data_needcogQ_v25 <- data_needcogQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openminded.thinkingQ_v25 <- data_openminded.thinkingQ_v25 %>%
+data_openQ_v25 <- data_openQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_randomness.probabilityQ_v25 <- data_randomness.probabilityQ_v25 %>%
+data_rpQ_v25 <- data_rpQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.attitudesQ_v25 <- data_science.attitudesQ_v25 %>%
+data_sciattQ_v25 <- data_sciattQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_science.curiosityQ_v25 <- data_science.curiosityQ_v25 %>%
+data_scicurQ_v25 <- data_scicurQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_studyinfoQ_v25 <- data_studyinfoQ_v25 %>%
+data_infoQ_v25 <- data_infoQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_unusual.usesT_v25 <- data_unusual.usesT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_unusual.usesT_v25))
-data_validityQ_v25 <- data_validityQ_v25 %>%
+data_uutT_v25 <- data_uutT_v25 %>%
+  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v25))
+data_validQ_v25 <- data_validQ_v25 %>%
   select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
 
 ```
 
+## Merge the different versions of each task/questionnaire
 
-# Cleaning and formatting
-This large chunk cleans and formats the data.
+This chunk combines the different versions of each task/questionnaire (leaving us with one df per task/questionnaire).
 
-```{r data cleaning and formatting, include = FALSE}
+```{r Merge the versions, include = FALSE}
 
-# Omitting the last row of each file as this row merely signals that the experiment has ended and carries no useful information.
-# Concatenating the versions of each task and removing the empty last line of each file 
+# Concatenate the versions of each task/questionnaire and remove the empty last line of each file 
 
 data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, data_big5Q_v24, data_big5Q_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_citizen.initiativeT <- rbind(data_citizen.initiativeT_v22, data_citizen.initiativeT_v23, data_citizen.initiativeT_v23, data_citizen.initiativeT_v25) %>%
+data_citiT <- rbind(data_citiT_v22, data_citiT_v23, data_citiT_v24, data_citiT_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_demographicsQ <-  rbind(data_demographicsQ_v22, data_demographicsQ_v23, data_demographicsQ_v24, data_demographicsQ_v25) %>%
+data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, data_demoQ_v24, data_demoQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_epistemicQ <- rbind(data_epistemicQ_v22, data_epistemicQ_v23, data_epistemicQ_v24, data_epistemicQ_v25) %>%
+data_epiQ <- rbind(data_epiQ_v22, data_epiQ_v23, data_epiQ_v24, data_epiQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_go.nogoT <- rbind(data_go.nogoT_v22, data_go.nogoT_v23, data_go.nogoT_v24, data_go.nogoT_v25) %>%
+data_nogoT <- rbind(data_nogoT_v22, data_nogoT_v23, data_nogoT_v24, data_nogoT_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_heuristicQ <- rbind(data_heuristicQ_v22, data_heuristicQ_v23, data_heuristicQ_v24, data_heuristicQ_v25) %>%
+data_heurQ <- rbind(data_heurQ_v22, data_heurQ_v23, data_heurQ_v24, data_heurQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_intellectual.humilityQ <- rbind(data_intellectual.humilityQ_v22, data_intellectual.humilityQ_v23, data_intellectual.humilityQ_v24, data_intellectual.humilityQ_v25) %>%
+data_inthumQ <- rbind(data_inthumQ_v22, data_inthumQ_v23, data_inthumQ_v24, data_inthumQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_matrix.reasoningT <- rbind(data_matrix.reasoningT_v22, data_matrix.reasoningT_v23, data_matrix.reasoningT_v24, data_matrix.reasoningT_v25) %>%
+data_matreasT <- rbind(data_matreasT_v22, data_matreasT_v23, data_matreasT_v24, data_matreasT_v25) %>%
   filter(!is.na(Participant.Private.ID))
 data_NavonT <- rbind(data_NavonT_v22, data_NavonT_v23, data_NavonT_v24, data_NavonT_v25) %>%
   filter(!is.na(Participant.Private.ID))
 data_NeckerT <- rbind(data_NeckerT_v22, data_NeckerT_v23, data_NeckerT_v24, data_NeckerT_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_need.closureQ <- rbind(data_need.closureQ_v22, data_need.closureQ_v23, data_need.closureQ_v24, data_need.closureQ_v25) %>%
+data_needcloQ <- rbind(data_needcloQ_v22, data_needcloQ_v23, data_needcloQ_v24, data_needcloQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_need.cognitionQ <- rbind(data_need.cognitionQ_v22, data_need.cognitionQ_v23, data_need.cognitionQ_v24, data_need.cognitionQ_v25) %>%
+data_needcogQ <- rbind(data_needcogQ_v22, data_needcogQ_v23, data_needcogQ_v24, data_needcogQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_openminded.thinkingQ <- rbind(data_openminded.thinkingQ_v22, data_openminded.thinkingQ_v23, data_openminded.thinkingQ_v24, data_openminded.thinkingQ_v25) %>%
+data_openQ <- rbind(data_openQ_v22, data_openQ_v23, data_openQ_v24, data_openQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_randomness.probabilityQ <- rbind(data_randomness.probabilityQ_v22, data_randomness.probabilityQ_v23, data_randomness.probabilityQ_v24, data_randomness.probabilityQ_v25) %>%
+data_rpQ <- rbind(data_rpQ_v22, data_rpQ_v23, data_rpQ_v24, data_rpQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_science.attitudesQ <- rbind(data_science.attitudesQ_v22, data_science.attitudesQ_v23, data_science.attitudesQ_v24, data_science.attitudesQ_v25) %>%
+data_sciattQ <- rbind(data_sciattQ_v22, data_sciattQ_v23, data_sciattQ_v24, data_sciattQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_science.curiosityQ <- rbind(data_science.curiosityQ_v22, data_science.curiosityQ_v23, data_science.curiosityQ_v24, data_science.curiosityQ_v25) %>%
+data_scicurQ <- rbind(data_scicurQ_v22, data_scicurQ_v23, data_scicurQ_v24, data_scicurQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_studyinfoQ <- rbind(data_studyinfoQ_v22, data_studyinfoQ_v23, data_studyinfoQ_v24, data_studyinfoQ_v25) %>%
+data_infoQ <- rbind(data_infoQ_v22, data_infoQ_v23, data_infoQ_v24, data_infoQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_unusual.usesT <- rbind(data_unusual.usesT_v22, data_unusual.usesT_v23, data_unusual.usesT_v24, data_unusual.usesT_v25) %>%
+data_uutT <- rbind(data_uutT_v22, data_uutT_v23, data_uutT_v24, data_uutT_v25) %>%
   filter(!is.na(Participant.Private.ID))
-data_validityQ <- rbind(data_validityQ_v22, data_validityQ_v23, data_validityQ_v24, data_validityQ_v25) %>%
+data_validQ <- rbind(data_validQ_v22, data_validQ_v23, data_validQ_v24, data_validQ_v25) %>%
   filter(!is.na(Participant.Private.ID))
 
-# Remove just to clean up the environment, can keep these lines to double check the data
-rm(data_big5Q_v22, data_citizen.initiativeT_v22, data_demographicsQ_v22, data_epistemicQ_v22, data_go.nogoT_v22, data_heuristicQ_v22, data_intellectual.humilityQ_v22, data_matrix.reasoningT_v22, data_NavonT_v22, data_NeckerT_v22, data_need.closureQ_v22, data_need.cognitionQ_v22, data_openminded.thinkingQ_v22, data_randomness.probabilityQ_v22, data_science.attitudesQ_v22, data_science.curiosityQ_v22, data_studyinfoQ_v22, data_unusual.usesT_v22, data_validityQ_v22)
+# Remove to clean up the environment
+rm(data_big5Q_v22, data_citiT_v22, data_demoQ_v22, data_epiQ_v22, data_nogoT_v22, data_heurQ_v22, data_inthumQ_v22, data_matreasT_v22, data_NavonT_v22, data_NeckerT_v22, data_needcloQ_v22, data_needcogQ_v22, data_openQ_v22, data_rpQ_v22, data_sciattQ_v22, data_scicurQ_v22, data_infoQ_v22, data_uutT_v22, data_validQ_v22)
 
-rm(data_big5Q_v23, data_citizen.initiativeT_v23, data_demographicsQ_v23, data_epistemicQ_v23, data_go.nogoT_v23, data_heuristicQ_v23, data_intellectual.humilityQ_v23, data_matrix.reasoningT_v23, data_NavonT_v23, data_NeckerT_v23, data_need.closureQ_v23, data_need.cognitionQ_v23, data_openminded.thinkingQ_v23, data_randomness.probabilityQ_v23, data_science.attitudesQ_v23, data_science.curiosityQ_v23, data_studyinfoQ_v23, data_unusual.usesT_v23, data_validityQ_v23)
+rm(data_big5Q_v23, data_citiT_v23, data_demoQ_v23, data_epiQ_v23, data_nogoT_v23, data_heurQ_v23, data_inthumQ_v23, data_matreasT_v23, data_NavonT_v23, data_NeckerT_v23, data_needcloQ_v23, data_needcogQ_v23, data_openQ_v23, data_rpQ_v23, data_sciattQ_v23, data_scicurQ_v23, data_infoQ_v23, data_uutT_v23, data_validQ_v23)
 
-rm(data_big5Q_v24, data_citizen.initiativeT_v24, data_demographicsQ_v24, data_epistemicQ_v24, data_go.nogoT_v24, data_heuristicQ_v24, data_intellectual.humilityQ_v24, data_matrix.reasoningT_v24, data_NavonT_v24, data_NeckerT_v24, data_need.closureQ_v24, data_need.cognitionQ_v24, data_openminded.thinkingQ_v24, data_randomness.probabilityQ_v24, data_science.attitudesQ_v24, data_science.curiosityQ_v24, data_studyinfoQ_v24, data_unusual.usesT_v24, data_validityQ_v24)
+rm(data_big5Q_v24, data_citiT_v24, data_demoQ_v24, data_epiQ_v24, data_nogoT_v24, data_heurQ_v24, data_inthumQ_v24, data_matreasT_v24, data_NavonT_v24, data_NeckerT_v24, data_needcloQ_v24, data_needcogQ_v24, data_openQ_v24, data_rpQ_v24, data_sciattQ_v24, data_scicurQ_v24, data_infoQ_v24, data_uutT_v24, data_validQ_v24)
 
-rm(data_big5Q_v25, data_citizen.initiativeT_v25, data_demographicsQ_v25, data_epistemicQ_v25, data_go.nogoT_v25, data_heuristicQ_v25, data_intellectual.humilityQ_v25, data_matrix.reasoningT_v25, data_NavonT_v25, data_NeckerT_v25, data_need.closureQ_v25, data_need.cognitionQ_v25, data_openminded.thinkingQ_v25, data_randomness.probabilityQ_v25, data_science.attitudesQ_v25, data_science.curiosityQ_v25, data_studyinfoQ_v25, data_unusual.usesT_v25, data_validityQ_v25)
+rm(data_big5Q_v25, data_citiT_v25, data_demoQ_v25, data_epiQ_v25, data_nogoT_v25, data_heurQ_v25, data_inthumQ_v25, data_matreasT_v25, data_NavonT_v25, data_NeckerT_v25, data_needcloQ_v25, data_needcogQ_v25, data_openQ_v25, data_rpQ_v25, data_sciattQ_v25, data_scicurQ_v25, data_infoQ_v25, data_uutT_v25, data_validQ_v25)
 
 ``` 
 
+## Merge questionnaire dataframes
 
-# Merging questionnaire dataframes
+This chunk merges all questionnaire dataframes, leaving us with one dataframe.
 
-```{r Renaming the END.QUESTIONNAIRE + Randomise.questionnaire.elements. columns for each questionnaire, include = FALSE}
+```{r Merge questionnaire dataframes, include = FALSE}
 
-# Renaming two columns before combining all the questionnaires into one df. END.QUESTIONNAIRE column gives you the response time for that questionnaire, and Randomise.questionnaire.elements. column gives you a logical value indicating whether the questionnaire items were randomised for that questionnaire.
+# Rename two columns before combining all the questionnaires into one df (the column has the same name in each questionnaire file). END.QUESTIONNAIRE column gives you the response time for that questionnaire, and Randomise.questionnaire.elements. column gives you a logical value indicating whether the questionnaire items were randomised for that questionnaire.
 
 # END.QUESTIONNAIRE
-names(data_demographicsQ)[names(data_demographicsQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.DEMOGRAPHICS"
-names(data_big5Q)[names(data_big5Q)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.BIG5"
-names(data_epistemicQ)[names(data_epistemicQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.EPISTEMIC"
-names(data_heuristicQ)[names(data_heuristicQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.HEURISTIC"
-names(data_intellectual.humilityQ)[names(data_intellectual.humilityQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.INT.HUM"
-names(data_need.closureQ)[names(data_need.closureQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.NEED.CLO"
-names(data_need.cognitionQ)[names(data_need.cognitionQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.NEED.COG"
-names(data_openminded.thinkingQ)[names(data_openminded.thinkingQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.OPEN.THINK"
-names(data_randomness.probabilityQ)[names(data_randomness.probabilityQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.RANDOM.PROB"
-names(data_science.attitudesQ)[names(data_science.attitudesQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.SCIENCE.ATT"
-names(data_science.curiosityQ)[names(data_science.curiosityQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.SCIENCE.CUR"
-names(data_studyinfoQ)[names(data_studyinfoQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.INFO"
-names(data_validityQ)[names(data_validityQ)  ==  "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.VALIDITY"
+names(data_demoQ)[names(data_demoQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.DEMOGRAPHICS"
+names(data_big5Q)[names(data_big5Q) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.BIG5"
+names(data_epiQ)[names(data_epiQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.EPISTEMIC"
+names(data_heurQ)[names(data_heurQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.HEURISTIC"
+names(data_inthumQ)[names(data_inthumQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.INT.HUM"
+names(data_needcloQ)[names(data_needcloQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.NEED.CLO"
+names(data_needcogQ)[names(data_needcogQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.NEED.COG"
+names(data_openQ)[names(data_openQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.OPEN.THINK"
+names(data_rpQ)[names(data_rpQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.RANDOM.PROB"
+names(data_sciattQ)[names(data_sciattQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.SCIENCE.ATT"
+names(data_scicurQ)[names(data_scicurQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.SCIENCE.CUR"
+names(data_infoQ)[names(data_infoQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.INFO"
+names(data_validQ)[names(data_validQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.VALIDITY"
 
 # Randomise.questionnaire.elements
-names(data_demographicsQ)[names(data_demographicsQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..DEMOGRAPHICS"
-names(data_big5Q)[names(data_big5Q)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..BIG5"
-names(data_epistemicQ)[names(data_epistemicQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..EPISTEMIC"
-names(data_heuristicQ)[names(data_heuristicQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..HEURISTIC"
-names(data_intellectual.humilityQ)[names(data_intellectual.humilityQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..INT.HUM"
-names(data_need.closureQ)[names(data_need.closureQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..NEED.CLO"
-names(data_need.cognitionQ)[names(data_need.cognitionQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..NEED.COG"
-names(data_openminded.thinkingQ)[names(data_openminded.thinkingQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..OPEN.THINK"
-names(data_randomness.probabilityQ)[names(data_randomness.probabilityQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..RANDOM.PROB"
-names(data_science.attitudesQ)[names(data_science.attitudesQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..SCIENCE.ATT"
-names(data_science.curiosityQ)[names(data_science.curiosityQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..SCIENCE.CUR"
-names(data_studyinfoQ)[names(data_studyinfoQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..INFO"
-names(data_validityQ)[names(data_validityQ)  ==  "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..VALIDITY"
+names(data_demoQ)[names(data_demoQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..DEMOGRAPHICS"
+names(data_big5Q)[names(data_big5Q) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..BIG5"
+names(data_epiQ)[names(data_epiQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..EPISTEMIC"
+names(data_heurQ)[names(data_heurQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..HEURISTIC"
+names(data_inthumQ)[names(data_inthumQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..INT.HUM"
+names(data_needcloQ)[names(data_needcloQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..NEED.CLO"
+names(data_needcogQ)[names(data_needcogQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..NEED.COG"
+names(data_openQ)[names(data_openQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..OPEN.THINK"
+names(data_rpQ)[names(data_rpQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..RANDOM.PROB"
+names(data_sciattQ)[names(data_sciattQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..SCIENCE.ATT"
+names(data_scicurQ)[names(data_scicurQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..SCIENCE.CUR"
+names(data_infoQ)[names(data_infoQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..INFO"
+names(data_validQ)[names(data_validQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..VALIDITY"
 
+# Merge by participant ID
+# All rows for all dataframes are kept (all unique rows).
+data1 <- merge(data_demoQ, data_big5Q, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data2 <- merge(data_epiQ, data_heurQ, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data3 <- merge(data_inthumQ, data_needcloQ, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data4 <- merge(data_needcogQ, data_openQ, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data5 <- merge(data_rpQ, data_sciattQ, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data6 <- merge(data_scicurQ, data_infoQ, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data7 <- merge(data1, data2, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data8 <- merge(data3, data4, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data9 <- merge(data5, data6, 
+               by = "Participant.Private.ID", 
+               all = TRUE)
+data10 <- merge(data7, data8, 
+                by = "Participant.Private.ID", 
+                all = TRUE)
+data11 <- merge(data9, data_validQ, 
+                by = "Participant.Private.ID", 
+                all = TRUE)
+data_Q_total <- merge(data10, data11, 
+                      by = "Participant.Private.ID", 
+                      all = TRUE)
 
-# The questionnaire files currently include the participant private ID and the questionnaire-specific columns.
-
-# Merging by participant ID
-# The way the dataframes are joined means that all rows in both dfs are kept. We need to keep all unique rows because some ppts have not done all the tasks, so the dfs are different lengths
-
-data1 <- merge(data_demographicsQ, data_big5Q, by = "Participant.Private.ID", all = TRUE)
-data2 <- merge(data_epistemicQ, data_heuristicQ, by = "Participant.Private.ID", all = TRUE)
-data3 <- merge(data_intellectual.humilityQ, data_need.closureQ, by = "Participant.Private.ID", all = TRUE)
-data4 <- merge(data_need.cognitionQ, data_openminded.thinkingQ, by = "Participant.Private.ID", all = TRUE)
-data5 <- merge(data_randomness.probabilityQ, data_science.attitudesQ, by = "Participant.Private.ID", all = TRUE)
-data6 <- merge(data_science.curiosityQ, data_studyinfoQ, by = "Participant.Private.ID", all = TRUE)
-data7 <- merge(data1, data2, by = "Participant.Private.ID", all = TRUE)
-data8 <- merge(data3, data4, by = "Participant.Private.ID", all = TRUE)
-data9 <- merge(data5, data6, by = "Participant.Private.ID", all = TRUE)
-data10 <- merge(data7, data8, by = "Participant.Private.ID", all = TRUE)
-data11 <- merge(data9, data_validityQ, by = "Participant.Private.ID", all = TRUE)
-data_Q_total <- merge(data10, data11, by = "Participant.Private.ID", all = TRUE)
-
-# Cleaning up the environment
+# Clean the environment
 rm(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11)
 
 ```
 
-Now the file we have (data_Q_total) includes all the questionnaire data. Before merging the files, two columns per file had to be renamed as there would have been columns with the same name otherwise (END.QUESTIONNAIRE and Randomise.questionnaire.elements.).
-
-Finally, the dfs were merged using the merge() function and merging them by private participant ID (the function matches the rows based on this column's value).
-
-From now on, the questionnaire data can be accessed either through the separate variables that contain the data for that questionnaire (e.g., data_demographicsQ) **or** using the variable that contains all the questionnaire data (data_Q_total). Having one big dataframe means that it is easier to omit rows that shouldn't be there (e.g., participants who have not consented / who said their data is not valid for some reason).
-
-
 # Participant exclusions and demographics 
 
-This chunk removes nonvalid participants and analyzes demographics.
+This chunk removes nonvalid participants and computes demographic information.
 
-First, check comments for those who chose something other than "you can use my data" to see what else is chosen and why. Here, there were a few "other, what?" that can be kept, e.g. ppts worried that making mistakes in a few trials of Navon makes their data invalid
+**NOTE: why are we computing demographics here? I don't think it's necessary as we are still removing participants with exclusion criteria???**
 
-Participants' data is omitted completely if they have stated that a) their responses are not valid, and/or s) their Finnish isn't Äidinkieli or Keskusteleva. Ppts who declined to consent were taken away from the study and no data was collected for them. 
+First, check comments for those who chose something other than "you can use my data" to see what else is chosen and why. Here, there were a few "other, what?" that can be kept, e.g. ppts worried that making mistakes in a few trials of Navon makes their data invalid.
 
-```{r Cleaning questionnaire data, include = FALSE}
+Participants' data is omitted completely if they have stated that a) their responses are not valid, and/or b) their Finnish isn't Äidinkieli or Keskusteleva. Ppts who declined to consent were taken away from the study and no data was collected for them. 
+
+```{r Clean questionnaire data, include = FALSE}
  
-# 2 nonvalid ppts "älä huomioi aineistoani"
+# Save data for nonvalid ppts ("älä huomioi aineistoani") in a separate file prior to removal
 data_nonvalid <- data_Q_total %>%
-  filter(Validity  ==  "Ã„lÃ¤ huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity  ==  "Ã„lÃ¤ huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiÃ¤ kunnolla.")
+  filter(Validity == "Ã„lÃ¤ huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity == "Ã„lÃ¤ huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiÃ¤ kunnolla.")
 
-# nonvalid language answers: there was one "muu" who said they had fluent but not native level, included them
-# the remaining "ei ole" is a test by CD
+# Save data for participants with nonvalid language answers in a separate file. One participant who said "muu" but said they were fluent but not native level was included.
 data_Q_lang_omit <- data_Q_total %>%
-  filter(Language !=  "Sujuva / Ã¤idinkieli" & Language !=  "Keskitaso / keskusteleva" & Language !=  "Muu, mikÃ¤?")
+ filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
-## Subsetting: 
-# check that the strings are correct and check for any blanks or NAs that should not be there
-
-# 1 nonvalid language, 2 validity check, 1 has NAs in all columns
-# total N =  178 -> 174 ppts. 
-# table(data_Q_total$ConsentFlag) #1 = consent, 0 = no ; there should be 100% consent
-table(data_Q_total$Validity) 
-table(data_Q_total$Language)
-
+# Remove nonvalid participants
 data_Q_total <- data_Q_total %>%
-  filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.", "Muu, mikÃ¤? ", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+ filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.", "Muu, mikÃ¤? ", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
 
 
-## Demographics: checking the class and range of the data
-typeof(data_Q_total$gender)
-data_Q_total$gender <- factor(data_Q_total$gender) # changing gender into factor
-
-typeof(data_Q_total$Age) # Age should be integer so we leave it
-
-typeof(data_Q_total$Country) 
-data_Q_total$Country <- factor(data_Q_total$Country) # changing country into factor
-
-typeof(data_Q_total$Language)
-data_Q_total$Language <- factor(data_Q_total$Language) # changing language into factor
-
-typeof(data_Q_total$Education)
-data_Q_total$Education <- factor(data_Q_total$Education) # changing education into factor
-
-
-# Demographics visuals
-
-par(mfrow = c(2, 3))
-
-# this one works for categorical data 
-barplot(table(data_Q_total$gender), ylim = (c(0, 150)), main = "Gender", col = 'skyblue3')
-barplot(table(data_Q_total$Country), ylim = (c(0, 180)), main = "Country", col = 'skyblue3')
-
-x <- barplot(table(data_Q_total$Education.quantised), ylim = (c(0, 80)), col = 'skyblue3', xaxt = "n", main = "Education level")
-labs <- paste(c("Tohtorintutkinto / lisensiaattitutkinto", "Ylempi korkeakoulututkinto", "Alempi korkeakoulututkinto", "Ammattikoulututkinto", "Ylioppislastutkinto", "Peruskoulu tai kansakoulu", "Muu tutkinto, mikä?"))
-text(cex = .65, x = x-.25, y = -9, labs, xpd = TRUE, srt = 30)
-
-hist(data_Q_total$Age, xlim = c(15, 80), ylim = c(0, 50), col = 'skyblue3', breaks = 7, xlab = "Age", ylab = "Frequency", main = "Age")
+# # Demographics: checking the class and range of the data
+# typeof(data_Q_total$gender)
+# data_Q_total$gender <- factor(data_Q_total$gender) # changing gender into factor
+# 
+# typeof(data_Q_total$Age) # Age should be integer so we leave it
+# 
+# typeof(data_Q_total$Country) 
+# data_Q_total$Country <- factor(data_Q_total$Country) # changing country into factor
+# 
+# typeof(data_Q_total$Language)
+# data_Q_total$Language <- factor(data_Q_total$Language) # changing language into factor
+# 
+# typeof(data_Q_total$Education)
+# data_Q_total$Education <- factor(data_Q_total$Education) # changing education into factor
+# 
+# 
+# # Visualize demograhics
+# barplot(table(data_Q_total$gender), ylim = (c(0, 150)), main = "Gender", col = 'skyblue3')
+# barplot(table(data_Q_total$Country), ylim = (c(0, 180)), main = "Country", col = 'skyblue3')
+# barplot(table(data_Q_total$Education.quantised), ylim = (c(0, 80)), col = 'skyblue3', xaxt = "n", main = "Education level", xaxt = "n")
+# axis(1, at = seq(from = 0.75, to = 7.9, length.out = 7), labels = c("Tohtori", "Ylempi KKT", "Alempi KKT", "AMK", "YO", "Peruskoulu", "Muu"), cex.axis = 0.7, las = 2)
+# hist(data_Q_total$Age, xlim = c(15, 80), ylim = c(0, 50), col = 'skyblue3', breaks = 7, xlab = "Age", ylab = "Frequency", main = "Age")
 
 ```
 
 
+# WHERE YOU LEFT OFF
+
 # Questionnaire processing 
 
-The following chunks deal with TIPI, EC, IH, AOT, NFC, and NFcog. They remove bad quality data from each questionnaire, runs CFA on all but TIPI, and calculate sum scores. 
+The following chunks deal with TIPI, EC, IH, AOT, NFC, and NFcog. They remove bad quality data from each questionnaire, run CFA on all but TIPI, and calculate sum scores. 
 
-The data from each questionnaire is checked: if a participant was suspiciously quick at responding to the questionnaire (I've used <1s/item for now), that participant's data for that questionnaire is replaced with NAs. After this, items are reverse-coded (if necessary), the structure is checked with CFA (prior to which the distributions of the items are checked so that CFA assumptions are met), and sum scores/mean scores are calculated for each questionnaire according to the scoring instructions.
+The data from each questionnaire is checked: if a participant was suspiciously quick at responding to the questionnaire (<1s/item), that participant's data for that questionnaire is replaced with NAs. After this, items are reverse-coded (if necessary), the structure is checked with CFA (prior to which the distributions of the items are checked so that CFA assumptions are met), and sum scores/mean scores are calculated for each questionnaire according to the scoring instructions.
 
 **NOTE: double FA is not an issue? (i.e., first running CFA for each and then doing the EFA)**
 
 Additionally, for scales that have reverse-coded items, if 95% of a participant's responses fall on the same response, their data for that scale are replaced with NAs (this indicates that they have not even read the questions properly).
+
+**NOTE: only for reverse-coded items?**
 
 ****Note to self: check the issues with CFA: single factor, methods, nonnormality, model indices****
 
@@ -543,26 +617,26 @@ CFA or reliability are not calculated for TIPI, see Gosling's website for explan
 ## Big Five (range 1-7)
 
 # Exclusion criteria
-   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
-   # minimum response time (if participant was too quick to fill the survey;(1s/item -> 10000ms total)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
+  # minimum response time (if participant was too quick to fill the survey;(1s/item -> 10000ms total)
 
 # Distribution of responses: Here, I look at the table/distribution of responses for each survey (Big 5 in this context) for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value) If B5 = 1, that participant's B5 data should be omitted/replaced with NAs
 
 data_Q_total <- data_Q_total %>%
-  mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) > =  .95) | (END.QUESTIONNAIRE.BIG5 < =  10000) ~ 1, 
-         ((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)) < .95) & (END.QUESTIONNAIRE.BIG5 > 10000) ~ 0))) 
-  
+ mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) > = .95) | (END.QUESTIONNAIRE.BIG5 < = 10000) ~ 1, 
+     ((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)) < .95) & (END.QUESTIONNAIRE.BIG5 > 10000) ~ 0))) 
+ 
 # Omitting B5 data based on the B5_omit column
-data_Q_total$agreeablenessNormal[which(data_Q_total$B5_omit  ==  1)] <- NA
-data_Q_total$agreeablenessReverse[which(data_Q_total$B5_omit  == 1)] <- NA
-data_Q_total$conscientiousnessNormal[which(data_Q_total$B5_omit  ==  1)] <- NA
-data_Q_total$conscientiousnessReverse[which(data_Q_total$B5_omit  == 1)] <- NA
-data_Q_total$extroversionNormal[which(data_Q_total$B5_omit  ==  1)] <- NA
-data_Q_total$extroversionReverse[which(data_Q_total$B5_omit  == 1)] <- NA
-data_Q_total$opennessNormal[which(data_Q_total$B5_omit  ==  1)] <- NA
-data_Q_total$opennessReverse[which(data_Q_total$B5_omit  == 1)] <- NA
-data_Q_total$emotionalStabilityNormal[which(data_Q_total$B5_omit  ==  1)] <- NA
-data_Q_total$emotionalStabilityReverse[which(data_Q_total$B5_omit  == 1)] <- NA
+data_Q_total$agreeablenessNormal[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$agreeablenessReverse[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$conscientiousnessNormal[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$conscientiousnessReverse[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$extroversionNormal[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$extroversionReverse[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$opennessNormal[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$opennessReverse[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$emotionalStabilityNormal[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total$emotionalStabilityReverse[which(data_Q_total$B5_omit == 1)] <- NA
 
 # Reverse-coding
 data_Q_total$agreeableness.rev <- reverse.code(keys = c(-1), items = data_Q_total$agreeablenessReverse, mini = c(1), maxi = c(7)) 
@@ -669,23 +743,23 @@ data_Q_total$OMean <- rowMeans(cbind(data_Q_total$opennessNormal, data_Q_total$o
 ## Epistemic Curiosity (range 1-5)
 
 # Exclusion criteria
-   # min response time (1s/item -> 10000ms total)
+  # min response time (1s/item -> 10000ms total)
 
 data_Q_total <- data_Q_total %>%
-  mutate(EpiCur_omit = case_when(END.QUESTIONNAIRE.EPISTEMIC < =  10000 ~ 1, 
-                                 END.QUESTIONNAIRE.EPISTEMIC > 10000 ~ 0)) # again, if EpiCur_omit = 1, that participant's Epistemic Curiosity data should be omitted
+ mutate(EpiCur_omit = case_when(END.QUESTIONNAIRE.EPISTEMIC < = 10000 ~ 1, 
+                 END.QUESTIONNAIRE.EPISTEMIC > 10000 ~ 0)) # again, if EpiCur_omit = 1, that participant's Epistemic Curiosity data should be omitted
 
 # Omitting Epistemic Curiosity data based on the EpiCur_omit column
-data_Q_total$Icuriosity1[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Icuriosity2[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Icuriosity3[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Icuriosity4[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Icuriosity5[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Dcuriosity1[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Dcuriosity2[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Dcuriosity3[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Dcuriosity4[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
-data_Q_total$Dcuriosity5[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
+data_Q_total$Icuriosity1[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Icuriosity2[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Icuriosity3[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Icuriosity4[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Icuriosity5[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Dcuriosity1[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Dcuriosity2[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Dcuriosity3[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Dcuriosity4[which(data_Q_total$EpiCur_omit == 1)] <- NA
+data_Q_total$Dcuriosity5[which(data_Q_total$EpiCur_omit == 1)] <- NA
 
 ## Checking the structure with CFA
 
@@ -737,7 +811,7 @@ data_Q_total$Dcuriosity5[which(data_Q_total$EpiCur_omit  ==  1)] <- NA
 round(cor(data_Q_total[, c()], method = "spearman"), 2)
 round(cov(data_Q_total[, c()], method = "spearman"), 2)
 modelEpi <- 'Dcuriosity = ~Dcuriosity1+Dcuriosity2+Dcuriosity3+Dcuriosity4+Dcuriosity5
-             Icuriosity = ~Icuriosity1+Icuriosity2+Icuriosity3+Icuriosity4+Icuriosity5
+       Icuriosity = ~Icuriosity1+Icuriosity2+Icuriosity3+Icuriosity4+Icuriosity5
 Dcuriosity ~~ Icuriosity'
 modelEpi.est<-cfa(modelEpi, data = data_Q_total, std.lv = TRUE, estimator = "ULS")
 summary(modelEpi.est, fit.measures = T, standardized = T) # American English spelling for "standardized"
@@ -789,39 +863,39 @@ describe(data_Q_total$DCuriositySum)
 ## Intellectual Humility (range 1-4)
 
 # Exclusion criteria
-   #distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-   #response time (1s/item -> 22000ms total)
+  #distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  #response time (1s/item -> 22000ms total)
 
 ## Distribution of responses & min response time
 
 data_Q_total <- data_Q_total %>%
-  mutate(IH_omit = case_when(((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4))) > =  .95) | (END.QUESTIONNAIRE.INT.HUM < =  22000) ~ 1, 
-         ((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)) < .95) & (END.QUESTIONNAIRE.INT.HUM > 22000) ~ 0))) # again, if IH_omit = 1, that participant's Epistemic Curiosity data should be omitted
+ mutate(IH_omit = case_when(((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4))) > = .95) | (END.QUESTIONNAIRE.INT.HUM < = 22000) ~ 1, 
+     ((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)) < .95) & (END.QUESTIONNAIRE.INT.HUM > 22000) ~ 0))) # again, if IH_omit = 1, that participant's Epistemic Curiosity data should be omitted
 
 
 # Omitting IH data based on the IH_omit column
-data_Q_total$IH1rev1[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH2rev1[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH3rev1[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH4rev1[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH5rev1[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH6norm2[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH7norm2[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH8norm2[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH9norm2[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH10norm2[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH11norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH12norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH13norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH14norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH15norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH16norm3[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH17rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH18rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH19rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH20rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH21rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
-data_Q_total$IH22rev4[which(data_Q_total$IH_omit  ==  1)] <- NA
+data_Q_total$IH1rev1[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH2rev1[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH3rev1[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH4rev1[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH5rev1[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH6norm2[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH7norm2[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH8norm2[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH9norm2[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH10norm2[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH11norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH12norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH13norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH14norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH15norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH16norm3[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH17rev4[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH18rev4[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH19rev4[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH20rev4[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH21rev4[which(data_Q_total$IH_omit == 1)] <- NA
+data_Q_total$IH22rev4[which(data_Q_total$IH_omit == 1)] <- NA
 
 
 # Reverse-coding
@@ -924,10 +998,10 @@ data_Q_total$IH22.rev <- reverse.code(keys = c(-1), items = data_Q_total$IH22rev
 # CFA
 round(cor(data_Q_total[, c()], method = "spearman"), 2)
 round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelIH <- 'IH1  = ~ IH1.rev + IH2.rev + IH3.rev + IH4.rev + IH5.rev
-           IH2  = ~ IH6norm2 + IH7norm2 + IH8norm2 + IH9norm2 + IH10norm2
-            IH3  = ~ IH11norm3 + IH12norm3 + IH13norm3 + IH14norm3 + IH15norm3 + IH16norm3
-            IH4  = ~ IH17.rev + IH18.rev + IH19.rev+ IH20.rev + IH21.rev + IH22.rev
+modelIH <- 'IH1 = ~ IH1.rev + IH2.rev + IH3.rev + IH4.rev + IH5.rev
+      IH2 = ~ IH6norm2 + IH7norm2 + IH8norm2 + IH9norm2 + IH10norm2
+      IH3 = ~ IH11norm3 + IH12norm3 + IH13norm3 + IH14norm3 + IH15norm3 + IH16norm3
+      IH4 = ~ IH17.rev + IH18.rev + IH19.rev+ IH20.rev + IH21.rev + IH22.rev
 IH1 ~~ IH2
 IH1 ~~ IH3
 IH1 ~~ IH4
@@ -950,10 +1024,10 @@ data_Q_total$IH3Sum <- rowSums(cbind(data_Q_total$IH11norm3, data_Q_total$IH12no
 data_Q_total$IH4Sum <- rowSums(cbind(data_Q_total$IH17.rev, data_Q_total$IH18.rev, data_Q_total$IH19.rev, data_Q_total$IH20.rev, data_Q_total$IH21.rev), na.rm = TRUE)
 
 
-data_Q_total$IH1Sum[which(data_Q_total$IH1Sum  ==  0)] <- NA
-data_Q_total$IH2Sum[which(data_Q_total$IH2Sum  ==  0)] <- NA
-data_Q_total$IH3Sum[which(data_Q_total$IH3Sum  ==  0)] <- NA
-data_Q_total$IH4Sum[which(data_Q_total$IH4Sum  ==  0)] <- NA
+data_Q_total$IH1Sum[which(data_Q_total$IH1Sum == 0)] <- NA
+data_Q_total$IH2Sum[which(data_Q_total$IH2Sum == 0)] <- NA
+data_Q_total$IH3Sum[which(data_Q_total$IH3Sum == 0)] <- NA
+data_Q_total$IH4Sum[which(data_Q_total$IH4Sum == 0)] <- NA
 
 # sample level sum score descriptives 
 
@@ -1003,34 +1077,34 @@ data_Q_total$IH4Sum[which(data_Q_total$IH4Sum < 5)] <- NA
 ## Need for Closure (range 1-6)
 
 # Exclusion criteria
-   # Response time (1s/item -> 15000ms total)
+  # Response time (1s/item -> 15000ms total)
 
 ## min response time
 
 data_Q_total <- data_Q_total %>%
-  mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO < =  15000 ~ 1, 
-                              END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
+ mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO < = 15000 ~ 1, 
+               END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
 
-# add: case_when(Participant.Private.ID  ==  "ppt ID that needs to be rejected for this task")
+# add: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
 
 # again, if Clo_omit = 1, that participant's need for closure data should be omitted
 
 #Omitting Need for closure data based on Clo_omit
-data_Q_total$closure1[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure2[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure3[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure4[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure5[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure6[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure7[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure8[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure9[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure10[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure11[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure12[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure13[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure14[which(data_Q_total$Clo_omit  ==  1)] <- NA
-data_Q_total$closure15[which(data_Q_total$Clo_omit  ==  1)] <- NA
+data_Q_total$closure1[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure2[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure3[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure4[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure5[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure6[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure7[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure8[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure9[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure10[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure11[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure12[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure13[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure14[which(data_Q_total$Clo_omit == 1)] <- NA
+data_Q_total$closure15[which(data_Q_total$Clo_omit == 1)] <- NA
 
 ## Checking structure with CFA
 # one factor?
@@ -1100,7 +1174,7 @@ data_Q_total$closure15[which(data_Q_total$Clo_omit  ==  1)] <- NA
 # CFA
 round(cor(data_Q_total[, c(160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188)], method = "spearman"), 2)
 round(cov(data_Q_total[, c(160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188)], method = "spearman"), 2)
-modelClo <- 'Closure  = ~ closure1 + closure2 + closure3 + closure4 + closure5 + closure6 +              closure7 + closure8 +  closure9 + closure10 + closure11 + closure12 +                     closure13 + closure14 + closure15'
+modelClo <- 'Closure = ~ closure1 + closure2 + closure3 + closure4 + closure5 + closure6 +       closure7 + closure8 + closure9 + closure10 + closure11 + closure12 +           closure13 + closure14 + closure15'
 modelClo.est<-cfa(modelClo, data = data_Q_total, std.lv = TRUE) #Same errors
 summary(modelClo.est, fit.measures = T, standardized = T)
 modindices(modelClo.est, sort = T)
@@ -1113,7 +1187,7 @@ modindices(modelClo.est, sort = T)
 data_Q_total$CloSum <- rowSums(cbind(data_Q_total$closure1, data_Q_total$closure2, data_Q_total$closure3, data_Q_total$closure4, data_Q_total$closure5, data_Q_total$closure6, data_Q_total$closure7, data_Q_total$closure8, data_Q_total$closure9, data_Q_total$closure10, data_Q_total$closure11, data_Q_total$closure12, data_Q_total$closure13, data_Q_total$closure14, data_Q_total$closure15), na.rm = TRUE)
 
 
-data_Q_total$CloSum[which(data_Q_total$CloSum  ==  0)] <- NA
+data_Q_total$CloSum[which(data_Q_total$CloSum == 0)] <- NA
 
 # sample level
 # sample level is actually normally distributed
@@ -1151,35 +1225,35 @@ alpha(NeedforClos)
 ## Need for Cognition (range 1-6)
 
 # Exclusion criteria
-   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-   # Response time (1s/item -> 18000ms total)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # Response time (1s/item -> 18000ms total)
 
 ## Distribution of responses & response time
 # Distribution of responses: there probably is an easier way to do this (maybe by creating a function?) but this is the first way I came up with. Here, I look at the table/distribution of responses for each survey for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value)
 
 data_Q_total <- data_Q_total %>%
-  mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) > =  .95) | (END.QUESTIONNAIRE.NEED.COG < =  18000) ~ 1, 
-         ((max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)) < .95) & (END.QUESTIONNAIRE.NEED.COG > 18000) ~ 0))) 
+ mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) > = .95) | (END.QUESTIONNAIRE.NEED.COG < = 18000) ~ 1, 
+     ((max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)) < .95) & (END.QUESTIONNAIRE.NEED.COG > 18000) ~ 0))) 
 
 # Omitting Need for cognition data based on Cog_omit column
-data_Q_total$cognition1[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition2[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition3.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition4.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition5.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition6[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition7.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition8.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition9.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition10[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition11[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition12.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition13[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition14[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition15[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition16.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition17.rev[which(data_Q_total$Cog_omit  ==  1)] <- NA
-data_Q_total$cognition18[which(data_Q_total$Cog_omit  ==  1)] <- NA
+data_Q_total$cognition1[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition2[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition3.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition4.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition5.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition6[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition7.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition8.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition9.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition10[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition11[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition12.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition13[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition14[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition15[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition16.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition17.rev[which(data_Q_total$Cog_omit == 1)] <- NA
+data_Q_total$cognition18[which(data_Q_total$Cog_omit == 1)] <- NA
 
 
 # Reverse-coding
@@ -1267,7 +1341,7 @@ data_Q_total$cognition17.rev2 <- reverse.code(keys = c(-1), items = data_Q_total
 names(data_Q_total[, c()])
 round(cor(data_Q_total[, c()], method = "spearman"), 2)
 round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelCog <- 'Cognition  = ~ cognition1 + cognition2 + cognition3.rev2 + cognition4.rev2 + cognition5.rev2 + cognition6 + cognition7.rev2 + cognition8.rev2 + cognition9.rev2 + cognition10 + cognition11 + cognition12.rev2 + cognition13 + cognition14 + cognition15 + cognition16.rev2 + cognition17.rev2 + cognition18'
+modelCog <- 'Cognition = ~ cognition1 + cognition2 + cognition3.rev2 + cognition4.rev2 + cognition5.rev2 + cognition6 + cognition7.rev2 + cognition8.rev2 + cognition9.rev2 + cognition10 + cognition11 + cognition12.rev2 + cognition13 + cognition14 + cognition15 + cognition16.rev2 + cognition17.rev2 + cognition18'
 modelCog.est<-cfa(modelCog, data = data_Q_total, std.lv = TRUE) #Same errors
 summary(modelCog.est, fit.measures = T, standardized = T)
 modindices(modelCog.est, sort = T)
@@ -1279,7 +1353,7 @@ modindices(modelCog.est, sort = T)
 # Calculating Sum score
 data_Q_total$CogSum <- rowSums(cbind(data_Q_total$cognition1, data_Q_total$cognition2, data_Q_total$cognition3.rev2, data_Q_total$cognition4.rev2, data_Q_total$cognition5.rev2, data_Q_total$cognition6, data_Q_total$cognition7.rev2, data_Q_total$cognition8.rev2, data_Q_total$cognition9.rev2, data_Q_total$cognition10, data_Q_total$cognition11, data_Q_total$cognition12.rev2, data_Q_total$cognition13, data_Q_total$cognition14, data_Q_total$cognition15, data_Q_total$cognition16.rev2, data_Q_total$cognition17.rev2, data_Q_total$cognition18), na.rm = TRUE)
 
-data_Q_total$CogSum[which(data_Q_total$CogSum  ==  0)] <- NA
+data_Q_total$CogSum[which(data_Q_total$CogSum == 0)] <- NA
 
 # sample level
 
@@ -1315,23 +1389,23 @@ alpha(NeedforCog)
 ## Actively Openminded Thinking (range 1-7)
 
 # Exclusion criteria
-   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-   # response time (1s/item -> 7000ms total)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # response time (1s/item -> 7000ms total)
 
 ## Distribution of responses & min response time
 
 data_Q_total <- data_Q_total %>%
-  mutate(AOT_omit = case_when(((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) > =  .95) | (END.QUESTIONNAIRE.OPEN.THINK < =  7000) ~ 1, 
-         ((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)) < .95) & (END.QUESTIONNAIRE.OPEN.THINK > 7000) ~ 0))) # again, if AOT_omit = 1, that participant's AOT data should be omitted
+ mutate(AOT_omit = case_when(((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) > = .95) | (END.QUESTIONNAIRE.OPEN.THINK < = 7000) ~ 1, 
+     ((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)) < .95) & (END.QUESTIONNAIRE.OPEN.THINK > 7000) ~ 0))) # again, if AOT_omit = 1, that participant's AOT data should be omitted
 
 # Omitting AOT data based on the AOT_omit column
-data_Q_total$openNormal1[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openNormal2[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openNormal3[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openReverse1[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openReverse2[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openReverse3[which(data_Q_total$AOT_omit  ==  1)] <- NA
-data_Q_total$openReverse4[which(data_Q_total$AOT_omit  ==  1)] <- NA
+data_Q_total$openNormal1[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openNormal2[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openNormal3[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openReverse1[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openReverse2[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openReverse3[which(data_Q_total$AOT_omit == 1)] <- NA
+data_Q_total$openReverse4[which(data_Q_total$AOT_omit == 1)] <- NA
 
 # Using MLE for nor as range is >5
 
@@ -1382,7 +1456,7 @@ data_Q_total$open.rev4 <- reverse.code(keys = c(-1), items = data_Q_total$openRe
 names(data_Q_total[, c()])
 round(cor(data_Q_total[, c()], method = "spearman"), 2)
 round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelAOT <- 'AOT  = ~ openNormal1 + openNormal2 + openNormal3 + open.rev1 + open.rev2 + open.rev3 + open.rev4'
+modelAOT <- 'AOT = ~ openNormal1 + openNormal2 + openNormal3 + open.rev1 + open.rev2 + open.rev3 + open.rev4'
 modelAOT.est<-cfa(modelAOT, data = data_Q_total, std.lv = TRUE) 
 summary(modelAOT.est, fit.measures = T, standardized = T)
 modindices(modelAOT.est, sort = T)
@@ -1395,7 +1469,7 @@ modindices(modelAOT.est, sort = T)
 data_Q_total$AOTSum <- rowSums(cbind(data_Q_total$openNormal1, data_Q_total$openNormal2, data_Q_total$openNormal3, data_Q_total$open.rev1, data_Q_total$open.rev2, data_Q_total$open.rev3, data_Q_total$open.rev4), na.rm = TRUE)
 
 
-data_Q_total$AOTSum[which(data_Q_total$AOTSum  ==  0)] <- NA
+data_Q_total$AOTSum[which(data_Q_total$AOTSum == 0)] <- NA
 
 # excluding outliers
 #Q1 <- quantile(data_Q_total$AOTSum, 0.25, na.rm = TRUE)
@@ -1449,95 +1523,95 @@ This was coded as a Task in Gorilla but analyzed like a questionnaire
 # 5jgzfsrk	5608075 : there was a bug
 # o1lnepu8	4887607 : did not understand the task
 
-data_matrix.reasoningT$Participant.Private.ID <- factor(data_matrix.reasoningT$Participant.Private.ID)
+data_matreasT$Participant.Private.ID <- factor(data_matreasT$Participant.Private.ID)
 
 # Omitting columns that are not relevant (experiment-general columns)
-data_matrix.reasoningT <- data_matrix.reasoningT %>%
-  select(Participant.Private.ID, Spreadsheet:ANSWER)
+data_matreasT <- data_matreasT %>%
+ select(Participant.Private.ID, Spreadsheet:ANSWER)
 
 # Omitting rows that are not relevant (e.g., practice trials)
-data_matrix.reasoningT <- data_matrix.reasoningT %>%
-  filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
+data_matreasT <- data_matreasT %>%
+ filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
 
 # keeping a copy of the original dataset in case something goes wrong with validity
-data_matrix.reasoningT_original <- data_matrix.reasoningT
-#data_matrix.reasoningT <- data_matrix.reasoningT_original
+data_matreasT_original <- data_matreasT
+#data_matreasT <- data_matreasT_original
 
 ## Exclusion Criteria
 # Median RT & Accuracy
 
 # trying to ID a median reaction time overall to reject ppts, but IQR doesn't work for these kinds of RTs
 
-data_matrix.reasoningT <- data_matrix.reasoningT %>%
-  group_by(Participant.Private.ID) %>%
-  mutate(medianRT = median(Reaction.Time, na.rm = TRUE)) %>%
-  mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
-                                (medianRT < =  500) ~ 1))
+data_matreasT <- data_matreasT %>%
+ group_by(Participant.Private.ID) %>%
+ mutate(medianRT = median(Reaction.Time, na.rm = TRUE)) %>%
+ mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
+                (medianRT < = 500) ~ 1))
 
 
 # Creating a separate df for subsetting purposes
-data_matrix_omit <- data_matrix.reasoningT %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(Matrix_omit = mean(Matrix_omit)) %>%
-  select(Participant.Private.ID, Matrix_omit)
+data_matrix_omit <- data_matreasT %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(Matrix_omit = mean(Matrix_omit)) %>%
+ select(Participant.Private.ID, Matrix_omit)
 
 
 # Extracting the relevant information
-data_matrix.reasoningT <- data_matrix.reasoningT %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(MatrixCorrectCount = sum(Correct, na.rm = TRUE)) %>%
-  select(Participant.Private.ID, MatrixCorrectCount)
+data_matreasT <- data_matreasT %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(MatrixCorrectCount = sum(Correct, na.rm = TRUE)) %>%
+ select(Participant.Private.ID, MatrixCorrectCount)
 
 # Omitting data based on matrix_omit
-data_matrix.reasoningT_final <- merge(data_matrix.reasoningT, data_matrix_omit, by = "Participant.Private.ID", all = TRUE)
-data_matrix.reasoningT_final$MatrixCorrectCount[which(data_matrix.reasoningT_final$Matrix_omit  ==  "1")] <- NA
-data_matrix.reasoningT_final <- data_matrix.reasoningT_final %>%
-  select(Participant.Private.ID, MatrixCorrectCount)
+data_matreasT_final <- merge(data_matreasT, data_matrix_omit, by = "Participant.Private.ID", all = TRUE)
+data_matreasT_final$MatrixCorrectCount[which(data_matreasT_final$Matrix_omit == "1")] <- NA
+data_matreasT_final <- data_matreasT_final %>%
+ select(Participant.Private.ID, MatrixCorrectCount)
 
 
 # Excluding participants with invalid responses
-data_ValidityFlag <- data_validityQ %>%
-  select(Participant.Private.ID, Validity.quantised)
-data_Language <- data_demographicsQ %>%
-  select(Participant.Private.ID, Language)
+data_ValidityFlag <- data_validQ %>%
+ select(Participant.Private.ID, Validity.quantised)
+data_Language <- data_demoQ %>%
+ select(Participant.Private.ID, Language)
 data_matrixValidity <- merge(data_Language, data_ValidityFlag, by = "Participant.Private.ID", all = TRUE)
 
-data_matrix.reasoningT_final <- merge(data_matrix.reasoningT_final, data_matrixValidity, by = "Participant.Private.ID", all = TRUE)
+data_matreasT_final <- merge(data_matreasT_final, data_matrixValidity, by = "Participant.Private.ID", all = TRUE)
 
 # from main validity, creating separate df for nonvalid ppts, check against other ppt rejection chunks
-data_nonvalid_matrix <- data_matrix.reasoningT_final %>%
-  filter(Validity.quantised %in% c("2", 3, 4))
+data_nonvalid_matrix <- data_matreasT_final %>%
+ filter(Validity.quantised %in% c("2", 3, 4))
 
-data_Q_lang_omit_matrix <- data_matrix.reasoningT_final %>%
-  filter(Language !=  "Sujuva / Ã¤idinkieli" & Language !=  "Keskitaso / keskusteleva" & Language !=  "Muu, mikÃ¤?")
+data_Q_lang_omit_matrix <- data_matreasT_final %>%
+ filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
-data_matrix.reasoningT_final <- data_matrix.reasoningT_final %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+data_matreasT_final <- data_matreasT_final %>%
+ filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
 
 #omitting specific participants who commented that they had technical issues with this task or did not understand the task
-data_matrix.reasoningT_final <- data_matrix.reasoningT_final %>%
-  filter(Participant.Private.ID !=  "5555882" & Participant.Private.ID !=  "5608075" & Participant.Private.ID !=  "4887607")
+data_matreasT_final <- data_matreasT_final %>%
+ filter(Participant.Private.ID != "5555882" & Participant.Private.ID != "5608075" & Participant.Private.ID != "4887607")
 
 
 # Deleting the irrelevant columns
-data_matrix.reasoningT_final <- data_matrix.reasoningT_final %>%
-  select(Participant.Private.ID, MatrixCorrectCount)
+data_matreasT_final <- data_matreasT_final %>%
+ select(Participant.Private.ID, MatrixCorrectCount)
 
 # merging with the large final dataframe is done in the section Merging 
 # no outliers
 
-#Q1 <- quantile(data_matrix.reasoningT_final$MatrixCorrectCount, 0.25, na.rm = TRUE)
-#Q3 <- quantile(data_matrix.reasoningT_final$MatrixCorrectCount, 0.75, na.rm = TRUE)
-#range <- (IQR(data_matrix.reasoningT_final$MatrixCorrectCount, na.rm = TRUE)*1.5)
+#Q1 <- quantile(data_matreasT_final$MatrixCorrectCount, 0.25, na.rm = TRUE)
+#Q3 <- quantile(data_matreasT_final$MatrixCorrectCount, 0.75, na.rm = TRUE)
+#range <- (IQR(data_matreasT_final$MatrixCorrectCount, na.rm = TRUE)*1.5)
 #lowbound <- (Q1 - range)
 #highbound <- (Q3 + range)
-#summary(data_matrix.reasoningT_final$MatrixCorrectCount)
+#summary(data_matreasT_final$MatrixCorrectCount)
 #lowbound
 #highbound
 
-#hist(data_matrix.reasoningT_final$MatrixCorrectCount, main = "Matrix Score", col = rainbow(14), ylim = c(0, 40), breaks = seq(0, 10, 1), xlab = "")
+#hist(data_matreasT_final$MatrixCorrectCount, main = "Matrix Score", col = rainbow(14), ylim = c(0, 40), breaks = seq(0, 10, 1), xlab = "")
 
-#Matrix_task <- (describe(data_matrix.reasoningT_final$MatrixCorrectCount))
+#Matrix_task <- (describe(data_matreasT_final$MatrixCorrectCount))
 #row.names(Matrix_task) <- c("Correct")
 #View(Matrix_task)
 
@@ -1571,42 +1645,42 @@ There are 3 additional questions that can be analyzed separately or used in demo
 # ***d) Researchers cannot be trusted because their views are biased.
 
 data_Q_total %>%
-  select(Randomise.questionnaire.elements..SCIENCE.ATT:END.QUESTIONNAIRE.SCIENCE.ATT)
+ select(Randomise.questionnaire.elements..SCIENCE.ATT:END.QUESTIONNAIRE.SCIENCE.ATT)
 
 # Science identity
 data_Q_total %>%
-  select(sa.1a, sa.1b, sa.1d, sa.1g) #b, d reverse-coded
+ select(sa.1a, sa.1b, sa.1d, sa.1g) #b, d reverse-coded
 
 # Importance of science in everyday life
 data_Q_total %>%
-  select(sa.1c, sa.1e, sa.1h, sa.1f)
+ select(sa.1c, sa.1e, sa.1h, sa.1f)
 
 # Trust in scientists
 data_Q_total %>%
-  select(sa.2a, sa.2b, sa.2c, sa.2d) #a, b, d reverse-coded
+ select(sa.2a, sa.2b, sa.2c, sa.2d) #a, b, d reverse-coded
 
 # Exclusion criteria
-   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-   # response time (1s/item -> 15000ms total)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # response time (1s/item -> 15000ms total)
 
 data_Q_total <- data_Q_total %>%
-  mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) > =  .95) | (END.QUESTIONNAIRE.SCIENCE.ATT < =  15000) ~ 1, 
-         ((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)) < .95) & (END.QUESTIONNAIRE.SCIENCE.ATT > 15000) ~ 0))) 
+ mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) > = .95) | (END.QUESTIONNAIRE.SCIENCE.ATT < = 15000) ~ 1, 
+     ((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)) < .95) & (END.QUESTIONNAIRE.SCIENCE.ATT > 15000) ~ 0))) 
 
 
 # Omitting SA data based on the Sci.att_omit column
-data_Q_total$sa.1a[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1b[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1c[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1d[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1e[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1f[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1g[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.1h[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.2a[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.2b[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.2c[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
-data_Q_total$sa.2d[which(data_Q_total$Sci.att_omit  ==  1)] <- NA
+data_Q_total$sa.1a[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1b[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1c[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1d[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1e[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1f[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1g[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.1h[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.2a[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.2b[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.2c[which(data_Q_total$Sci.att_omit == 1)] <- NA
+data_Q_total$sa.2d[which(data_Q_total$Sci.att_omit == 1)] <- NA
 
 
 # Reverse-coding
@@ -1678,9 +1752,9 @@ data_Q_total$sa.2d.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.2d,
 names(data_Q_total[, c()])
 round(cor(data_Q_total[, c()], method = "spearman"), 2)
 round(cov(data_Q_total[, c()], method = "spearman"), 2)
-model_Sci.att <- 'Sci_id  = ~ sa.1a + sa.1b.rev + sa.1d.rev + sa.1g
-                  Sci_impo  = ~ sa.1c + sa.1e + sa.1h + sa.1f
-                  Sci_tru  = ~ sa.2a.rev + sa.2b.rev + sa.2c + sa.2d.rev
+model_Sci.att <- 'Sci_id = ~ sa.1a + sa.1b.rev + sa.1d.rev + sa.1g
+         Sci_impo = ~ sa.1c + sa.1e + sa.1h + sa.1f
+         Sci_tru = ~ sa.2a.rev + sa.2b.rev + sa.2c + sa.2d.rev
 Sci_id ~~ Sci_impo
 Sci_id ~~ Sci_tru
 Sci_impo ~~ Sci_tru'
@@ -1695,15 +1769,15 @@ data_Q_total$Sci.impo_Sum <- rowSums(cbind(data_Q_total$sa.1c, data_Q_total$sa.1
 data_Q_total$Sci.tru_Sum <- rowSums(cbind(data_Q_total$sa.2a.rev, data_Q_total$sa.2b.rev, data_Q_total$sa.2c, data_Q_total$sa.2d.rev), na.rm = TRUE)
 
 # replace total score zeroes with NA
-data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum  ==  0)] <- NA
-data_Q_total$Sci.impo_Sum[which(data_Q_total$Sci.impo_Sum  ==  0)] <- NA
-data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum  ==  0)] <- NA
+data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum == 0)] <- NA
+data_Q_total$Sci.impo_Sum[which(data_Q_total$Sci.impo_Sum == 0)] <- NA
+data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum == 0)] <- NA
 
 
 # scale level descriptives
 
 # use this to ID outlier boundaries
-#Q1 <- quantile(data_Q_total$Sci.id_Sum, na.rm =  TRUE, 0.25)
+#Q1 <- quantile(data_Q_total$Sci.id_Sum, na.rm = TRUE, 0.25)
 #Q3 <- quantile(data_Q_total$Sci.id_Sum, na.rm = TRUE, 0.75)
 #range <- (IQR(data_Q_total$Sci.id_Sum, na.rm = TRUE)*1.5)
 #lowbound <- (Q1 - range)
@@ -1713,7 +1787,7 @@ data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum  ==  0)] <- NA
 #highbound
 
 # no outliers in sci.id_sum
-#data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum  ==  0)] <- NA
+#data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum == 0)] <- NA
 data_Q_total$Sci.impo_Sum[which(data_Q_total$Sci.impo_Sum < 11.5)] <- NA
 data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum < 12)] <- NA
 
@@ -1768,20 +1842,20 @@ Modified from Landrum et al., 2016 and Motta et al., 2019
 
 
 data_Q_total %>%
-  select(Randomise.questionnaire.elements..SCIENCE.CUR:END.QUESTIONNAIRE.SCIENCE.CUR) # Note: I am writing the code with the assumption that q2 is a scale as it will be in the later versions
+ select(Randomise.questionnaire.elements..SCIENCE.CUR:END.QUESTIONNAIRE.SCIENCE.CUR) # Note: I am writing the code with the assumption that q2 is a scale as it will be in the later versions
 
 # Exclusion criteria
-   # response time (1s/item -> 4000ms total)
+  # response time (1s/item -> 4000ms total)
 
 data_Q_total <- data_Q_total %>%
-  mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR < =  4000 ~ 1, 
-                                  END.QUESTIONNAIRE.SCIENCE.CUR > 4000 ~ 0))
+ mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR < = 4000 ~ 1, 
+                 END.QUESTIONNAIRE.SCIENCE.CUR > 4000 ~ 0))
 
 # Omitting SC data based on the Sci.cur_omit column
-data_Q_total$sc.1.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
-data_Q_total$sc.2.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
-data_Q_total$sc.3.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
-data_Q_total$sc.4.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
+data_Q_total$sc.1.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
+data_Q_total$sc.2.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
+data_Q_total$sc.3.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
+data_Q_total$sc.4.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
 
 ## Assumptions
 
@@ -1810,7 +1884,7 @@ data_Q_total$sc.4.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
 #names(data_Q_total[, c()])
 #round(cor(data_Q_total[, c()], method = "spearman"), 2)
 #round(cov(data_Q_total[, c()], method = "spearman"), 2)
-#model_Sci.cur <- 'Sci_id  = ~ sc.1.quantised + sc.2.quantised + sc.3.quantised + sc.4.quantised'
+#model_Sci.cur <- 'Sci_id = ~ sc.1.quantised + sc.2.quantised + sc.3.quantised + sc.4.quantised'
 #model_Sci.cur.est<-cfa(model_Sci.cur, data = data_Q_total, std.lv = TRUE)
 #summary(model_Sci.cur.est, fit.measures = T, standardized = T)
 #modindices(model_Sci.cur.est, sort = T)
@@ -1819,7 +1893,7 @@ data_Q_total$sc.4.quantised[which(data_Q_total$Sci.cur_omit  ==  1)] <- NA
 # Calculating Sum score
 data_Q_total$Sci.cur_Sum <- rowSums(cbind(data_Q_total$sc.1.quantised, data_Q_total$sc.2.quantised, data_Q_total$sc.3.quantised, data_Q_total$sc.4.quantised), na.rm = TRUE)
 
-data_Q_total$Sci.cur_Sum[which(data_Q_total$Sci.cur_Sum  ==  0)] <- NA
+data_Q_total$Sci.cur_Sum[which(data_Q_total$Sci.cur_Sum == 0)] <- NA
 
 #Q1 <- quantile(data_Q_total$Sci.cur_Sum, 0.25, na.rm = TRUE)
 #Q3 <- quantile(data_Q_total$Sci.cur_Sum, 0.75, na.rm = TRUE)
@@ -1855,13 +1929,13 @@ H-R: #Q4, 5, 6
 ```{r Scoring heuristic reasoning, include = FALSE}
 
 # Exclusion criteria
-   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-   # response time (1s/item -> 6000ms total)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # response time (1s/item -> 6000ms total)
 
 ## min response time
 data_Q_total <- data_Q_total %>%
-  mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC < =  6000 ~ 1, 
-                             END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
+ mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC < = 6000 ~ 1, 
+               END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
 
 # Q1
 # Luonnollinen sukupuolijakauma syntyvien lasten osalta on arviolta yksi mies naista kohden. Tämä tarkoittaa sitä, että syntyvä lapsi on 50% todennäköisyydellä poika ja 50 % todennäköisyydellä tyttö. Kuvittele perhe, johon on syntynyt viisi lasta, kaikki heistä poikia. Mikä seuraavista on todennäköisin?
@@ -1874,7 +1948,7 @@ data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
 
 #levels(data_Q_total$hr.1) #I added an empty level here as we do not currently have answers on each level; this enables renaming all the levels **DOES NOT NEED TO BE DONE FOR FINAL DATA**
 
-levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" =  "Kuudes lapsi on poika")
+levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" = "Kuudes lapsi on poika")
 data_Q_total$hr.1
 # Yhta todennakoista = N; Tytto = H-R
 #barplot(table(data_Q_total$hr.1), ylim = (c(0, 160)), main = "H-R child", col = rainbow(14))
@@ -1925,10 +1999,10 @@ levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a"
 # Creating the variables for the combinations of answers
 # abc / acb / cab = N; bac / bca /cba = H-R
 data_Q_total <- data_Q_total %>%
-  mutate(hr.3.updated = case_when(
-  ((hr.3.1  ==  "b" & (hr.3.2  ==  "a"|hr.3.3  ==  "a")) | hr.3.2  ==  "b" & hr.3.3  ==  "a") ~ "H-R", 
-  ((hr.3.1  ==  "a" & (hr.3.2  ==  "b"|hr.3.3  ==  "b")) | (hr.3.2  ==  "a" & hr.3.3  ==  "b")) ~ "N"
-  ))
+ mutate(hr.3.updated = case_when(
+ ((hr.3.1 == "b" & (hr.3.2 == "a"|hr.3.3 == "a")) | hr.3.2 == "b" & hr.3.3 == "a") ~ "H-R", 
+ ((hr.3.1 == "a" & (hr.3.2 == "b"|hr.3.3 == "b")) | (hr.3.2 == "a" & hr.3.3 == "b")) ~ "N"
+ ))
 data_Q_total$hr.3.updated <- factor(data_Q_total$hr.3.updated)
 
 
@@ -1971,24 +2045,24 @@ data_Q_total$hr.6
 
 # Sums
 data_Q_total <- data_Q_total %>%
-  mutate(
-    total_N = apply(., 1, function(x) length(which(x  ==  "N"))), 
-    total_HR = apply(., 1, function(x) length(which(x  ==  "H-R"))), 
-    total_HE = apply(., 1, function(x) length(which(x  ==  "H-E"))), 
-    total_Neither = apply(., 1, function(x) length(which(x  ==  "Neither")))
-  )
+ mutate(
+  total_N = apply(., 1, function(x) length(which(x == "N"))), 
+  total_HR = apply(., 1, function(x) length(which(x == "H-R"))), 
+  total_HE = apply(., 1, function(x) length(which(x == "H-E"))), 
+  total_Neither = apply(., 1, function(x) length(which(x == "Neither")))
+ )
 
 # Omitting heuristic reasoning data based on the HR_omit column
-data_Q_total$total_N[which(data_Q_total$HR_omit  ==  1)] <- NA
-data_Q_total$total_HR[which(data_Q_total$HR_omit  ==  1)] <- NA
-data_Q_total$total_HE[which(data_Q_total$HR_omit  ==  1)] <- NA
-data_Q_total$total_Neither[which(data_Q_total$HR_omit  ==  1)] <- NA
+data_Q_total$total_N[which(data_Q_total$HR_omit == 1)] <- NA
+data_Q_total$total_HR[which(data_Q_total$HR_omit == 1)] <- NA
+data_Q_total$total_HE[which(data_Q_total$HR_omit == 1)] <- NA
+data_Q_total$total_Neither[which(data_Q_total$HR_omit == 1)] <- NA
 
 # this replaces the zeroes in these new columns with NA--only if there are zeroes in all 4 of these sum columns, because that indicates missing data (the participant didn't do the task), not true zeroes. The lines going down are different because after the first column's value gets replaced with NA, the logic of the whole set is changed, so there is now a combination of NAs and zeroes
-data_Q_total$total_N[which(data_Q_total$total_N  ==  0 & data_Q_total$total_HR  ==  0 & data_Q_total$total_HE  ==  0 & data_Q_total$total_Neither  ==  0)] <- NA
-data_Q_total$total_HR[which(is.na(data_Q_total$total_N)  ==  TRUE & data_Q_total$total_HR  ==  0 & data_Q_total$total_HE  ==  0 & data_Q_total$total_Neither  ==  0)] <- NA
-data_Q_total$total_HE[which(is.na(data_Q_total$total_N)  ==  TRUE & is.na(data_Q_total$total_HR)  ==  TRUE & data_Q_total$total_HE  ==  0 & data_Q_total$total_Neither  ==  0)] <- NA
-data_Q_total$total_Neither[which(is.na(data_Q_total$total_N)  ==  TRUE & is.na(data_Q_total$total_HR)  ==  TRUE & is.na(data_Q_total$total_HE)  ==  TRUE & data_Q_total$total_Neither  ==  0)] <- NA
+data_Q_total$total_N[which(data_Q_total$total_N == 0 & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
+data_Q_total$total_HR[which(is.na(data_Q_total$total_N) == TRUE & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
+data_Q_total$total_HE[which(is.na(data_Q_total$total_N) == TRUE & is.na(data_Q_total$total_HR) == TRUE & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
+data_Q_total$total_Neither[which(is.na(data_Q_total$total_N) == TRUE & is.na(data_Q_total$total_HR) == TRUE & is.na(data_Q_total$total_HE) == TRUE & data_Q_total$total_Neither == 0)] <- NA
 
 # creating the proportion scores per type
 #data_Q_total$Nprop <- (data_Q_total$total_N/6)
@@ -2000,14 +2074,14 @@ data_Q_total$HEscore <- data_Q_total$total_HE
 data_Q_total$HRscore <- data_Q_total$total_HR
 
 # converting the new variables to binary while preserving the original sums. If a ppt's total HE or HR score is 1 or greater, they get a 1 for that category
-data_Q_total$HEscore[which(data_Q_total$HEscore > =  1)] <- 1
-data_Q_total$HRscore[which(data_Q_total$HRscore > =  1)] <- 1
+data_Q_total$HEscore[which(data_Q_total$HEscore > = 1)] <- 1
+data_Q_total$HRscore[which(data_Q_total$HRscore > = 1)] <- 1
 
 # adding an additional measure of total heuristic response. 1 = at least one mistake in one heuristic category, 2 = at least 1 heuristic mistake in both heuristic categories, 0 = all normative responses
 data_Q_total <- data_Q_total %>%
 group_by(Participant.Private.ID) %>% 
-  mutate(HEHRscore = HEscore + HRscore)
-        
+ mutate(HEHRscore = HEscore + HRscore)
+    
 
 # sample wise frequency distributions
 #par(mfrow = c(2, 3))
@@ -2044,12 +2118,12 @@ This section is complicated because each question is scored differently. It coul
 ```{r Scoring randomness and probability, include = FALSE}
 
 # Exclusion criteria
-   #response time (1s/item -> 7000ms total)
+  #response time (1s/item -> 7000ms total)
 
 ## min response time
 data_Q_total <- data_Q_total %>%
-  mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB < =  4000 ~ 1, 
-                             END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
+ mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB < = 4000 ~ 1, 
+               END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
 
 # Q1
 # Sairaala B is the correct answer
@@ -2059,8 +2133,8 @@ levels(data_Q_total$rp.1)
 
 # Creating a new column
 data_Q_total <- data_Q_total %>%
-  mutate(rp.1.int = case_when(rp.1  ==  "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1, 
-                              rp.1 !=  "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 0)) # rows with correct answer take value 1 in the new column
+ mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1, 
+               rp.1 != "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 0)) # rows with correct answer take value 1 in the new column
 
 # Q2
 # Robottiteht?v?: Pyydys1 AND Pyydys 2. You only get a point if you have both of these and no other options.
@@ -2077,15 +2151,15 @@ data_Q_total$rp.2.8 <- as.factor(data_Q_total$rp.2.8)
 
 
 # Creating a new column
-# original code used isn.na(var) for the first chunk (assigning 1 point to correct answers) but the df cells are blank, not NA, so there were no correct answers. Can use the empty string "" for blank cells. This way assigns 1 to all cases that match the one correct answer combination and NA to anything else.  This way avoids missing something if we were to try to list all the possible combinations.
+# original code used isn.na(var) for the first chunk (assigning 1 point to correct answers) but the df cells are blank, not NA, so there were no correct answers. Can use the empty string "" for blank cells. This way assigns 1 to all cases that match the one correct answer combination and NA to anything else. This way avoids missing something if we were to try to list all the possible combinations.
 
 data_Q_total <- data_Q_total %>%
-  mutate(rp.2.int = case_when((rp.2.1  ==  "Pyydys 1" & rp.2.2  ==  "Pyydys 2" & rp.2.3  ==  "" & rp.2.4  ==  "" & rp.2.5  ==  "" & rp.2.6  ==  "" & rp.2.7  ==  "" & rp.2.8  ==  "") ~ 1))
-  
+ mutate(rp.2.int = case_when((rp.2.1 == "Pyydys 1" & rp.2.2 == "Pyydys 2" & rp.2.3 == "" & rp.2.4 == "" & rp.2.5 == "" & rp.2.6 == "" & rp.2.7 == "" & rp.2.8 == "") ~ 1))
+ 
 # this keeps the 1s but replaces NAs with zeroes. In the last part of this chunk, we'll NA all ppts who didn't actually complete this task and get rid of any spurious zeroes
 data_Q_total <- data_Q_total %>%
-  mutate(rp.2.int = case_when(rp.2.int  ==  "1" ~ 1, 
-                            (is.na(rp.2.int) ~ 0)))       
+ mutate(rp.2.int = case_when(rp.2.int == "1" ~ 1, 
+              (is.na(rp.2.int) ~ 0)))    
 
 # Q3
 # Kanava 1; 2 tai 3 is the correct answer
@@ -2101,8 +2175,8 @@ data_Q_total <- data_Q_total %>%
 
 # Creating a new column
 data_Q_total <- data_Q_total %>%
-  mutate(rp.3.int = case_when(rp.3.quantised  ==  "4" ~ 1, 
-                              rp.3.quantised !=  "4" ~ 0))
+ mutate(rp.3.int = case_when(rp.3.quantised == "4" ~ 1, 
+               rp.3.quantised != "4" ~ 0))
 
 # Q4
 # Ruudukot A; B ja C is the correct answer
@@ -2116,19 +2190,19 @@ data_Q_total <- data_Q_total %>%
 #class(data_Q_total$rp.4)
 
 data_Q_total <- data_Q_total %>%
-  mutate(rp.4.int = case_when(rp.4.quantised  ==  "5" ~ 1, 
-                              rp.4.quantised !=  "5" ~ 0))
+ mutate(rp.4.int = case_when(rp.4.quantised == "5" ~ 1, 
+               rp.4.quantised != "5" ~ 0))
 
 # Calculating the sum score for the randomness/probability questions
 data_Q_total <- data_Q_total %>%
-  mutate(RPSum = rp.1.int + rp.2.int + rp.3.int + rp.4.int)
+ mutate(RPSum = rp.1.int + rp.2.int + rp.3.int + rp.4.int)
 
 
 
 # Omitting Randomness-Probability data based on the RP_omit column
-data_Q_total$RPSum[which(data_Q_total$RP_omit  ==  1)] <- NA
+data_Q_total$RPSum[which(data_Q_total$RP_omit == 1)] <- NA
 data_Q_total$RPSum[which(is.na(data_Q_total$RP_omit))] <- NA 
-# The way we've processed the questions resulted in some spurious zeroes, e.g. for ppts who didn't actually complete the task. If RP_omit = NA, then the ppt didn't do the task, and RPSum is replaced with NA based on this.  
+# The way we've processed the questions resulted in some spurious zeroes, e.g. for ppts who didn't actually complete the task. If RP_omit = NA, then the ppt didn't do the task, and RPSum is replaced with NA based on this. 
 # An alternative way to do it:
 #data_Q_total$RPSum <- rowSums(cbind(data_Q_total$rp.1.int, data_Q_total$rp.2.int, data_Q_total$rp.3.int, data_Q_total$rp.4.int), na.rm = TRUE)
 
@@ -2147,7 +2221,7 @@ data_Q_total$RPSum[which(is.na(data_Q_total$RP_omit))] <- NA
 
 ## Merging the important columns
 data_Q_sub <- data_Q_total %>%
-  select(Participant.Private.ID, gender, Age, Country, Language, Education, AMean, CMean, EMean, ESMean, OMean, ICuriositySum, DCuriositySum, IH1Sum, IH2Sum, IH3Sum, IH4Sum, CloSum, CogSum, AOTSum, HEscore, HRscore, RPSum, Sci.cur_Sum, Sci.tru_Sum, Sci.impo_Sum, Sci.id_Sum)
+ select(Participant.Private.ID, gender, Age, Country, Language, Education, AMean, CMean, EMean, ESMean, OMean, ICuriositySum, DCuriositySum, IH1Sum, IH2Sum, IH3Sum, IH4Sum, CloSum, CogSum, AOTSum, HEscore, HRscore, RPSum, Sci.cur_Sum, Sci.tru_Sum, Sci.impo_Sum, Sci.id_Sum)
 
 # for now leaving out this variable I created that isn't in the original variable list
 #HEHRscore
@@ -2157,13 +2231,13 @@ data_Q_sub <- data_Q_total %>%
 # double check that merge is keeping unique rows; if not, use cbind 
 # this has to be added separately because it's a questionnaire coded as a task. Other task variables are put into their own dataframe separately which can be merged to create a total minimal variable set for EFA
 
-data_Q_sub <- merge(data_Q_sub, data_matrix.reasoningT_final, by = "Participant.Private.ID", all = TRUE)
+data_Q_sub <- merge(data_Q_sub, data_matreasT_final, by = "Participant.Private.ID", all = TRUE)
 
-# Make sure to include the argument all =  TRUE! This includes rows that contain NA, which is necessary to include ppts with missing data. The default in merge() is to get rid of rows containing NA. 
+# Make sure to include the argument all = TRUE! This includes rows that contain NA, which is necessary to include ppts with missing data. The default in merge() is to get rid of rows containing NA. 
 
 # use this to get rid of NaNs or string NAs introduced by calculations
 is.nan.data.frame <- function(x)
-  do.call(cbind, lapply(x, is.nan))
+ do.call(cbind, lapply(x, is.nan))
 
 data_Q_sub[is.nan(data_Q_sub)] <- NA
 
@@ -2190,15 +2264,15 @@ library(naniar)
 
 # add a column for count of missing data per ppt, to sub df
 data_Q_sub <- data_Q_sub %>%
-  mutate(missingdata = rowSums(is.na(data_Q_sub)))
+ mutate(missingdata = rowSums(is.na(data_Q_sub)))
 
 View(data_Q_sub)
 
 # hard to ID a cutoff point because cutting at the elbow gets rid of too much data. 11 missing variables is ppts with at least 50% of usable data--about 5 ppts difference between cutoff of 30% or 50% (11 or 15 variables)
 # we need to specify some cutoff point because 20 missing variables out of 22 is too many 
 ggplot(data_Q_sub, aes(x = as.factor(Participant.Private.ID), y = missingdata)) + 
-     geom_boxplot(fill = "slateblue", alpha = 0.2) + 
-     xlab("Missing variables count")
+   geom_boxplot(fill = "slateblue", alpha = 0.2) + 
+   xlab("Missing variables count")
 
 # see if there's an elbow in the number of missing variables per ppt
 MissingData<-sort(data_Q_sub$missingdata, decreasing = FALSE)
@@ -2215,8 +2289,8 @@ gg_miss_fct(x = data_Q_sub, fct = Education)
 
 # removing ppts with 16 or fewer variables missing out of total 22 (30%)
 data_Q_sub <- data_Q_sub %>%
-  group_by(Participant.Private.ID) %>%
-  filter(missingdata < 16)
+ group_by(Participant.Private.ID) %>%
+ filter(missingdata < 16)
 
 View(data_Q_sub)
 
@@ -2234,57 +2308,57 @@ It also transforms variables that need to be transformed--no transformations app
 
 # Further subsetting the data as we probably won't need the demographic variables here (?)
 #data_Q_sub2 <- data_Q_sub %>%
-  #select(AMean:MatrixCorrectCount)
+ #select(AMean:MatrixCorrectCount)
 
 ## Normality of variables: visualising with histograms
 AMean <- ggplot(data_Q_sub, aes(x = AMean)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 AMean
 CMean <- ggplot(data_Q_sub, aes(x = CMean)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 CMean
 EMean <- ggplot(data_Q_sub, aes(x = EMean)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 EMean
 OMean <- ggplot(data_Q_sub, aes(x = OMean)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 OMean
 ESMean <- ggplot(data_Q_sub, aes(x = ESMean)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 ESMean
 ICuriositySum <- ggplot(data_Q_sub, aes(x = ICuriositySum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 ICuriositySum
 DCuriositySum <- ggplot(data_Q_sub, aes(x = DCuriositySum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 DCuriositySum
 IH1Sum <- ggplot(data_Q_sub, aes(x = IH1Sum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 IH1Sum
 IH2Sum <- ggplot(data_Q_sub, aes(x = IH2Sum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 IH2Sum
 IH3Sum <- ggplot(data_Q_sub, aes(x = IH3Sum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 IH3Sum
 IH4Sum <- ggplot(data_Q_sub, aes(x = IH4Sum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 IH4Sum
 CloSum <- ggplot(data_Q_sub, aes(x = CloSum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 CloSum
 CogSum <- ggplot(data_Q_sub, aes(x = CogSum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 CogSum
 AOTSum <- ggplot(data_Q_sub, aes(x = AOTSum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 AOTSum
 
 RPSum <- ggplot(data_Q_sub, aes(x = RPSum)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 RPSum
 MatrixCorrectCount <- ggplot(data_Q_sub, aes(x = MatrixCorrectCount)) +
-  geom_histogram(color = "black", fill = "lightblue")
+ geom_histogram(color = "black", fill = "lightblue")
 MatrixCorrectCount
 
 
@@ -2301,7 +2375,7 @@ MatrixCorrectCount
 # check the indexes, it changes if you've deleted the demographic columns
 # no strong corelations in TIPI
 # TRUE values: we should consider omitting one of the variables 
-cor(data_Q_sub[, 2:6], method = "pearson", use = "pairwise.complete.obs")  
+cor(data_Q_sub[, 2:6], method = "pearson", use = "pairwise.complete.obs") 
 abs(cor(data_Q_sub[, 2:6], method = "pearson", use = "pairwise.complete.obs")) > .85 
 
 # correlation 0.558, but I think EC is supposed to correlate, and is still under .85
@@ -2318,7 +2392,7 @@ abs(cor(data_Q_sub[, 20:22], method = "pearson", use = "pairwise.complete.obs"))
 
 # subsetting now: this is the cleaned copy with only variables to be used in EFA
 data_Q_sub <- data_Q_sub %>%
-  select(AMean:MatrixCorrectCount)
+ select(AMean:MatrixCorrectCount)
 
 ``` 
 
@@ -2351,38 +2425,38 @@ N = 134 usable ppts (146??)
 # kqn3t62x 5635997
 
 
-data_go.nogoT$Participant.Private.ID <- factor(data_go.nogoT$Participant.Private.ID)
+data_nogoT$Participant.Private.ID <- factor(data_nogoT$Participant.Private.ID)
 
 ## Omitting experiment-general columns & practice (etc.) rows
-data_go.nogoT <- data_go.nogoT %>%
-  select(Participant.Private.ID, Spreadsheet:Answer)  %>%
-  filter(display  ==  "Trials")
+data_nogoT <- data_nogoT %>%
+ select(Participant.Private.ID, Spreadsheet:Answer) %>%
+ filter(display == "Trials")
 
 # Outlier trial exclusions first
 # interquartile range: 1.5*(Q3-Q1), subtract this value from Q1 and add to Q3 to get the outlier boundaries. Here it was 1072. At least everything above 4000 is clearly an outlier, according to boxplots there are 4 trials between 1072 and 3000 that are also outliers. Need to do this first because outlier trials mess up the ppt level calculations. 
 # In GNG the screens advance automatically after 1000ms (250ms stimulus presentation and 750ms wait, so e.g. a no-go response should be recorded as 1000ms). According to Gorilla, there is also the 16.67ms refresh rate and about 8ms latency between a computer and mouse, which adds something. https://support.gorilla.sc/support/info/timing#onlinetimingaccuracy A glance says that most NG responses are only up to about 1004ms, but it could be that there are some up to 1050? 
 
-# Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#  0      342      416     1113      634 20694243
+# Min. 1st Qu.  Median   Mean 3rd Qu.   Max. 
+# 0   342   416   1113   634 20694243
 
 # trying to ID a median reaction time overall to reject ppts, but this doesn't work for Matrix because the RTs are so variable
-#Q1 <- quantile(data_go.nogoT$Reaction.Time, 0.25)
-#Q3 <- quantile(data_go.nogoT$Reaction.Time, 0.75)
-#range <- (IQR(data_go.nogoT$Reaction.Time)*1.5)
+#Q1 <- quantile(data_nogoT$Reaction.Time, 0.25)
+#Q3 <- quantile(data_nogoT$Reaction.Time, 0.75)
+#range <- (IQR(data_nogoT$Reaction.Time)*1.5)
 #lowbound <- Q1 - range
 #highbound <- Q3 + range
-#summary(data_go.nogoT$Reaction.Time)
+#summary(data_nogoT$Reaction.Time)
 #lowbound
 #highbound
-#boxplot(data_go.nogoT$Reaction.Time)
+#boxplot(data_nogoT$Reaction.Time)
 
 # upper outliers need to be rejected in order to look at mean RT measures
 # the upper bound is reasonable based on what looks like only a few outliers above it
 # there are a lot of responses around 1000ms, these are "no go" responses which moved to the next trial automatically. We will only look at mean/SD RTs of HITS and FA (correct hits and commission errors)
-data_go.nogoT$Reaction.Time[which(data_go.nogoT$Reaction.Time > 1072)] <- NA
+data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time > 1072)] <- NA
 
 # setting a lower bound based on Jaana's 2017 paper: brain needs this much time to react
-data_go.nogoT$Reaction.Time[which(data_go.nogoT$Reaction.Time < 150)] <- NA
+data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time < 150)] <- NA
 
 ## Participant exclusion criteria
 #median RT<200ms, accuracy <60%
@@ -2390,23 +2464,23 @@ data_go.nogoT$Reaction.Time[which(data_go.nogoT$Reaction.Time < 150)] <- NA
 
 # Median RT + Accuracy, participant level rejections
 # nobody rejected
-data_go.nogoT <- data_go.nogoT %>%
-  group_by(Participant.Private.ID) %>% 
-  mutate(medianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect))) %>% # Creating a new column that gives the median response time for each participant
-  mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, (medianRT < =  200 | Accuracy < =  .60)  ~ 1)) # assigning 1 to rows where median RT is <200ms
-  
+data_nogoT <- data_nogoT %>%
+ group_by(Participant.Private.ID) %>% 
+ mutate(medianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect))) %>% # Creating a new column that gives the median response time for each participant
+ mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, (medianRT < = 200 | Accuracy < = .60) ~ 1)) # assigning 1 to rows where median RT is <200ms
+ 
 # Omitting rows based on exclusion criteria
-data_go.nogoT$Response[which(data_go.nogoT$go.nogo_omit  ==  1)] <- NA
+data_nogoT$Response[which(data_nogoT$go.nogo_omit == 1)] <- NA
 
 
 ## Signal Detection Theory categories for each row
 # can also use the Response and Answer columns but the logic is pretty much the same
-data_go.nogoT <- data_go.nogoT %>%
-  filter(display  ==  "Trials") %>%
-  mutate(SDT = case_when(((Array  ==  "H.png" | Array  ==  "T.png") & Response  ==  "Go")  ~ "Hit", 
-                         ((Array  ==  "H.png" | Array  ==  "T.png") & Response  ==  "No Go") ~ "Miss", 
-                         (Array  ==  "N.png" & Response  ==  "Go") ~ "False Alarm", 
-                         (Array  ==  "N.png" & Response  ==  "No Go") ~ "Correct Rejection")) # This is in case we want to look at how these relate to reaction times or EEG data at some point?
+data_nogoT <- data_nogoT %>%
+ filter(display == "Trials") %>%
+ mutate(SDT = case_when(((Array == "H.png" | Array == "T.png") & Response == "Go") ~ "Hit", 
+             ((Array == "H.png" | Array == "T.png") & Response == "No Go") ~ "Miss", 
+             (Array == "N.png" & Response == "Go") ~ "False Alarm", 
+             (Array == "N.png" & Response == "No Go") ~ "Correct Rejection")) # This is in case we want to look at how these relate to reaction times or EEG data at some point?
 
 # Hit = H.png or T.png and Go (Array and Response)
 # Miss = H-png or T.png and No Go
@@ -2417,24 +2491,24 @@ data_go.nogoT <- data_go.nogoT %>%
 
 # https://www.rdocumentation.org/packages/psycho/versions/0.6.1/topics/dprime
 # http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
-  
+ 
 library(psycho)
 
-data_go.nogoT <- data_go.nogoT %>%
-  mutate(Hit = case_when(SDT  ==  "Hit" ~ 1, 
-                         SDT !=  "Hit" ~ 0), 
-         Miss = case_when(SDT  ==  "Miss" ~ 1, 
-                          SDT !=  "Miss" ~ 0), 
-         FA = case_when(SDT  ==  "False Alarm" ~ 1, 
-                        SDT !=  "False Alarm" ~ 0), 
-         CR = case_when(SDT  ==  "Correct Rejection" ~ 1, 
-                        SDT !=  "Correct Rejection" ~ 0))
+data_nogoT <- data_nogoT %>%
+ mutate(Hit = case_when(SDT == "Hit" ~ 1, 
+             SDT != "Hit" ~ 0), 
+     Miss = case_when(SDT == "Miss" ~ 1, 
+             SDT != "Miss" ~ 0), 
+     FA = case_when(SDT == "False Alarm" ~ 1, 
+            SDT != "False Alarm" ~ 0), 
+     CR = case_when(SDT == "Correct Rejection" ~ 1, 
+            SDT != "Correct Rejection" ~ 0))
 
 # calculating the mean and sd of hits and FA
-data_hit <- filter(data_go.nogoT , SDT  ==  "Hit")
+data_hit <- filter(data_nogoT , SDT == "Hit")
 data_hit_RT <- data_hit %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(meanHitRT = mean(Reaction.Time, na.rm = TRUE), sdHitRT = sd(Reaction.Time, na.rm = TRUE))
+ group_by(Participant.Private.ID) %>%
+ summarise(meanHitRT = mean(Reaction.Time, na.rm = TRUE), sdHitRT = sd(Reaction.Time, na.rm = TRUE))
 
 #Q1 <- quantile(data_hit_RT$sdHitRT, 0.25, na.rm = TRUE)
 #Q3 <- quantile(data_hit_RT$sdHitRT, 0.75, na.rm = TRUE)
@@ -2451,10 +2525,10 @@ data_hit_RT$meanHitRT[which(data_hit_RT$meanHitRT > 593)] <- NA
 data_hit_RT$sdHitRT[which(data_hit_RT$sdHitRT > 165)] <- NA
 
 # FAs
-data_FA <- filter(data_go.nogoT , SDT  ==  "False Alarm")
+data_FA <- filter(data_nogoT , SDT == "False Alarm")
 data_FA_RT <- data_FA %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(meanFA_RT = mean(Reaction.Time, na.rm = TRUE), sdFA_RT = sd(Reaction.Time, na.rm = TRUE))
+ group_by(Participant.Private.ID) %>%
+ summarise(meanFA_RT = mean(Reaction.Time, na.rm = TRUE), sdFA_RT = sd(Reaction.Time, na.rm = TRUE))
 
 # e.g. remember to change the variables to calculate the quartiles 
 #Q1 <- quantile(data_FA_RT$meanFA_RT, 0.25, na.rm = TRUE)
@@ -2467,14 +2541,14 @@ data_FA_RT <- data_FA %>%
 #highbound
 
 #data_FA_RT$meanFA_RT[which(data_FA_RT$meanFA_RT > ??)] <- NA
-# no outliers in the mean  
+# no outliers in the mean 
 data_FA_RT$sdFA_RT[which(data_FA_RT$sdFA_RT > 198)] <- NA
 
 
 # Calculating d-prime + bias
-data_dprime <- data_go.nogoT %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(dp = dprime(n_hit = sum(Hit), n_fa = sum(FA), n_miss = sum(Miss), n_cr = sum(CR), n_targets = 300, n_distractors = 100))
+data_dprime <- data_nogoT %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(dp = dprime(n_hit = sum(Hit), n_fa = sum(FA), n_miss = sum(Miss), n_cr = sum(CR), n_targets = 300, n_distractors = 100))
 
 # Adding a row to specify what the five different values given mean
 names <- c("GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc") # we are interested in dprime and beta which means bias
@@ -2483,40 +2557,40 @@ data_dprime$value <- value
 
 # Into wide format
 data_dprime <- data_dprime %>%
-  pivot_wider(names_from = value, values_from = dp)
+ pivot_wider(names_from = value, values_from = dp)
 data_GNGdprime <- as.data.frame(data_dprime)
 
 # Creating a sum score of each response category for each participant
-data_go.nogoT_final <- data_go.nogoT %>%
-  select(Participant.Private.ID, Hit, Miss, FA, CR) %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(GNGHitSum = sum(Hit, na.rm = TRUE), GNGMissSum = sum(Miss, na.rm = TRUE), GNGFASum = sum(FA, na.rm = TRUE), GNGCRSum = sum(CR, na.rm = TRUE))
+data_nogoT_final <- data_nogoT %>%
+ select(Participant.Private.ID, Hit, Miss, FA, CR) %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(GNGHitSum = sum(Hit, na.rm = TRUE), GNGMissSum = sum(Miss, na.rm = TRUE), GNGFASum = sum(FA, na.rm = TRUE), GNGCRSum = sum(CR, na.rm = TRUE))
 
 # Combining the dataframes, keeping all rows
-data_go.nogoT_final <- merge(data_go.nogoT_final, data_GNGdprime, by = "Participant.Private.ID", all = TRUE)
-data_go.nogoT_final <- merge(data_go.nogoT_final, data_hit_RT, by = "Participant.Private.ID", all = TRUE)
-data_go.nogoT_final <- merge(data_go.nogoT_final, data_FA_RT, by = "Participant.Private.ID", all = TRUE)
+data_nogoT_final <- merge(data_nogoT_final, data_GNGdprime, by = "Participant.Private.ID", all = TRUE)
+data_nogoT_final <- merge(data_nogoT_final, data_hit_RT, by = "Participant.Private.ID", all = TRUE)
+data_nogoT_final <- merge(data_nogoT_final, data_FA_RT, by = "Participant.Private.ID", all = TRUE)
 
 
 ## Excluding participants with invalid responses
 # this contains validity data for all tasks
 data_ConsentValidity <- data_Q_total %>%
-  select(Participant.Private.ID, Language, Validity.quantised)
-  
-data_go.nogoT_final <- merge(data_go.nogoT_final, data_ConsentValidity, by = "Participant.Private.ID")
+ select(Participant.Private.ID, Language, Validity.quantised)
+ 
+data_nogoT_final <- merge(data_nogoT_final, data_ConsentValidity, by = "Participant.Private.ID")
 
 ####### creating new sets to double check that rejected ppts match the other df
 # I think one ppt was already excluded because of validity etc. These are the ones that didn't complete the task
-#data_nonvalid_gng <- data_go.nogoT_final %>%
-  #filter(Participant.Private.ID %in% c("4886650", "5117494", "5282634", "5500754", "5552405", "5635997"))
-  #filter(Validity.quantised %in% c("2", 3, 4))
+#data_nonvalid_gng <- data_nogoT_final %>%
+ #filter(Participant.Private.ID %in% c("4886650", "5117494", "5282634", "5500754", "5552405", "5635997"))
+ #filter(Validity.quantised %in% c("2", 3, 4))
 
-#data_Q_lang_omit_gng <- data_go.nogoT_final %>%
-  #filter(Language !=  "Sujuva / Ã¤idinkieli" & Language !=  "Keskitaso / keskusteleva" & Language !=  "Muu, mikÃ¤?")
+#data_Q_lang_omit_gng <- data_nogoT_final %>%
+ #filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
 # final set. Somehow this ppt who didn't actually do the task (zeroes in sum scores) has squeaked through, so removing them now. 
-data_go.nogoT_final <- data_go.nogoT_final %>%
-  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?") & Participant.Private.ID !=  "5201242" & Participant.Private.ID !=  "4886650" & Participant.Private.ID !=  "5117494" & Participant.Private.ID !=  "5282634" & Participant.Private.ID !=  "5500754" & Participant.Private.ID !=  "5552405" & Participant.Private.ID !=  "5635997")
+data_nogoT_final <- data_nogoT_final %>%
+ filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?") & Participant.Private.ID != "5201242" & Participant.Private.ID != "4886650" & Participant.Private.ID != "5117494" & Participant.Private.ID != "5282634" & Participant.Private.ID != "5500754" & Participant.Private.ID != "5552405" & Participant.Private.ID != "5635997")
 # there are some rows with NAs or other missing data still but I think those are gotten rid of during the merging or formatting task variables chunks
 
 # omitting specific participants who commented that they were interrupted in the task
@@ -2537,33 +2611,33 @@ data_go.nogoT_final <- data_go.nogoT_final %>%
 # Subsetting by validity and consent info + omitting the irrelevant columns
 # Technically we will likely only need d prime and bias but extra columns can easily be dropped later on
 # has 148 ppts now but should eventually be 146
-data_go.nogoT_final <- data_go.nogoT_final %>%
-  select(Participant.Private.ID, GNGHitSum, GNGMissSum, GNGFASum, GNGCRSum, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GNGdprime, GNGbeta, GNGaprime, GNGbppd, GNGc) 
+data_nogoT_final <- data_nogoT_final %>%
+ select(Participant.Private.ID, GNGHitSum, GNGMissSum, GNGFASum, GNGCRSum, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GNGdprime, GNGbeta, GNGaprime, GNGbppd, GNGc) 
 
 # no outliers (dprime only??)
 #par(mfrow = c(2, 3))
-#hist(as.numeric(data_go.nogoT_final$GNGdprime), main = "dprime", ylim = c(0, 40), col = rainbow(14), xlab = "")
-#hist(as.numeric(data_go.nogoT_final$GNGbeta), main = "beta", col = rainbow(14), xlab = "")
-#hist(as.numeric(data_go.nogoT_final$GNGaprime), main = "aprime", col = rainbow(14), xlab = "")
-#hist(as.numeric(data_go.nogoT_final$GNGbppd), main = "bppd", ylim = c(0, 100), col = rainbow(14), xlab = "")
-#hist(as.numeric(data_go.nogoT_final$GNGc), main = "c", ylim = c(0, 40), col = rainbow(14), xlab = "")
+#hist(as.numeric(data_nogoT_final$GNGdprime), main = "dprime", ylim = c(0, 40), col = rainbow(14), xlab = "")
+#hist(as.numeric(data_nogoT_final$GNGbeta), main = "beta", col = rainbow(14), xlab = "")
+#hist(as.numeric(data_nogoT_final$GNGaprime), main = "aprime", col = rainbow(14), xlab = "")
+#hist(as.numeric(data_nogoT_final$GNGbppd), main = "bppd", ylim = c(0, 100), col = rainbow(14), xlab = "")
+#hist(as.numeric(data_nogoT_final$GNGc), main = "c", ylim = c(0, 40), col = rainbow(14), xlab = "")
 
 
-#shapiro.test(as.numeric(data_go.nogoT_final$GNGdprime))
+#shapiro.test(as.numeric(data_nogoT_final$GNGdprime))
 
-#GNG_task <- (describe(data_go.nogoT_final$dprime))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGbeta))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGaprime))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGbppd))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGc))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGHitSum))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGMissSum))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGFASum))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$GNGCRSum))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$meanHitRT))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$sdHitRT))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$meanFA_RT))
-#GNG_task <- rbind(GNG_task, describe(data_go.nogoT_final$sdFA_RT))
+#GNG_task <- (describe(data_nogoT_final$dprime))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGbeta))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGaprime))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGbppd))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGc))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGHitSum))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGMissSum))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGFASum))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGCRSum))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$meanHitRT))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$sdHitRT))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$meanFA_RT))
+#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$sdFA_RT))
 #row.names(GNG_task) <- c("GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc", "GNGHitSum", "GNGMissSum", "GNGFASum", "GNGCRSum", "meanHitRT", "sdHitRT", "meanFA_RT", "sdFA_RT")
 #View(GNG_task)
 
@@ -2595,11 +2669,11 @@ started with 140 who finished
 # ajrc2dxp 5626669
 # l802ayaq 5808176
 
-# Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only  
+# Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
 
-# Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only  
+# Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only 
 
-# Positive values indicate the extent to which global stimuli interfere with the local info  
+# Positive values indicate the extent to which global stimuli interfere with the local info 
 
 # I calculated these manually. I first extracted the SDs for the reaction times for the two conditions in question (global consistent and local consistent for global precedence, local consistent and local inconsistent for global-to-local interference). I then calculated the pooled mean (https://www.statisticshowto.com/pooled-standard-deviation/). After that, I calculated the mean reaction time to the two trial types for each participant (e.g., global consistent and local consistent for global precedence). Finally, I compared the difference between these means for each participant to the pooled SD (https://www.statisticshowto.com/cohens-d/).
 
@@ -2607,17 +2681,17 @@ data_NavonT$Participant.Private.ID <- factor(data_NavonT$Participant.Private.ID)
 
 ## Omitting experiment-general columns & practice (etc.) rows
 data_NavonT <- data_NavonT %>%
-  select(Participant.Private.ID, Spreadsheet:Image) %>%
-  filter(display %in% c("task1", "task2"))
+ select(Participant.Private.ID, Spreadsheet:Image) %>%
+ filter(display %in% c("task1", "task2"))
 
 ## Only Including the relevant rows for us: this means rows where Screen.name = "Screen 3" 
 data_NavonT <- data_NavonT %>%
-  filter(Screen.Name  ==  "Screen 3")
+ filter(Screen.Name == "Screen 3")
 
 # Creating a column for consistency
 data_NavonT <- data_NavonT %>%
-  mutate(Consistency = case_when((Image  ==  "bigHsmallH.png" | Image  ==  "bigSsmallS.png") ~ "Consistent", 
-                                 (Image  ==  "bigHsmallS.png" | Image  ==  "bigSsmallH.png") ~ "Inconsistent"))
+ mutate(Consistency = case_when((Image == "bigHsmallH.png" | Image == "bigSsmallS.png") ~ "Consistent", 
+                 (Image == "bigHsmallS.png" | Image == "bigSsmallH.png") ~ "Inconsistent"))
 data_NavonT$Consistency <- factor(data_NavonT$Consistency)
 
 data_NavonT$display <- factor(data_NavonT$display)
@@ -2625,18 +2699,18 @@ data_NavonT$display <- factor(data_NavonT$display)
 
 # Accuracy is now its own df, summary(Accuracy_Navon) gives Accuracy_cond minimum 91.21%
 Accuracy_Navon <- data_NavonT %>%
-  group_by(Consistency, display) %>%
-  summarise(Accuracy_cond = sum(Correct)/(sum(Correct)+sum(Incorrect)))
+ group_by(Consistency, display) %>%
+ summarise(Accuracy_cond = sum(Correct)/(sum(Correct)+sum(Incorrect)))
 
 ## Exclusion criteria
 
 # for ppt level median RT<50ms (this is arbitrary, I've just chosen 50ms here (so that actually means 250+50 = 300 in this task), i.e. the previous screen is stimulus presentation and advances automatically after 250ms, while the response screen advances only on response, but we should probably look at the distribution of RTs later on), accuracy <60%, <95% RESPONSES fall on the same value
-  
+ 
 # Outlier trial exclusions first
 # interquartile range: 1.5*(Q3-Q1), subtract this value from Q1 and add to Q3 to get the outlier boundaries. Here it was 671.8. Need to do this first because outlier trials mess up the ppt level calculations. There seem to be a lot of outliers on a gradient from around 5000ms up to 20000ms, different to GNG 
 
-#Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#0.6    211.0    307.1    389.2    441.4 183064.1 
+#Min. 1st Qu.  Median   Mean 3rd Qu.   Max. 
+#0.6  211.0  307.1  389.2  441.4 183064.1 
 
 #store_data_Navon <- data_NavonT
 #data_NavonT <- store_data_Navon 
@@ -2649,9 +2723,9 @@ data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time > 3000)] <- NA
 #########keep this or no?##############
 
 data_NavonT <- data_NavonT %>%
-  group_by(Participant.Private.ID) %>%
-  filter(between(Reaction.Time, mean(Reaction.Time, na.rm = TRUE) - (2.5 * sd(Reaction.Time, na.rm = TRUE)), 
-                     mean(Reaction.Time, na.rm = TRUE) + (2.5 * sd(Reaction.Time, na.rm = TRUE))))
+ group_by(Participant.Private.ID) %>%
+ filter(between(Reaction.Time, mean(Reaction.Time, na.rm = TRUE) - (2.5 * sd(Reaction.Time, na.rm = TRUE)), 
+           mean(Reaction.Time, na.rm = TRUE) + (2.5 * sd(Reaction.Time, na.rm = TRUE))))
 
 #Q1 <- quantile(data_NavonT$Reaction.Time, 0.25)
 #Q3 <- quantile(data_NavonT$Reaction.Time, 0.75)
@@ -2666,17 +2740,17 @@ data_NavonT <- data_NavonT %>%
 
 # Median RT & Accuracy
 data_NavonT <- data_NavonT %>%
-  group_by(Participant.Private.ID) %>%
-  mutate(MedianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect)), Ratio = max(table(Response))/length(Response)) %>%
-  mutate(Navon_omit = case_when(MedianRT > 50 & MedianRT < 1000 & Accuracy > .60 & Ratio < .95 ~ 0, 
-                                MedianRT <=  50 | Accuracy <=  .60 | Ratio >=  .95 ~ 1))
+ group_by(Participant.Private.ID) %>%
+ mutate(MedianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect)), Ratio = max(table(Response))/length(Response)) %>%
+ mutate(Navon_omit = case_when(MedianRT > 50 & MedianRT < 1000 & Accuracy > .60 & Ratio < .95 ~ 0, 
+                MedianRT <= 50 | Accuracy <= .60 | Ratio >= .95 ~ 1))
 
 # Omitting data based on Navon_omit
-data_NavonT$Reaction.Time[which(data_NavonT$Navon_omit  ==  1)] <- NA
+data_NavonT$Reaction.Time[which(data_NavonT$Navon_omit == 1)] <- NA
 
 ## Subsetting: only looking at the correct answers
 data_NavonT <- data_NavonT %>%
-  filter(Correct  ==  "1")
+ filter(Correct == "1")
 
 ## Calculating pooled SDs
 
@@ -2685,19 +2759,19 @@ data_NavonT <- ungroup(data_NavonT)
 #Global SD 1 (consistent trials only)
 #again need to include the argument na.rm = TRUE otherwise NA values will cause the sd calculation to return empty
 sd_Global_con <- data_NavonT %>%
-  filter((Consistency  ==  "Consistent") & display  ==  "task1") %>%
-  summarise(sd(Reaction.Time, na.rm = TRUE))
+ filter((Consistency == "Consistent") & display == "task1") %>%
+ summarise(sd(Reaction.Time, na.rm = TRUE))
 
 # Local SD 1 (consistent trials only)
 sd_Local_con <- data_NavonT %>%
-  filter((Consistency  ==  "Consistent") & display  ==  "task2") %>%
-  summarise(sd(Reaction.Time, na.rm = TRUE))
+ filter((Consistency == "Consistent") & display == "task2") %>%
+ summarise(sd(Reaction.Time, na.rm = TRUE))
 
 # Local SD 2 (inconsistent trials only)
 sd_Local_incon <- data_NavonT %>%
-  filter((Consistency  ==  "Inconsistent") & display  ==  "task2") %>%
-  summarise(sd(Reaction.Time, na.rm = TRUE))
-  
+ filter((Consistency == "Inconsistent") & display == "task2") %>%
+ summarise(sd(Reaction.Time, na.rm = TRUE))
+ 
 # Calculating pooled SD
 # https://www.statisticshowto.com/pooled-standard-deviation/
 # I used the simplest formula and calculated it manually but there might be a quicker way to do it
@@ -2712,29 +2786,29 @@ pooled_SD_local <- sqrt((sd_Local_incon^2 + sd_Local_con^2)/2)
 pooled_SD_local
 
 #pooled_SD_con
-  #sd(Reaction.Time, na.rm = TRUE)
-#1                         130.033
+ #sd(Reaction.Time, na.rm = TRUE)
+#1             130.033
 
 #pooled_SD_local
-  #sd(Reaction.Time, na.rm = TRUE)
-#1                        137.5748
+ #sd(Reaction.Time, na.rm = TRUE)
+#1            137.5748
 
 # Final form of the Navon data: selecting relevant columns and transforming the data so that the columns reflect mean reaction times in each of the four conditions (local/global x consistent/inconsistent)
 data_NavonT_final <- data_NavonT %>% 
-  select(Participant.Private.ID, Consistency, display, Reaction.Time) %>%
-  group_by(Participant.Private.ID, Consistency, display) %>%
-  summarise(NavonReactionTimeMean = mean(Reaction.Time, na.rm = TRUE), .groups = "keep") %>%
-  pivot_wider(names_from = c(Consistency, display), values_from = NavonReactionTimeMean)
+ select(Participant.Private.ID, Consistency, display, Reaction.Time) %>%
+ group_by(Participant.Private.ID, Consistency, display) %>%
+ summarise(NavonReactionTimeMean = mean(Reaction.Time, na.rm = TRUE), .groups = "keep") %>%
+ pivot_wider(names_from = c(Consistency, display), values_from = NavonReactionTimeMean)
 
 
 
 # Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
 data_NavonT_final <- data_NavonT_final %>%
-  mutate(GlobalToLocalPrecedence = ((Consistent_task1 - Consistent_task2)/as.numeric(pooled_SD_con)))
+ mutate(GlobalToLocalPrecedence = ((Consistent_task1 - Consistent_task2)/as.numeric(pooled_SD_con)))
 
 ## Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only
 data_NavonT_final <- data_NavonT_final %>%
-  mutate(GlobalToLocalInterference = ((Inconsistent_task1 - Consistent_task2)/as.numeric(pooled_SD_local)))
+ mutate(GlobalToLocalInterference = ((Inconsistent_task1 - Consistent_task2)/as.numeric(pooled_SD_local)))
 
 ## Excluding nonvalid participants
 data_NavonT_final <- merge(data_NavonT_final, data_ConsentValidity, by = "Participant.Private.ID")
@@ -2749,17 +2823,17 @@ data_NavonT_final <- merge(data_NavonT_final, data_ConsentValidity, by = "Partic
 # l802ayaq 5808176
 
 #data_NavonT_final <- data_NavonT_final %>%
-  #filter(ConsentFlag  ==  1 & Validity.quantised  ==  1 & Language  ==  "Sujuva / Ã¤idinkieli") %>%
-  #select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
+ #filter(ConsentFlag == 1 & Validity.quantised == 1 & Language == "Sujuva / Ã¤idinkieli") %>%
+ #select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
 
 # getting rid of ppts who stopped halfway through, some have already been caught by quality control
 data_NavonT_final <- data_NavonT_final %>%
-  filter(Participant.Private.ID !=  "4907987"  & Participant.Private.ID !=  "4960307" & Participant.Private.ID !=  "5317567" & Participant.Private.ID !=  "5372338" & Participant.Private.ID !=  "5526450" & Participant.Private.ID !=  "5578226" & Participant.Private.ID !=  "5626669" & Participant.Private.ID !=  "5808176")
+ filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176")
 
 # validity filter
 data_NavonT_final <- data_NavonT_final %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
-  select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
+ filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+ select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
 # there are 3 rows of NAN 
 
 # final score outlier exclusions
@@ -2815,29 +2889,29 @@ data_NeckerT$Participant.Private.ID <- factor(data_NeckerT$Participant.Private.I
 
 # Omitting irrelevant columns
 data_NeckerT <- data_NeckerT %>%
-  select(Participant.Private.ID, Spreadsheet:Image)
+ select(Participant.Private.ID, Spreadsheet:Image)
 
 # Omitting irrelevant rows (Instructions / empty rows)
 data_NeckerT <- data_NeckerT %>%
-  filter(display %in% c("Trial 1", "Trial 2"))
+ filter(display %in% c("Trial 1", "Trial 2"))
 
 # Exclusion criteria: none for now, but consider high outliers and ppts who reported no switching--can check later if there is a difference there
 
 # this ppt stopped during Necker
-# t98f4qif  5385143
+# t98f4qif 5385143
 
 ## Sum score for how many times space bar was hit in total
 data_NeckerT_final <- data_NeckerT %>%
-  select(Participant.Private.ID, Response) %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(NeckerCountTotal = sum(Response  ==  "space", na.rm = TRUE))
+ select(Participant.Private.ID, Response) %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(NeckerCountTotal = sum(Response == "space", na.rm = TRUE))
 
 ## Switches per second
 data_NeckerT_final <- data_NeckerT_final %>%
-  mutate(NeckerTotalRate = NeckerCountTotal/60)
+ mutate(NeckerTotalRate = NeckerCountTotal/60)
 
 # rate interquartile max 0.35832, 6 ppts NA'd here
-#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  Min. 1st Qu. Median  Mean 3rd Qu.  Max. 
 #0.00000 0.06667 0.11667 0.13647 0.18333 0.48333 
 
 #data_NeckerT_final$NeckerTotalRate[which(data_NeckerT_final$NeckerTotalRate > 0.35832)] <- NA
@@ -2847,17 +2921,17 @@ data_NeckerT_final <- merge(data_NeckerT_final, data_ConsentValidity, by = "Part
 
 # creating ppt omit sets
 #data_nonvalid_Necker <- data_NeckerT_final %>%
-#  filter(Validity.quantised %in% c(2, 3, 4))
+# filter(Validity.quantised %in% c(2, 3, 4))
 
 #data_Necker_lang_omit <- data_NeckerT_final %>%
-#  filter(Language !=  "Sujuva / Ã¤idinkieli" & Language !=  "Keskitaso / keskusteleva" & Language !=  "Muu, mikÃ¤?")
+# filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
 # Subsetting by validity and consent info + omitting the irrelevant columns
 data_NeckerT_final <- data_NeckerT_final %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
-  select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
+ filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+ select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
 
-# ppt 5385143 stopped during necker, exclude their data (already NA) Participant.Private.ID !=  "5385143" 
+# ppt 5385143 stopped during necker, exclude their data (already NA) Participant.Private.ID != "5385143" 
 
 #boxplot(data_NeckerT_final$NeckerTotalRate)
 #boxplot(data_NeckerT_final$NeckerCountTotal)
@@ -2867,7 +2941,7 @@ data_NeckerT_final <- data_NeckerT_final %>%
 
 ## Unusual Uses Task
 
-NB: FIRST conduct interrater reliability using UUT_Analysis.Rmd. Then create a file that contains at least columns for participant number, fluency and flexibility ratings for at least 2 raters. Rows are individual participant responses.  Rows are individual participant responses.
+NB: FIRST conduct interrater reliability using UUT_Analysis.Rmd. Then create a file that contains at least columns for participant number, fluency and flexibility ratings for at least 2 raters. Rows are individual participant responses. Rows are individual participant responses.
 
 Fluency is a measure of how many unique unusual uses a ppt can think of for each item. FluencySum is the count of all unique uses over all items for a ppt. Flexibility score refers to the uniquenes of the functional categories of items, i.e. a participant gets two point for using a shoe as a doorstop and a flowerpot but only one point for a houseplant pot and a bonsai tree pot (same functional use).FlexSum is the sum of flexibility points over all items for a participant. Refer to UUT scoring instructions for further detail.
 
@@ -2886,25 +2960,25 @@ data_UUT <- read.csv('UUT_scoring_COMBINED_REVISED_Rcsv.csv', sep = ";")
 
 ########################################################################################################
 ## did they use these processing chunks in the reliability analysis?? maybe move them to there? 
-#data_unusual.usesT$Participant.Private.ID <- factor(data_unusual.usesT$Participant.Private.ID)
+#data_uutT$Participant.Private.ID <- factor(data_uutT$Participant.Private.ID)
 
 # Omitting experiment-general columns and excluding practice trials
-#data_unusual.usesT <- data_unusual.usesT %>%
-#  select(Participant.Private.ID, Spreadsheet:text) %>%
-#  filter(Screen.Name !=  "Screen 3")
+#data_uutT <- data_uutT %>%
+# select(Participant.Private.ID, Spreadsheet:text) %>%
+# filter(Screen.Name != "Screen 3")
 
 # Omitting irrelevant rows (with empty cells)
-#data_unusual.usesT$Response[which(data_unusual.usesT$Response  ==  "")] <- NA
+#data_uutT$Response[which(data_uutT$Response == "")] <- NA
 
-#data_unusual.usesT <- data_unusual.usesT %>%
-#  filter(!is.na(Response)) #only keeping rows with responses (not NAs)
+#data_uutT <- data_uutT %>%
+# filter(!is.na(Response)) #only keeping rows with responses (not NAs)
 
 # Splitting cells that have multiple responses (if participant forgot to press enter between answers)
-#data_unusual.usesT <- separate_rows(data_unusual.usesT, Response, sep = ", ", convert = TRUE)
+#data_uutT <- separate_rows(data_uutT, Response, sep = ", ", convert = TRUE)
 
 # Creating fake columns for flexibility and fluency to demonstrate how they would be calculated
-#data_unusual.usesT$Fluency <- rbinom(n = nrow(data_unusual.usesT), 1, p = 0.90)
-#data_unusual.usesT$Flexibility <- rbinom(n = nrow(data_unusual.usesT), 1, p = 0.70)
+#data_uutT$Fluency <- rbinom(n = nrow(data_uutT), 1, p = 0.90)
+#data_uutT$Flexibility <- rbinom(n = nrow(data_uutT), 1, p = 0.70)
 
 ############################################################################################################
 
@@ -2914,9 +2988,9 @@ data_UUT <- read.csv('UUT_scoring_COMBINED_REVISED_Rcsv.csv', sep = ";")
 
 ### Calculating the fluency and flexibility sum score for each participant per rater
 data_UUT_scores <- data_UUT %>%
-  select(Participant.Private.ID, S.Flex, S.Fluency, K.Flex, K.Fluency) %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(SFlexibilitySum = sum(S.Flex), SFluencySum = sum(S.Fluency), KFlexibilitySum = sum(K.Flex), KFluencySum = sum(K.Fluency))
+ select(Participant.Private.ID, S.Flex, S.Fluency, K.Flex, K.Fluency) %>%
+ group_by(Participant.Private.ID) %>%
+ summarise(SFlexibilitySum = sum(S.Flex), SFluencySum = sum(S.Fluency), KFlexibilitySum = sum(K.Flex), KFluencySum = sum(K.Fluency))
 #View(data_UUT_scores)
 
 # participant sum scores as a mean of rater scores
@@ -2946,15 +3020,15 @@ data_UUT_scores$FluencySum <-rowMeans(cbind(data_UUT_scores$SFluencySum, data_UU
 data_UUT_scores <- merge(data_UUT_scores, data_ConsentValidity, by = "Participant.Private.ID")
 
 #data_nonvalid_UUT <- data_UUT_scores %>%
-  #filter(Validity.quantised %in% c(2, 3, 4))
+ #filter(Validity.quantised %in% c(2, 3, 4))
 
 #data_UUT_lang_omit <- data_UUT_scores %>%
-  #filter(Language !=  "Sujuva / Ã¤idinkieli" & Language !=  "Keskitaso / keskusteleva" & Language !=  "Muu, mikÃ¤?")
+ #filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
 # extracting the columns we want
 data_UUT_scores <- data_UUT_scores %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
-  select(Participant.Private.ID, FlexSum, FluencySum)
+ filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+ select(Participant.Private.ID, FlexSum, FluencySum)
 
 ```
 
@@ -2967,7 +3041,7 @@ N = 155
 
 ```{r Combining the task dataframes, include = FALSE}
 
-data_T_total1 <- merge(data_go.nogoT_final, data_NavonT_final, by = "Participant.Private.ID", all = TRUE)
+data_T_total1 <- merge(data_nogoT_final, data_NavonT_final, by = "Participant.Private.ID", all = TRUE)
 data_T_total2 <- merge(data_UUT_scores, data_NeckerT_final, by = "Participant.Private.ID", all = TRUE)
 #data_T_total <- merge(data_T_total, data_NeckerT_final, by = "Participant.Private.ID", all = TRUE)
 data_T_total <- merge(data_T_total1, data_T_total2, by = "Participant.Private.ID", all = TRUE)
@@ -2977,17 +3051,17 @@ rm(data_T_total1, data_T_total2)
 ## Extracting the relevant columns
 
 data_T_sub <- data_T_total %>%
-  select(Participant.Private.ID, GNGdprime, GNGbeta, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GlobalToLocalPrecedence, GlobalToLocalInterference, NeckerTotalRate, FlexSum, FluencySum)
+ select(Participant.Private.ID, GNGdprime, GNGbeta, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GlobalToLocalPrecedence, GlobalToLocalInterference, NeckerTotalRate, FlexSum, FluencySum)
 
 
 # getting rid of values that should be NAs 
 #is.nan.data.frame <- function(x)
-#  do.call(cbind, lapply(x, is.nan))
+# do.call(cbind, lapply(x, is.nan))
 #data_T_sub[is.nan(data_T_sub)] <- NA
 
 # need to coerce the numeric variables to numeric through unlist and get rid of the NULLs in the meantime
-data_T_sub$GNGdprime[which(data_T_sub$GNGdprime  ==  "NULL")] <- NA
-data_T_sub$GNGbeta[which(data_T_sub$GNGbeta  ==  "NULL")] <- NA
+data_T_sub$GNGdprime[which(data_T_sub$GNGdprime == "NULL")] <- NA
+data_T_sub$GNGbeta[which(data_T_sub$GNGbeta == "NULL")] <- NA
 data_T_sub$GNGdprime <- as.numeric(unlist(data_T_sub$GNGdprime))
 data_T_sub$GNGbeta <- as.numeric(unlist(data_T_sub$GNGbeta))
 
@@ -3010,15 +3084,15 @@ library(naniar)
 
 # add a column for count of missing data per ppt, to task sub df
 data_T_sub1 <- data_T_sub %>%
-  mutate(missingtasks = rowSums(is.na(data_T_sub)))
+ mutate(missingtasks = rowSums(is.na(data_T_sub)))
 
 View(data_T_sub)
 
 # there is a clear elbow at around 3 missing variables, the next step is 6 missing which adds 2 more ppts, and above that is 8 missing
 # so for this I'll choose to cut off at below 4 missing
 ggplot(data_T_sub, aes(x = as.factor(Participant.Private.ID), y = missingtasks)) +
-     geom_boxplot(fill = "slateblue", alpha = 0.2) + 
-     xlab("Missing variables count")
+   geom_boxplot(fill = "slateblue", alpha = 0.2) + 
+   xlab("Missing variables count")
 
 # try to see if there's an elbow in the number of missing variables per ppt 
 MissingTasks<-sort(data_T_sub$missingtasks, decreasing = FALSE)
@@ -3026,13 +3100,13 @@ plot(MissingTasks)
 
 # just temporarily getting the demographic info to the task df so I can investigate missingness
 data_T_all <- data_Q_total %>%
-  select(Participant.Private.ID, gender, Age, Country, Language, Education)
+ select(Participant.Private.ID, gender, Age, Country, Language, Education)
 
 data_T_sub <- merge(data_T_all, data_T_sub, by = "Participant.Private.ID", all = TRUE)
 
 # getting rid of some NaNs in the Navon variables
 is.nan.data.frame <- function(x)
-  do.call(cbind, lapply(x, is.nan))
+ do.call(cbind, lapply(x, is.nan))
 data_T_sub[is.nan(data_T_sub)] <- NA
 
 # there is a significant correlation between age and missing data in the tasks before ppt removal, probably because older ppts struggle more in the timed tasks
@@ -3047,8 +3121,8 @@ cor.test(data_T_sub$Age, data_T_sub$missing, method = "spearman", exact = FALSE)
 
 # removing ppts with 5 or more task variables missing (total 9 variables, looks like most ppts have no more than 3 missing)
 data_T_sub <- data_T_sub %>%
-  group_by(Participant.Private.ID)  %>%
-  filter(missing < 4)
+ group_by(Participant.Private.ID) %>%
+ filter(missing < 4)
 
 # checking whether there is still a correlation between age and missing data--it's better but still there
 gg_miss_fct(x = data_T_sub, fct = Age)
@@ -3056,7 +3130,7 @@ cor.test(data_T_sub$Age, data_T_sub$missing, method = "spearman", exact = FALSE)
 
 # removing the columns we don't need again
 data_T_sub <- data_T_sub %>%
-  select(GNGdprime:FluencySum)
+ select(GNGdprime:FluencySum)
 
 View(data_T_sub)
 
@@ -3080,31 +3154,31 @@ NB: not entirely sure about the processing here.
 
 ## Normality of variables: visualising with histograms
 #GNGdprime <- ggplot(data_T_sub, aes(x = GNGdprime)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #GNGdprime
 #GNGbeta <- ggplot(data_T_sub, aes(x = GNGbeta)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #GNGbeta
 #meanHitRT <- ggplot(data_T_sub, aes(x = meanHitRT)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #meanHitRT
 #meanFA_RT <- ggplot(data_T_sub, aes(x = meanFA_RT)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #meanFA_RT
 #sdHitRT <- ggplot(data_T_sub, aes(x = sdHitRT)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #sdHitRT
 #sdFA_RT <- ggplot(data_T_sub, aes(x = sdFA_RT)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #sdFA_RT
 #GlobalToLocalPrecendence <- ggplot(data_T_sub, aes(x = GlobalToLocalPrecendence)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #GlobalToLocalPrecendence
 #GlobalToLocalInterference <- ggplot(data_T_sub, aes(x = GlobalToLocalInterference)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #GlobalToLocalInterference
 #NeckerTotalRate <- ggplot(data_T_sub, aes(x = NeckerTotalRate)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #NeckerTotalRate
 
 # Transformations 
@@ -3121,12 +3195,12 @@ NB: not entirely sure about the processing here.
 
 # check the indexes, it changes if you've deleted the demographic columns
 #GNG variables
-#mean hit RT and mean FA RT are correlated 0.8775609  
+#mean hit RT and mean FA RT are correlated 0.8775609 
 cor(data_T_sub[, 2:7], method = "pearson", use = "pairwise.complete.obs") 
 abs(cor(data_T_sub[, 2:7], method = "pearson", use = "pairwise.complete.obs")) > .85 #TRUE values: we should consider omitting one of the variables 
 
 # Navon variables
-#correlated with each other 0.8947398       
+#correlated with each other 0.8947398    
 cor(data_T_sub[, 8:9], method = "pearson", use = "pairwise.complete.obs") 
 abs(cor(data_T_sub[, 8:9], method = "pearson", use = "pairwise.complete.obs")) > .85
 
@@ -3143,33 +3217,33 @@ abs(cor(data_T_sub[, 11:12], method = "pearson", use = "pairwise.complete.obs"))
 
 data_T_sub$GNGbetalog<-log10(data_T_sub$GNGbeta)
 #GNGbetalog <- ggplot(data_T_sub, aes(x = GNGbetalog)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #GNGbetalog
 #qqnorm(data_T_sub$GNGbetalog)
 #it's not as bad as it could be? keeping for now?? 
 
 data_T_sub$meanHitRTlog<-log10(data_T_sub$meanHitRT)
 #meanHitRTlog <- ggplot(data_T_sub, aes(x = meanHitRTlog)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #meanHitRTlog
 #good enough according to shapiro. The original wasn't that bad. 
 
 data_T_sub$sdHitRTlog<-log10(data_T_sub$sdHitRT)
 #sdHitRTlog <- ggplot(data_T_sub, aes(x = sdHitRTlog)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #sdHitRTlog
 #again wasn't that bad but helped
 
 data_T_sub$sdFA_RTlog<-log10(data_T_sub$sdFA_RT)
 #sdFA_RTlog <- ggplot(data_T_sub, aes(sdFA_RTlog)) +
-#  geom_histogram(color = "black", fill = "lightblue")
+# geom_histogram(color = "black", fill = "lightblue")
 #sdFA_RTlog
 # was a bit worse but helped, still not great
 
 # selecting a final set of task variables including the transformed ones
 #here abribtrarily remove variables that were highly correlated with others from the same task
 data_T_sub <- data_T_sub %>%
-  select(GNGdprime, GNGbetalog, meanHitRTlog, sdHitRTlog, sdFA_RTlog, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
+ select(GNGdprime, GNGbetalog, meanHitRTlog, sdHitRTlog, sdFA_RTlog, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
 
 ```
 
@@ -3187,59 +3261,59 @@ View(data_all_sub_cleaned)
 
 #ungroup(data_all_sub_cleaned)
 #clustdata <- data_all_sub_cleaned %>%
-  #select(Participant.Private.ID:AOTSum, RPSum:FluencySum)
+ #select(Participant.Private.ID:AOTSum, RPSum:FluencySum)
 
 # need to ungroup and select to get rid of ppt private id. This can also be done earlier. Ungrouping turns the df into a tibble, so have to coerce back to a df before selecting to remove ppt private id
 ungroup(data_all_sub_cleaned)
 data_all_sub_cleaned <- data_all_sub_cleaned %>%
-  select(AMean:FluencySum)
+ select(AMean:FluencySum)
 View(data_all_sub_cleaned)
 
 ungroup(data_Q_sub)
 data_Q_sub<-data.frame(data_Q_sub)
 data_Q_sub <- data_Q_sub %>%
-  select(AMean:MatrixCorrectCount)
+ select(AMean:MatrixCorrectCount)
 
 ungroup(data_T_sub)
 data_T_sub<-data.frame(data_T_sub)
 data_T_sub <- data_T_sub %>%
-  select(GNGdprime:NeckerTotalRate)
+ select(GNGdprime:NeckerTotalRate)
 
 # this set removes GNGbetalog and the other RT based GNG measures which are generally correlated and clustered with themselves and nothing else 
 # trying this to see if it solves the ultra-Heywood case issue
 data_all_without_GNG <- data_all_sub_cleaned %>%
-  select(AMean:GNGdprime, GlobalToLocalPrecedence:FlexSum)
+ select(AMean:GNGdprime, GlobalToLocalPrecedence:FlexSum)
 
 # without binary variables, use this for clustering raw (not correlation matrix)
 data_all_without_binary <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum, RPSum:FlexSum)
+ select(AMean:AOTSum, RPSum:FlexSum)
 
 # data without GNG or binary, use this for the cross validated ridge regression predictions of tasks by surveys etc. 
 data_without_GNG_or_binary <- data_all_without_GNG %>%
-  select(AMean:AOTSum, RPSum:FlexSum)
+ select(AMean:AOTSum, RPSum:FlexSum)
 
 # data set based on predictions: surveys plus navon and necker
 data_from_predictions <- data_all_sub_cleaned %>%
-  select(AMean:MatrixCorrectCount, GlobalToLocalPrecedence:NeckerTotalRate)
+ select(AMean:MatrixCorrectCount, GlobalToLocalPrecedence:NeckerTotalRate)
 
 #########################################################################
 # First start from the beginning---sets for EFA process
 # no need to worry about correlated variables, they were removed in the previous section
 # whole set
 all_new <- data_all_sub_cleaned %>%
-  select(AMean:FlexSum)
+ select(AMean:FlexSum)
 
 # eventually leaving out HEscore, EMean, sci.tru.sum
 Q_new <- data_all_sub_cleaned %>%
-  select(AMean:MatrixCorrectCount)
+ select(AMean:MatrixCorrectCount)
 #Q_new <- na.omit(Q_new) #dont use this, it gets rid of all rows with NAs
-  #select(AMean:CMean, ESMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
+ #select(AMean:CMean, ESMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
 
 # Task set for EFA process
 # UUT as a task
 T_new <- data_T_sub %>%
-  select(GNGdprime:FlexSum)
-  
+ select(GNGdprime:FlexSum)
+ 
 ```
 
 # Citizen's Initiative
