@@ -830,7 +830,7 @@ NOTE: do we want to already check assumptions for CFA here? it seems very jumpy 
 # Intellectual Humility
 
 # Exclusion criteria
-  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # distribution of responses for each survey per participant: if >= 95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
   # response time (1s/item -> 22000ms total)
 
 IH <- c(which(colnames(data_Q_total) == "IH1rev1"),
@@ -991,108 +991,59 @@ for (i in 1:length(IH_sum)) {
 
 ```{r Scoring need for closure, include = FALSE}
 
-## Need for Closure (range 1-6)
+# Need for Closure
 
 # Exclusion criteria
   # Response time (1s/item -> 15000ms total)
 
-## min response time
-
 data_Q_total <- data_Q_total %>%
- mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO <= 15000 ~ 1, 
-               END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
+  mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO <= 15000 ~ 1, 
+                              END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
 
+# NOTE: who needs to be excluded here?
 # add: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
 
-# again, if Clo_omit = 1, that participant's need for closure data should be omitted
+need_clo <- c()
+for (i in 1:15) {
+  need_clo <- c(need_clo, which(colnames(data_Q_total) == paste0("closure", i)))
+}
 
-#Omitting Need for closure data based on Clo_omit
-data_Q_total$closure1[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure2[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure3[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure4[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure5[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure6[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure7[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure8[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure9[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure10[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure11[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure12[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure13[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure14[which(data_Q_total$Clo_omit == 1)] <- NA
-data_Q_total$closure15[which(data_Q_total$Clo_omit == 1)] <- NA
+# Omit Need for closure data based on Clo_omit
+data_Q_total[which(data_Q_total$Clo_omit == 1), need_clo] <- NA
 
-## Checking structure with CFA
-# one factor?
+# Checking structure with CFA
 
-## Assumptions
+# Item-level assumptions
 
-# Normality
-#par(mfrow = c(3, 5))
-#hist(data_Q_total$closure1, main = "NFC1", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure2, main = "NFC2", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure3, main = "NFC3", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure4, main = "NFC4", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure5, main = "NFC5", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure6, main = "NFC6", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure7, main = "NFC7", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure8, main = "NFC8", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure9, main = "NFC9", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure10, main = "NFC10", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure11, main = "NFC11", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure12, main = "NFC12", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure13, main = "NFC13", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure14, main = "NFC14", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$closure15, main = "NFC15", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-
-# Summary (mean, skew, kurtosis)
-#NFC_item <- (describe(data_Q_total$closure1))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure2))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure3))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure4))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure5))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure6))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure7))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure8))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure9))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure10))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure11))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure12))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure13))
-#FC_item <- rbind(NFC_item, describe(data_Q_total$closure14))
-#NFC_item <- rbind(NFC_item, describe(data_Q_total$closure15))
-#row.names(NFC_item) <- c("closure1", "closure2", "closure3", "closure4", "closure5", "closure6", "closure7", "closure8", "closure9", "closure10", "closure11", "closure12", "closure13", "closure14", "closure15")
-#View(NFC_item)
-
-# Shapiro-Wilks
-# all nonnormal
-#shapiro.test(data_Q_total$closure1)
-#shapiro.test(data_Q_total$closure2)
-#shapiro.test(data_Q_total$closure3)
-#shapiro.test(data_Q_total$closure4)
-#shapiro.test(data_Q_total$closure5)
-#shapiro.test(data_Q_total$closure6)
-#shapiro.test(data_Q_total$closure7)
-#shapiro.test(data_Q_total$closure8)
-#shapiro.test(data_Q_total$closure9)
-#shapiro.test(data_Q_total$closure10)
-#shapiro.test(data_Q_total$closure11)
-#shapiro.test(data_Q_total$closure12)
-#shapiro.test(data_Q_total$closure13)
-#shapiro.test(data_Q_total$closure14)
-#shapiro.test(data_Q_total$closure15)
-
-
+# Normality assumption
+# Visualize
+par(mfrow = c(3, 5))
+for (i in 1:length(need_clo)) {
+  hist(data_Q_total[, need_clo[i]],
+       main = colnames(data_Q_total[need_clo[i]]),
+       breaks = seq(0, 6, 1),
+       col = sample(colors(), 1),
+       xlab = ""
+       )
+}
+# Describe: skew, kurtosis, mean
+describe(data_Q_total[, need_clo])[, c("mean", "skew", "kurtosis")]
+# Shapiro-Wilks test
+shapiro_p_need_clo <- data.frame(name = rep(0, 15), p_value = rep(0, 15))
+for (i in 1:length(need_clo)) {
+  shapiro_p_need_clo$name[i] <- colnames(data_Q_total[need_clo[i]])
+  shapiro_p_need_clo$p_value[i] <- shapiro.test(data_Q_total[, need_clo[i]])["p.value"][[1]]
+}
 
 # Using MLE for now as range = 5
 
 # what are these numbers?
 # CFA
-round(cor(data_Q_total[, c(160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188)], method = "spearman"), 2)
-round(cov(data_Q_total[, c(160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188)], method = "spearman"), 2)
-modelClo <- 'Closure =~ closure1 + closure2 + closure3 + closure4 + closure5 + closure6 +       closure7 + closure8 + closure9 + closure10 + closure11 + closure12 +           closure13 + closure14 + closure15'
-modelClo.est<-cfa(modelClo, data = data_Q_total, std.lv = TRUE) #Same errors
+round(cor(data_Q_total[, need_clo], 
+          method = "spearman",
+          use = "pairwise.complete.obs"), 2)
+modelClo <- 'Closure =~ closure1 + closure2 + closure3 + closure4 + closure5 + closure6 + closure7 + closure8 + closure9 + closure10 + closure11 + closure12 + closure13 + closure14 + closure15'
+modelClo.est <- cfa(modelClo, data = data_Q_total, std.lv = TRUE)
 summary(modelClo.est, fit.measures = T, standardized = T)
 modindices(modelClo.est, sort = T)
 
@@ -1100,38 +1051,26 @@ modindices(modelClo.est, sort = T)
 # https://www.midss.org/sites/default/files/need_for_closure_scale.pdf
 # Not entirely sure if this is the correct file but it says to sum so I'll do that here
 
-# Calculating Sum score
+# Calculate Sum score
 data_Q_total$CloSum <- rowSums(cbind(data_Q_total$closure1, data_Q_total$closure2, data_Q_total$closure3, data_Q_total$closure4, data_Q_total$closure5, data_Q_total$closure6, data_Q_total$closure7, data_Q_total$closure8, data_Q_total$closure9, data_Q_total$closure10, data_Q_total$closure11, data_Q_total$closure12, data_Q_total$closure13, data_Q_total$closure14, data_Q_total$closure15), na.rm = TRUE)
 
+# NOTE: what is this?
+# data_Q_total$CloSum[which(data_Q_total$CloSum == 0)] <- NA
 
-data_Q_total$CloSum[which(data_Q_total$CloSum == 0)] <- NA
-
-# sample level
-# sample level is actually normally distributed
-
-summary(data_Q_total$CloSum)
-
-data_Q_total$CloSum[which(data_Q_total$CloSum > 75)] <- NA
-
-
+# Factor/sum score level assumptions
+describe(data_Q_total$CloSum)[c("mean", "skew", "kurtosis")]
+# data_Q_total$CloSum[which(data_Q_total$CloSum > 75)] <- NA # ???
 shapiro.test(data_Q_total$CloSum)
+hist(data_Q_total$CloSum, 
+     main = "Need for Closure", 
+     col = rainbow(14), 
+     ylim = c(0, 12), 
+     breaks = seq(0, 80, 1), 
+     xlab = "")
 
-#hist(data_Q_total$CloSum, main = "Need for Closure", col = rainbow(14), ylim = c(0, 12), breaks = seq(0, 80, 1), xlab = "")
-
-#NFC_task <- describe(data_Q_total$CloSum)
-#row.names(NFC_task) <- c("CloSum")
-#View(NFC_task)
-
-# basic alpha reliability
-
-tibble::as_tibble(data_Q_total)
-
-# already reverse scored
-NeedforClos <- select(data_Q_total, closure1, closure2, closure3, closure4, closure5, closure6, closure7, closure8, closure9, closure10, closure11, closure12, closure13, closure14, closure15)
-
+# Cronbach's alpha
+NeedforClos <- data_Q_total[, need_clo]
 alpha(NeedforClos)
-# raw alpha 0.84
-# reliability if item dropped; 1 item higher to .85
 
 ```
 
