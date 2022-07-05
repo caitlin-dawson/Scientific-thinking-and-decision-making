@@ -24,7 +24,7 @@ library(dplyr)
 # library(ggplot2)
 # library(GPArotation)
 # library(lavaan)
-# library(psych)
+library(psych)
 # library(psycho)
 # library(tidyr)
 # library(tidyverse)
@@ -552,54 +552,42 @@ data_Q_total <- data_Q_total %>%
 
 ```
 
-
-# WHERE YOU LEFT OFF
-
 # Questionnaire processing 
 
 The following chunks deal with TIPI, EC, IH, AOT, NFC, and NFcog. They remove bad quality data from each questionnaire, run CFA on all but TIPI, and calculate sum scores. 
 
-The data from each questionnaire is checked: if a participant was suspiciously quick at responding to the questionnaire (<1s/item), that participant's data for that questionnaire is replaced with NAs. After this, items are reverse-coded (if necessary), the structure is checked with CFA (prior to which the distributions of the items are checked so that CFA assumptions are met), and sum scores/mean scores are calculated for each questionnaire according to the scoring instructions.
+The data from each questionnaire is checked: if a participant was suspiciously quick at responding to the questionnaire (<1s/item), that participant's data for that questionnaire is replaced with NAs. After this, the relevant items are reverse-coded, the structure is checked with CFA (prior to which the distributions of the items are checked so that CFA assumptions are met), and sum scores/mean scores are calculated for each questionnaire according to the scoring instructions.
 
 **NOTE: double FA is not an issue? (i.e., first running CFA for each and then doing the EFA)**
 
 Additionally, for scales that have reverse-coded items, if 95% of a participant's responses fall on the same response, their data for that scale are replaced with NAs (this indicates that they have not even read the questions properly).
 
-**NOTE: only for reverse-coded items?**
+**NOTE: only for reverse-coded items? Are we sure about the 95% threshold?**
 
-****Note to self: check the issues with CFA: single factor, methods, nonnormality, model indices****
+***Note to self: check the issues with CFA: single factor, methods, nonnormality, model indices***
 
-***GENERAL CFA NOTES***
+## CFA
+
 Maximum Likelihood Estimation (MLE) assumes large sample size, normality of data, and continuous data; if data are non-normal, we should use robust MLE; if data are ordinal, we should use unweighted least squares or diagonally weighted least squares.
 
-estimator = "MLF" or "MLR" for incomplete data, robust estimator 
-https://lavaan.ugent.be/tutorial/est.html 
+It is common to still treat data as continuous if there are more than 5 response options in your scale and participants are using the full range of responses. This is due to the fact that MLE has benefits that WLS doesn't have. 
 
-Should be noted that it is common to still treat data as continuous if there are more than 5 response options in your scale and participants are using the full range of responses. This is due to the fact that MLE has benefits that WLS doesn't have. **This should be discussed.** 
+**NOTE: This should be discussed.** 
 
-The default scaling constraint/identifcation constraints imposed when using the cfa() function are to fix the loading of the first item of each latent variable to 1. We can override this by setting std.lv = TRUE. This will instead scale the latent variables **(their variances)** by fixing them to 1.
-https://stats.stackexchange.com/questions/134348/when-a-cfa-model-has-a-covariance-matrix-was-not-positive-definite-problem-is : there are problems with this model (as expected) due to small sample size in the pilot data; this should hopefully not be an issue once the actual data is being analysed
-
-summary(modelB5.est, fit.measures = T, standardised = T) 
-
-look at SRMR and RMSEA (<.05) and CFI and TLI (>.95); These will tell you whether the hypothesized model fits the data or not
-
-modindices(modelB5.est, sort = T) 
-this allows us to look at the local mis-fit
+The default scaling constraint/identifcation constraints imposed when using the cfa() function are to fix the loading of the first item of each latent variable to 1. We can override this by setting std.lv = TRUE. This will instead scale the latent variables by fixing thir variances to 1.
 
 Some parameters are estimated or fixed by default when you estimate the model with the cfa() function. In this case, the residual factor variances and loadings are missing because the former are estimated by default and the latter are fixed to 1 by default. Latent factor variances are also estimated by default.
-
-modelB5.est<-cfa(modelB5, data = data_Q_total, std.lv = TRUE)
 
 https://journals.sagepub.com/doi/pdf/10.1177/0734282911406653 
 https://link.springer.com/article/10.3758/s13428-015-0619-7
 
-ASSUMPTIONS
-Large sample size: we will probably have that
-Normality of the data: this needs to be checked (plotting, Shapiro-Wilks)
-Kolmogorov-smirnov is better for larger datasets, but they both have the problem of being oversensitive in large sets
-Continuous data: Likert-scales are not continuous; some sources assert that it's ok to use MLE when you have a certain number of response options (typically 5 or more)
-It is especially safe to treat Likert data as continuous if there 5 or more response options AND participants are actually using all of them. 
+### CFA Assumptions
+
+* Large sample size: we will probably have that (?)
+* Normality of the data: this needs to be checked (plotting, Shapiro-Wilks)
+    + Kolmogorov-smirnov is better for larger datasets, but they both have the problem of being oversensitive in large sets
+* Continuous data: Likert-scales are not continuous; some sources assert that it's ok to use MLE when you have a certain number of response options (typically 5 or more)
+    + It is especially safe to treat Likert data as continuous if there 5 or more response options AND participants are actually using all of them. 
 
 ***NOTES ON RELIABILITY***
 
@@ -614,125 +602,111 @@ CFA or reliability are not calculated for TIPI, see Gosling's website for explan
 
 ```{r Scoring TIPI, include = FALSE}
 
-## Big Five (range 1-7)
+# Big Five
 
 # Exclusion criteria
-  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
-  # minimum response time (if participant was too quick to fill the survey;(1s/item -> 10000ms total)
+  # distribution of responses for each survey per participant: if >= 95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
+  # minimum response time (if participant was too quick to fill the survey; (1s/item -> 10000ms total)
 
 # Distribution of responses: Here, I look at the table/distribution of responses for each survey (Big 5 in this context) for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value) If B5 = 1, that participant's B5 data should be omitted/replaced with NAs
 
 data_Q_total <- data_Q_total %>%
- mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) > = .95) | (END.QUESTIONNAIRE.BIG5 < = 10000) ~ 1, 
+  mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) >= .95) | (END.QUESTIONNAIRE.BIG5 <= 10000) ~ 1, 
      ((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)) < .95) & (END.QUESTIONNAIRE.BIG5 > 10000) ~ 0))) 
  
 # Omitting B5 data based on the B5_omit column
-data_Q_total$agreeablenessNormal[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$agreeablenessReverse[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$conscientiousnessNormal[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$conscientiousnessReverse[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$extroversionNormal[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$extroversionReverse[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$opennessNormal[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$opennessReverse[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$emotionalStabilityNormal[which(data_Q_total$B5_omit == 1)] <- NA
-data_Q_total$emotionalStabilityReverse[which(data_Q_total$B5_omit == 1)] <- NA
+data_Q_total[which(data_Q_total$B5_omit == 1), c("agreeablenessNormal", "agreeablenessReverse", "conscientiousnessNormal", "conscientiousnessReverse", "extroversionNormal", "extroversionReverse", "emotionalStabilityNormal", "emotionalStabilityReverse", "opennessNormal", "opennessReverse")] <- NA
 
-# Reverse-coding
-data_Q_total$agreeableness.rev <- reverse.code(keys = c(-1), items = data_Q_total$agreeablenessReverse, mini = c(1), maxi = c(7)) 
-data_Q_total$emostability.rev <- reverse.code(keys = c(-1), items = data_Q_total$emotionalStabilityReverse, mini = c(1), maxi = c(7))
-data_Q_total$extroversion.rev <- reverse.code(keys = c(-1), items = data_Q_total$extroversionReverse, mini = c(1), maxi = c(7))
-data_Q_total$conscientiousness.rev <- reverse.code(keys = c(-1), items = data_Q_total$conscientiousnessReverse, mini = c(1), maxi = c(7))
-data_Q_total$openness.rev <- reverse.code(keys = c(-1), items = data_Q_total$opennessReverse, mini = c(1), maxi = c(7))
+# Reverse-code
+num <- c(which(colnames(data_Q_total) == "agreeablenessReverse"),
+         which(colnames(data_Q_total) == "emotionalStabilityReverse"),
+         which(colnames(data_Q_total) == "extroversionReverse"),
+         which(colnames(data_Q_total) == "conscientiousnessReverse"),
+         which(colnames(data_Q_total) == "opennessReverse"))
 
+for (i in 1:length(num)) {
+  data_Q_total[, num[i]] <- reverse.code(keys = c(-1), 
+                                         items = data_Q_total[, num[i]], 
+                                         mini = c(1), 
+                                         maxi = c(7)) 
+}
 
-# Item level
+# Item level Assumptions
+
 # Normality assumption
-
-# Visualising the data
-#par(mfrow = c(2, 5))
-#hist(data_Q_total$agreeablenessNormal, main = "Agreeableness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$agreeableness.rev, main = "Reversed Agreeableness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$emotionalStabilityNormal, main = "EmotionalStability", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$emostability.rev, main = "Reversed EmotionalStability", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$extroversionNormal, main = "Extroversion", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$extroversion.rev, main = "Reversed Extroversion", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$conscientiousnessNormal, main = "Conscientiousness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$conscientiousness.rev, main = "Reversed Conscientiousness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$opennessNormal, main = "Openness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$openness.rev, main = "Reversed Openness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-
-# Describe (skew, kurtosis, mean)
-#TIPI_items <- (describe(data_Q_total$agreeablenessNormal))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$agreeableness.rev))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$emotionalStabilityNormal))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$emostability.rev))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$extroversionNormal))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$extroversion.rev))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$conscientiousnessNormal))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$conscientiousness.rev))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$opennessNormal))
-#TIPI_items <- rbind(TIPI_items, describe(data_Q_total$openness.rev))
-#row.names(TIPI_items) <- c("AN", "AR", "EN", "ER", "EXN", "EXR", "CN", "CR", "ON", "OR")
-#View(TIPI_items)
-
-
+# Visualize
+b5 <- c(which(colnames(data_Q_total) == "agreeablenessNormal"),
+        which(colnames(data_Q_total) == "emotionalStabilityNormal"),
+        which(colnames(data_Q_total) == "extroversionNormal"),
+        which(colnames(data_Q_total) == "conscientiousnessNormal"),
+        which(colnames(data_Q_total) == "opennessNormal"),
+        which(colnames(data_Q_total) == "agreeablenessReverse"),
+        which(colnames(data_Q_total) == "emotionalStabilityReverse"),
+        which(colnames(data_Q_total) == "extroversionReverse"),
+        which(colnames(data_Q_total) == "conscientiousnessReverse"),
+        which(colnames(data_Q_total) == "opennessReverse"))
+par(mfrow = c(2, 5))
+for (i in 1:length(b5)) {
+  hist(data_Q_total[, b5[i]],
+       main = colnames(data_Q_total[b5[i]]),
+       col = sample(colors(), 1),
+       ylim = c(0, 60),
+       breaks = seq(0, 7, 1),
+       xlab = ""
+       )
+}
+# Describe: skew, kurtosis, mean
+describe(data_Q_total[, b5])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-# If p<.05, we need to look into it
-# they're all signficant
-#shapiro.test(data_Q_total$agreeablenessNormal)
-#shapiro.test(data_Q_total$agreeableness.rev)
-#shapiro.test(data_Q_total$emotionalStabilityNormal)
-#shapiro.test(data_Q_total$emostability.rev)
-#shapiro.test(data_Q_total$extroversionNormal)
-#shapiro.test(data_Q_total$extroversion.rev)
-#shapiro.test(data_Q_total$conscientiousnessNormal)
-#shapiro.test(data_Q_total$conscientiousness.rev)
-#shapiro.test(data_Q_total$opennessNormal)
-#shapiro.test(data_Q_total$openness.rev) 
+shapiro_p_b5 <- data.frame(name = rep(0, 10), p_value = rep(0, 10))
+for (i in 1:length(b5)) {
+  shapiro_p_b5$name[i] <- colnames(data_Q_total[b5[i]])
+  shapiro_p_b5$p_value[i] <- shapiro.test(data_Q_total[, b5[i]])["p.value"][[1]]
+}
 
-# Big 5 Scoring instructions
-# http://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/ 
+# Calculate means
+data_Q_total$AMean <- rowMeans(cbind(data_Q_total$agreeablenessNormal, 
+                                     data_Q_total$agreeablenessReverse), 
+                               na.rm = TRUE)
+data_Q_total$CMean <- rowMeans(cbind(data_Q_total$conscientiousnessNormal,
+                                     data_Q_total$conscientiousnessReverse),
+                               na.rm = TRUE)
+data_Q_total$EMean <- rowMeans(cbind(data_Q_total$extroversionNormal,
+                                     data_Q_total$extroversionReverse), 
+                               na.rm = TRUE)
+data_Q_total$ESMean <- rowMeans(cbind(data_Q_total$emotionalStabilityNormal,
+                                      data_Q_total$emostabilityReverse), 
+                                na.rm = TRUE)
+data_Q_total$OMean <- rowMeans(cbind(data_Q_total$opennessNormal,
+                                     data_Q_total$opennessReverse), 
+                               na.rm = TRUE)
 
-# Means
-data_Q_total$AMean <- rowMeans(cbind(data_Q_total$agreeablenessNormal, data_Q_total$agreeableness.rev), na.rm = TRUE)
-data_Q_total$CMean <- rowMeans(cbind(data_Q_total$conscientiousnessNormal, data_Q_total$conscientiousness.rev), na.rm = TRUE)
-data_Q_total$EMean <- rowMeans(cbind(data_Q_total$extroversionNormal, data_Q_total$extroversion.rev), na.rm = TRUE)
-data_Q_total$ESMean <- rowMeans(cbind(data_Q_total$emotionalStabilityNormal, data_Q_total$emostability.rev), na.rm = TRUE)
-data_Q_total$OMean <- rowMeans(cbind(data_Q_total$opennessNormal, data_Q_total$openness.rev), na.rm = TRUE)
+# Factor level assumptions
 
-# describing factor scores
-#TIPI_task <- (describe(data_Q_total$AMean))
-#TIPI_task <- rbind(TIPI_task, describe(data_Q_total$CMean))
-#TIPI_task <- rbind(TIPI_task, describe(data_Q_total$EMean))
-#TIPI_task <- rbind(TIPI_task, describe(data_Q_total$ESMean))
-#TIPI_task <- rbind(TIPI_task, describe(data_Q_total$OMean))
-#row.names(TIPI_task) <- c("AMean", "CMean", "EMean", "ESMean", "OMean")
-#View(TIPI_task)
-
-# not working
-#abs.skew <- (mean(as.numeric(data_Q_total$AMean, na.rm = TRUE)- median(as.numeric(data_Q_total$AMean, na.rm = TRUE))))
-
+# Normality assumption
+# Visualize
+b5_mean <- c(which(colnames(data_Q_total) == "AMean"),
+             which(colnames(data_Q_total) == "OMean"),
+             which(colnames(data_Q_total) == "EMean"), 
+             which(colnames(data_Q_total) == "CMean"),
+             which(colnames(data_Q_total) == "ESMean"))
+par(mfrow = c(2, 3))
+for (i in 1:length(b5_mean)) {
+  hist(data_Q_total[, b5_mean[i]],
+       main = colnames(data_Q_total[b5_mean[i]]),
+       col = sample(colors(), 1),
+       breaks = seq(0, 7, 1),
+       xlab = ""
+       )
+}
+# Describe mean/factor scores
+describe(data_Q_total[, b5_mean])[c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-#If p<.05, we need to look into it
-#they're all signficant
-#shapiro.test(data_Q_total$AMean)
-#shapiro.test(data_Q_total$CMean)
-#shapiro.test(data_Q_total$EMean)
-#shapiro.test(data_Q_total$ESMean)
-#shapiro.test(data_Q_total$OMean)
-
-
-# outliers not really relevant here
-
-
-# visualizing B5 total scores
-#par(mfrow = c(2, 3))
-#hist(data_Q_total$AMean, main = "Agreeableness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$CMean, main = "Conscientiousness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$EMean, main = "Extroversion", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$ESMean, main = "Emotional Stability", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$OMean, main = "Openness", col = rainbow(14), ylim = c(0, 60), breaks = seq(0, 7, 1), xlab = "")
+shapiro_p_b5_mean <- data.frame(name = rep(0, 5), p_value = rep(0, 5))
+for (i in 1:length(b5_mean)) {
+  shapiro_p_b5_mean$name[i] <- colnames(data_Q_total[b5_mean[i]])
+  shapiro_p_b5_mean$p_value[i] <- shapiro.test(data_Q_total[, b5_mean[i]])["p.value"][[1]]
+}
 
 ```
 
