@@ -604,37 +604,6 @@ CFA or reliability are not calculated for TIPI, see Gosling's website for explan
 
 # Big Five
 
-# Exclusion criteria
-  # distribution of responses for each survey per participant: if >= 95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
-  # minimum response time (if participant was too quick to fill the survey; (1s/item -> 10000ms total)
-
-# Distribution of responses: Here, I look at the table/distribution of responses for each survey (Big 5 in this context) for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value) If B5 = 1, that participant's B5 data should be omitted/replaced with NAs
-
-data_Q_total <- data_Q_total %>%
-  mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) >= .95) | (END.QUESTIONNAIRE.BIG5 <= 10000) ~ 1, 
-     ((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)) < .95) & (END.QUESTIONNAIRE.BIG5 > 10000) ~ 0))) 
- 
-# Omit B5 data based on the B5_omit column
-data_Q_total[which(data_Q_total$B5_omit == 1), c("agreeablenessNormal", "agreeablenessReverse", "conscientiousnessNormal", "conscientiousnessReverse", "extroversionNormal", "extroversionReverse", "emotionalStabilityNormal", "emotionalStabilityReverse", "opennessNormal", "opennessReverse")] <- NA
-
-# Reverse-code
-num <- c(which(colnames(data_Q_total) == "agreeablenessReverse"),
-         which(colnames(data_Q_total) == "emotionalStabilityReverse"),
-         which(colnames(data_Q_total) == "extroversionReverse"),
-         which(colnames(data_Q_total) == "conscientiousnessReverse"),
-         which(colnames(data_Q_total) == "opennessReverse"))
-
-for (i in 1:length(num)) {
-  data_Q_total[, num[i]] <- reverse.code(keys = c(-1), 
-                                         items = data_Q_total[, num[i]], 
-                                         mini = c(1), 
-                                         maxi = c(7)) 
-}
-
-# Item level Assumptions
-
-# Normality assumption
-# Visualize
 b5 <- c(which(colnames(data_Q_total) == "agreeablenessNormal"),
         which(colnames(data_Q_total) == "emotionalStabilityNormal"),
         which(colnames(data_Q_total) == "extroversionNormal"),
@@ -645,12 +614,47 @@ b5 <- c(which(colnames(data_Q_total) == "agreeablenessNormal"),
         which(colnames(data_Q_total) == "extroversionReverse"),
         which(colnames(data_Q_total) == "conscientiousnessReverse"),
         which(colnames(data_Q_total) == "opennessReverse"))
+b5_rev <- c(which(colnames(data_Q_total) == "agreeablenessReverse"),
+            which(colnames(data_Q_total) == "emotionalStabilityReverse"),
+            which(colnames(data_Q_total) == "extroversionReverse"),
+            which(colnames(data_Q_total) == "conscientiousnessReverse"),
+            which(colnames(data_Q_total) == "opennessReverse"))
+
+# Exclusion criteria
+  # distribution of responses for each survey per participant: if >= 95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (B5 has reverse-coded items so this applies here)
+  # minimum response time (if participant was too quick to fill the survey; (1s/item -> 10000ms total)
+
+# Distribution of responses: Here, I look at the table/distribution of responses for each survey (Big 5 in this context) for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value) If B5 = 1, that participant's B5 data should be omitted/replaced with NAs
+
+data_Q_total <- data_Q_total %>% 
+  mutate(B5_max = max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)), na.rm = TRUE) /
+           sum(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)), na.rm = TRUE))
+
+data_Q_total <- data_Q_total %>% 
+  mutate(B5_omit = case_when(B5_max >= .95 | END.QUESTIONNAIRE.BIG5 <= 1000*length(b5) ~ 1,
+                             B5_max < .95 & END.QUESTIONNAIRE.BIG5 > 1000*length(b5) ~ 0))
+ 
+# Omit B5 data based on the B5_omit column
+data_Q_total[which(data_Q_total$B5_omit == 1), b5] <- NA
+# NOTE: if we want to omit participants with only NAs, we use B5_omit != 0
+
+# Reverse-code
+for (i in 1:length(b5_rev)) {
+  data_Q_total[, b5_rev[i]] <- reverse.code(keys = c(-1), 
+                                            items = data_Q_total[, b5_rev[i]],
+                                            mini = c(1), 
+                                            maxi = c(7)) 
+}
+
+# Item level Assumptions
+
+# Normality assumption
+# Visualize
 par(mfrow = c(2, 5))
 for (i in 1:length(b5)) {
-  hist(data_Q_total[, b5[i]],
+  hist(as.numeric(data_Q_total[, b5[i]]),
        main = colnames(data_Q_total[b5[i]]),
        col = sample(colors(), 1),
-       ylim = c(0, 60),
        breaks = seq(0, 7, 1),
        xlab = ""
        )
@@ -658,7 +662,8 @@ for (i in 1:length(b5)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, b5])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_b5 <- data.frame(name = rep(0, 10), p_value = rep(0, 10))
+shapiro_p_b5 <- data.frame(name = rep(0, length(b5)), 
+                           p_value = rep(0, length(b5)))
 for (i in 1:length(b5)) {
   shapiro_p_b5$name[i] <- colnames(data_Q_total[b5[i]])
   shapiro_p_b5$p_value[i] <- shapiro.test(data_Q_total[, b5[i]])["p.value"][[1]]
@@ -702,7 +707,8 @@ for (i in 1:length(b5_mean)) {
 # Describe mean/factor scores
 describe(data_Q_total[, b5_mean])[c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_b5_mean <- data.frame(name = rep(0, 5), p_value = rep(0, 5))
+shapiro_p_b5_mean <- data.frame(name = rep(0, length(b5_mean)), 
+                                p_value = rep(0, length(b5_mean)))
 for (i in 1:length(b5_mean)) {
   shapiro_p_b5_mean$name[i] <- colnames(data_Q_total[b5_mean[i]])
   shapiro_p_b5_mean$p_value[i] <- shapiro.test(data_Q_total[, b5_mean[i]])["p.value"][[1]]
@@ -721,20 +727,6 @@ I am also wondering if there is a way to do the big EFA with all the items (i.e.
 
 # Epistemic Curiosity
 
-# Exclusion criteria
-  # min response time (1s/item -> 10000ms total)
-
-data_Q_total <- data_Q_total %>%
- mutate(EpiCur_omit = case_when(END.QUESTIONNAIRE.EPISTEMIC <= 10000 ~ 1, 
-                                END.QUESTIONNAIRE.EPISTEMIC > 10000 ~ 0))
-
-# Omit Epistemic Curiosity data based on the EpiCur_omit column
-data_Q_total[which(data_Q_total$EpiCur_omit == 1), c(paste0("Icuriosity", 1:5), paste0("Dcuriosity", 1:5))] <- NA
-
-## Item level assumptions
-
-# Normality assumption
-# Visualize
 epicur <- c()
 for (j in 1:2) {
   if (j == 1) {
@@ -747,6 +739,15 @@ for (j in 1:2) {
     }
   }
 }
+
+# Exclusion criteria
+  # min response time (1s/item -> 10000ms total)
+data_Q_total[which(data_Q_total$END.QUESTIONNAIRE.EPISTEMIC <= 1000*length(epicur)), epicur] <- NA
+
+# Item-level assumptions
+
+# Normality assumption
+# Visualize
 par(mfrow = c(2, 5))
 for (i in 1:length(epicur)) {
   hist(data_Q_total[, epicur[i]],
@@ -759,7 +760,8 @@ for (i in 1:length(epicur)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, epicur])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_epicur <- data.frame(name = rep(0, 10), p_value = rep(0, 10))
+shapiro_p_epicur <- data.frame(name = rep(0, length(epicur)), 
+                               p_value = rep(0, length(epicur)))
 for (i in 1:length(epicur)) {
   shapiro_p_epicur$name[i] <- colnames(data_Q_total[epicur[i]])
   shapiro_p_epicur$p_value[i] <- shapiro.test(data_Q_total[, epicur[i]])["p.value"][[1]]
@@ -783,7 +785,8 @@ modindices(modelEpi.est, sort = T)
 data_Q_total$ICuriositySum <- rowSums(cbind(data_Q_total$Icuriosity1, data_Q_total$Icuriosity2, data_Q_total$Icuriosity3, data_Q_total$Icuriosity4, data_Q_total$Icuriosity5), na.rm = TRUE)
 data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_total$Dcuriosity2, data_Q_total$Dcuriosity3, data_Q_total$Dcuriosity4, data_Q_total$Dcuriosity5), na.rm = TRUE)
 
-# Factor level assumptions
+# Factor/sum score level assumptions
+
 # Normality assumption
 # Visualize
 epicur_sum <- c(which(colnames(data_Q_total) == "ICuriositySum"),
@@ -814,13 +817,15 @@ for (i in 1:length(epicur_sum)) {
 describe(data_Q_total[, c(epicur_sum)])[, c("mean", "skew", "kurtosis")]
 
 # Shapiro-Wilks tests
-shapiro_p_epicur_sum <- data.frame(name = rep(0, 2), p_value = rep(0, 2))
+shapiro_p_epicur_sum <- data.frame(name = rep(0, length(epicur_sum)), 
+                                   p_value = rep(0, length(epicur_sum)))
 for (i in 1:length(epicur_sum)) {
   shapiro_p_epicur_sum$name[i] <- colnames(data_Q_total[epicur_sum[i]])
   shapiro_p_epicur_sum$p_value[i] <- shapiro.test(data_Q_total[, epicur_sum[i]])["p.value"][[1]]
 }
 
 ```
+
 NOTE: do we want to already check assumptions for CFA here? it seems very jumpy that we go from exclusion criteria and data cleaning to assumption checks.
 
 ## Intellectual Humility
@@ -855,7 +860,6 @@ IH <- c(which(colnames(data_Q_total) == "IH1rev1"),
         which(colnames(data_Q_total) == "IH20rev4"),
         which(colnames(data_Q_total) == "IH21rev4"),
         which(colnames(data_Q_total) == "IH22rev4"))
-
 IH_rev <- c(which(colnames(data_Q_total) == "IH1rev1"),
             which(colnames(data_Q_total) == "IH2rev1"),
             which(colnames(data_Q_total) == "IH3rev1"),
@@ -869,12 +873,17 @@ IH_rev <- c(which(colnames(data_Q_total) == "IH1rev1"),
             which(colnames(data_Q_total) == "IH22rev4"))
 
 # Distribution of responses & min response time
-data_Q_total <- data_Q_total %>%
-  mutate(IH_omit = case_when(((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4))) >= .95) | (END.QUESTIONNAIRE.INT.HUM <= 22000) ~ 1, 
-     ((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)) < .95) & (END.QUESTIONNAIRE.INT.HUM > 22000) ~ 0))) 
+data_Q_total <- data_Q_total %>% 
+  mutate(IH_max = max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)), na.rm = TRUE) /
+           sum(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)), na.rm = TRUE))
 
+data_Q_total <- data_Q_total %>% 
+  mutate(IH_omit = case_when(IH_max >= .95 | END.QUESTIONNAIRE.INT.HUM <= 1000*length(IH) ~ 1,
+                             IH_max < .95 & END.QUESTIONNAIRE.INT.HUM > 1000*length(IH) ~ 0))
+ 
 # Omit IH data based on the IH_omit column
 data_Q_total[which(data_Q_total$IH_omit == 1), IH] <- NA
+# NOTE: if we want to omit participants with only NAs, we use IH_omit != 0
 
 # Reverse-coding
 for (i in 1:length(IH_rev)) {
@@ -902,7 +911,7 @@ for (i in 1:length(IH)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, IH])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_IH <- data.frame(name = rep(0, 22), p_value = rep(0, 22))
+shapiro_p_IH <- data.frame(name = rep(0, length(IH)), p_value = rep(0, length(IH)))
 for (i in 1:length(IH)) {
   shapiro_p_IH$name[i] <- colnames(data_Q_total[IH[i]])
   shapiro_p_IH$p_value[i] <- shapiro.test(data_Q_total[, IH[i]])["p.value"][[1]]
@@ -979,7 +988,8 @@ for (i in 1:length(IH_sum)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, IH_sum])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_IH_sum <- data.frame(name = rep(0, 4), p_value = rep(0, 4))
+shapiro_p_IH_sum <- data.frame(name = rep(0, length(IH_sum)), 
+                               p_value = rep(0, length(IH_sum)))
 for (i in 1:length(IH_sum)) {
   shapiro_p_IH_sum$name[i] <- colnames(data_Q_total[IH_sum[i]])
   shapiro_p_IH_sum$p_value[i] <- shapiro.test(data_Q_total[, IH_sum[i]])["p.value"][[1]]
@@ -993,23 +1003,17 @@ for (i in 1:length(IH_sum)) {
 
 # Need for Closure
 
-# Exclusion criteria
-  # Response time (1s/item -> 15000ms total)
-
-data_Q_total <- data_Q_total %>%
-  mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO <= 15000 ~ 1, 
-                              END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
-
-# NOTE: who needs to be excluded here?
-# add: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
-
 need_clo <- c()
 for (i in 1:15) {
   need_clo <- c(need_clo, which(colnames(data_Q_total) == paste0("closure", i)))
 }
 
-# Omit Need for closure data based on Clo_omit
-data_Q_total[which(data_Q_total$Clo_omit == 1), need_clo] <- NA
+# Exclusion criteria
+  # Response time (1s/item -> 15000ms total)
+
+data_Q_total[which(data_Q_total$END.QUESTIONNAIRE.NEED.CLO <= 1000*length(need_clo)), need_clo] <- NA
+# NOTE: who needs to be excluded here?
+# add: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
 
 # Checking structure with CFA
 
@@ -1029,7 +1033,8 @@ for (i in 1:length(need_clo)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, need_clo])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_need_clo <- data.frame(name = rep(0, 15), p_value = rep(0, 15))
+shapiro_p_need_clo <- data.frame(name = rep(0, length(need_clo)), 
+                                 p_value = rep(0, length(need_clo)))
 for (i in 1:length(need_clo)) {
   shapiro_p_need_clo$name[i] <- colnames(data_Q_total[need_clo[i]])
   shapiro_p_need_clo$p_value[i] <- shapiro.test(data_Q_total[, need_clo[i]])["p.value"][[1]]
@@ -1043,7 +1048,9 @@ round(cor(data_Q_total[, need_clo],
           method = "spearman",
           use = "pairwise.complete.obs"), 2)
 modelClo <- 'Closure =~ closure1 + closure2 + closure3 + closure4 + closure5 + closure6 + closure7 + closure8 + closure9 + closure10 + closure11 + closure12 + closure13 + closure14 + closure15'
-modelClo.est <- cfa(modelClo, data = data_Q_total, std.lv = TRUE)
+modelClo.est <- cfa(modelClo, 
+                    data = data_Q_total, 
+                    std.lv = TRUE)
 summary(modelClo.est, fit.measures = T, standardized = T)
 modindices(modelClo.est, sort = T)
 
@@ -1114,19 +1121,24 @@ need_cog_rev <- c(which(colnames(data_Q_total) == "cognition3.rev"),
                   which(colnames(data_Q_total) == "cognition17.rev"))
 
 # Distribution of responses & response time
-data_Q_total <- data_Q_total %>%
-  mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) >= .95) | (END.QUESTIONNAIRE.NEED.COG <= 18000) ~ 1, 
-     ((max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)) < .95) & (END.QUESTIONNAIRE.NEED.COG > 18000) ~ 0))) 
+data_Q_total <- data_Q_total %>% 
+  mutate(Cog_max = max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)), na.rm = TRUE) /
+           sum(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)), na.rm = TRUE))
 
-# Omit Need for cognition data based on Cog_omit column
+data_Q_total <- data_Q_total %>% 
+  mutate(Cog_omit = case_when(Cog_max >= .95 | END.QUESTIONNAIRE.NEED.COG <= 1000*length(need_cog) ~ 1,
+                             Cog_max < .95 & END.QUESTIONNAIRE.NEED.COG > 1000*length(need_cog) ~ 0))
+ 
+# Omit Cog data based on the Cog_omit column
 data_Q_total[which(data_Q_total$Cog_omit == 1), need_cog] <- NA
+# NOTE: if we want to omit participants with only NAs, we use Cog_omit != 0
 
 # Reverse-coding
-for (i in length(need_cog_rev)) {
-  data_Q_total[, need_cog_rev[i]] <- reverse.code(keys = c(-1), 
-                                              items = data_Q_total[, need_cog_rev[i]], 
-                                              mini = c(1), 
-                                              maxi = c(6))
+for (i in 1:length(need_cog_rev)) {
+  data_Q_total[, need_cog_rev[i]] <- reverse.code(keys = c(-1),
+                                                  items = data_Q_total[, need_cog_rev[i]],
+                                                  mini = c(1),
+                                                  maxi = c(6))
 }
 
 # Check structure with CFA
@@ -1147,7 +1159,8 @@ for (i in 1:length(need_cog)) {
 # Describe: skew, kurtosis, mean
 describe(data_Q_total[, need_cog])[, c("mean", "skew", "kurtosis")]
 # Shapiro-Wilks test
-shapiro_p_need_cog <- data.frame(name = rep(0, 18), p_value = rep(0, 18))
+shapiro_p_need_cog <- data.frame(name = rep(0, length(need_cog)), 
+                                 p_value = rep(0, length(need_cog)))
 for (i in 1:length(need_cog)) {
   shapiro_p_need_cog$name[i] <- colnames(data_Q_total[need_cog[i]])
   shapiro_p_need_cog$p_value[i] <- shapiro.test(data_Q_total[, need_cog[i]])["p.value"][[1]]
@@ -1158,9 +1171,9 @@ round(cor(data_Q_total[, need_cog],
           method = "spearman",
           use = "pairwise.complete.obs"), 2)
 modelCog <- 'Cognition =~ cognition1 + cognition2 + cognition3.rev + cognition4.rev + cognition5.rev + cognition6 + cognition7.rev + cognition8.rev + cognition9.rev + cognition10 + cognition11 + cognition12.rev + cognition13 + cognition14 + cognition15 + cognition16.rev + cognition17.rev + cognition18'
-modelCog.est<-cfa(modelCog, 
-                  data = data_Q_total, 
-                  std.lv = TRUE)
+modelCog.est <- cfa(modelCog, 
+                    data = data_Q_total, 
+                    std.lv = TRUE)
 summary(modelCog.est, fit.measures = T, standardized = T)
 modindices(modelCog.est, sort = T)
 
@@ -1186,9 +1199,6 @@ hist(data_Q_total$CogSum,
 # Cronbach's alpha
 NeedforCog <- data_Q_total[, need_cog]
 alpha(NeedforCog)
-# raw alpha 0.88
-# reliability if item dropped; 2 items higher to .89
-# item distribution very skewed
 
 ```
 
@@ -1196,78 +1206,68 @@ alpha(NeedforCog)
 
 ```{r Scoring actively openminded thinking, include = FALSE}
 
-## Actively Openminded Thinking (range 1-7)
+# Actively Openminded Thinking
+
+aot <- c("openReverse1", "openReverse2", "openReverse3", "openReverse4", "openNormal1", "openNormal2", "openNormal3")
+aot_rev <- c("openReverse1", "openReverse2", "openReverse3", "openReverse4")
 
 # Exclusion criteria
   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
   # response time (1s/item -> 7000ms total)
 
 ## Distribution of responses & min response time
+data_Q_total <- data_Q_total %>% 
+  mutate(AOT_max = max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)), na.rm = TRUE) /
+           sum(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)), na.rm = TRUE))
 
-data_Q_total <- data_Q_total %>%
- mutate(AOT_omit = case_when(((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) >= .95) | (END.QUESTIONNAIRE.OPEN.THINK <= 7000) ~ 1, 
-     ((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)) < .95) & (END.QUESTIONNAIRE.OPEN.THINK > 7000) ~ 0))) # again, if AOT_omit = 1, that participant's AOT data should be omitted
-
-# Omitting AOT data based on the AOT_omit column
-data_Q_total$openNormal1[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openNormal2[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openNormal3[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openReverse1[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openReverse2[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openReverse3[which(data_Q_total$AOT_omit == 1)] <- NA
-data_Q_total$openReverse4[which(data_Q_total$AOT_omit == 1)] <- NA
-
-# Using MLE for nor as range is >5
+data_Q_total <- data_Q_total %>% 
+  mutate(AOT_omit = case_when(AOT_max >= .95 | END.QUESTIONNAIRE.OPEN.THINK <= 1000*length(aot) ~ 1,
+                             AOT_max < .95 & END.QUESTIONNAIRE.OPEN.THINK > 1000*length(aot) ~ 0))
+ 
+# Omit AOT data based on the AOT_omit column
+data_Q_total[which(data_Q_total$AOT_omit == 1), aot] <- NA
+# NOTE: if we want to omit participants with only NAs, we use AOT_omit != 0
 
 # Reverse-coding
-data_Q_total$open.rev1 <- reverse.code(keys = c(-1), items = data_Q_total$openReverse1, mini = c(1), maxi = c(7))
-data_Q_total$open.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$openReverse2, mini = c(1), maxi = c(7))
-data_Q_total$open.rev3 <- reverse.code(keys = c(-1), items = data_Q_total$openReverse3, mini = c(1), maxi = c(7))
-data_Q_total$open.rev4 <- reverse.code(keys = c(-1), items = data_Q_total$openReverse4, mini = c(1), maxi = c(7))
+for (i in 1:length(aot_rev)) {
+  data_Q_total[, aot_rev[i]] <- reverse.code(keys = c(-1), 
+                                             items = data_Q_total[, aot_rev[i]], 
+                                             mini = c(1), 
+                                             maxi = c(7))
+}
 
+# Checking the structure with CFA
 
-## Checking the structure with CFA
+# Item-level assumptions
 
-## Assumptions
-
-# Normality
-#par(mfrow = c(2, 4))
-#hist(data_Q_total$openNormal1, main = "ActiveOpen1", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$openNormal2, main = "ActiveOpen2", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$openNormal3, main = "ActiveOpen3", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$open.rev1, main = "ActiveOpen4.rev", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$open.rev2, main = "ActiveOpen5.rev", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$open.rev3, main = "ActiveOpen6.rev", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-#hist(data_Q_total$open.rev4, main = "ActiveOpen7.rev", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 7, 1), xlab = "")
-
-# Summary (mean, skew, kurtosis)
-#ActiveOpen_item <- (describe(data_Q_total$openNormal1))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$openNormal2))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$openNormal3))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$open.rev1))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$open.rev2))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$open.rev3))
-#ActiveOpen_item <- rbind(ActiveOpen_item, describe(data_Q_total$open.rev4))
-#row.names(ActiveOpen_item) <- c("openNormal1", "openNormal2", "openNormal3", "open.rev1", "open.rev2", "open.rev3", "open.rev4")
-#View(ActiveOpen_item)
-
-# Shapiro-Wilks
-# nonnormal
-#shapiro.test(data_Q_total$openNormal1)
-#shapiro.test(data_Q_total$openNormal2)
-#shapiro.test(data_Q_total$openNormal3)
-#shapiro.test(data_Q_total$open.rev1)
-#shapiro.test(data_Q_total$open.rev2)
-#shapiro.test(data_Q_total$open.rev3)
-#shapiro.test(data_Q_total$open.rev4)
-
+# Normality assumption
+# Visualize
+par(mfrow = c(2, 4))
+for (i in 1:length(aot)) {
+  hist(data_Q_total[, aot[i]], 
+       main = colnames(data_Q_total[aot[i]]), 
+       col = sample(colors(), 1), 
+       breaks = seq(0, 7, 1), 
+       xlab = "")
+}
+# Describe: skew, kurtosis, mean
+describe(data_Q_total[, aot])[, c("mean", "skew", "kurtosis")]
+# Shapiro-Wilks test
+shapiro_p_aot <- data.frame(name = rep(0, length(aot)), 
+                            p_value = rep(0, length(aot)))
+for (i in 1:length(aot)) {
+  shapiro_p_aot$name[i] <- colnames(data_Q_total[aot[i]])
+  shapiro_p_aot$p_value[i] <- shapiro.test(data_Q_total[, aot[i]])["p.value"][[1]]
+}
 
 # CFA
-names(data_Q_total[, c()])
-round(cor(data_Q_total[, c()], method = "spearman"), 2)
-round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelAOT <- 'AOT =~ openNormal1 + openNormal2 + openNormal3 + open.rev1 + open.rev2 + open.rev3 + open.rev4'
-modelAOT.est<-cfa(modelAOT, data = data_Q_total, std.lv = TRUE) 
+round(cor(data_Q_total[, aot], 
+          method = "spearman",
+          use = "pairwise.complete.obs"), 2)
+modelAOT <- 'AOT =~ openNormal1 + openNormal2 + openNormal3 + openReverse1 + openReverse2 + openReverse3 + openReverse4'
+modelAOT.est <- cfa(modelAOT, 
+                    data = data_Q_total, 
+                    std.lv = TRUE) 
 summary(modelAOT.est, fit.measures = T, standardized = T)
 modindices(modelAOT.est, sort = T)
 
@@ -1276,10 +1276,10 @@ modindices(modelAOT.est, sort = T)
 # Again, this article says to do a sum score
 
 #Calculating Sum score
-data_Q_total$AOTSum <- rowSums(cbind(data_Q_total$openNormal1, data_Q_total$openNormal2, data_Q_total$openNormal3, data_Q_total$open.rev1, data_Q_total$open.rev2, data_Q_total$open.rev3, data_Q_total$open.rev4), na.rm = TRUE)
+data_Q_total$AOTSum <- rowSums(cbind(data_Q_total$openNormal1, data_Q_total$openNormal2, data_Q_total$openNormal3, data_Q_total$openReverse1, data_Q_total$openReverse2, data_Q_total$openReverse3, data_Q_total$openReverse4), na.rm = TRUE)
 
-
-data_Q_total$AOTSum[which(data_Q_total$AOTSum == 0)] <- NA
+# NOTE: ??
+# data_Q_total$AOTSum[which(data_Q_total$AOTSum == 0)] <- NA
 
 # excluding outliers
 #Q1 <- quantile(data_Q_total$AOTSum, 0.25, na.rm = TRUE)
@@ -1293,38 +1293,25 @@ data_Q_total$AOTSum[which(data_Q_total$AOTSum == 0)] <- NA
 
 #data_Q_total$AOTSum[which(data_Q_total$AOTSum < )] <- NA # no outliers here
 
-
-# sample level
-# nonnormal
-
-#hist(data_Q_total$AOTSum, main = "Actively Openminded Thinking", col = rainbow(14), ylim = c(0, 25), breaks = seq(30, 50, 1), xlab = "")
-
-#ActiveOpen_task <- describe(data_Q_total$AOTSum)
-#row.names(ActiveOpen_task) <- c("AOT")
-#View(ActiveOpen_task)
-
+# Factor/sum score level
+describe(data_Q_total$AOTSum)[c("mean", "skew", "kurtosis")]
 shapiro.test(data_Q_total$AOTSum)
+hist(data_Q_total$AOTSum,
+     main = "Actively Openminded Thinking", 
+     col = rainbow(14), 
+     xlab = "")
 
-
-# a simple reliability
-
-library(psych)
-tibble::as_tibble(data_Q_total)
-
-# already reverse scored
-AOT <- select(data_Q_total, openNormal1, openNormal2, openNormal3, open.rev1, open.rev2, open.rev3, open.rev4)
-
+# Cronbach's alpha
+AOT <- data_Q_total[, aot]
 alpha(AOT)
-# raw alpha 0.69 
-# reliability if item dropped; only one is higher and it's to .70
-# item distribution very skewed
 
 ```
 
+NOTE: we need to think about what we do with missing data (i.e., actually missing data and not data that we have now marked as NA due to exclusion criteria) / we need to remember that these are separate things
 
 ## Matrix Reasoning
 
-This was coded as a Task in Gorilla but analyzed like a questionnaire
+This was coded as a Task in Gorilla but analyzed like a questionnaire.
 
 ```{r Scoring matrix reasoning, include = FALSE}
 
@@ -1335,19 +1322,12 @@ This was coded as a Task in Gorilla but analyzed like a questionnaire
 
 data_matreasT$Participant.Private.ID <- factor(data_matreasT$Participant.Private.ID)
 
-# Omitting columns that are not relevant (experiment-general columns)
+# Omit columns that are not relevant (experiment-general columns) + rows that are not relevant (e.g., practice trials)
 data_matreasT <- data_matreasT %>%
- select(Participant.Private.ID, Spreadsheet:ANSWER)
+  select(Participant.Private.ID, Spreadsheet:ANSWER) %>% 
+  filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
 
-# Omitting rows that are not relevant (e.g., practice trials)
-data_matreasT <- data_matreasT %>%
- filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
-
-# keeping a copy of the original dataset in case something goes wrong with validity
-data_matreasT_original <- data_matreasT
-#data_matreasT <- data_matreasT_original
-
-## Exclusion Criteria
+# Exclusion Criteria
 # Median RT & Accuracy
 
 # trying to ID a median reaction time overall to reject ppts, but IQR doesn't work for these kinds of RTs
@@ -1358,56 +1338,57 @@ data_matreasT <- data_matreasT %>%
  mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
                 (medianRT <= 500) ~ 1))
 
-
-# Creating a separate df for subsetting purposes
+# Create a separate df for subsetting purposes
 data_matrix_omit <- data_matreasT %>%
  group_by(Participant.Private.ID) %>%
  summarise(Matrix_omit = mean(Matrix_omit)) %>%
  select(Participant.Private.ID, Matrix_omit)
 
-
-# Extracting the relevant information
+# Extract the relevant information
 data_matreasT <- data_matreasT %>%
  group_by(Participant.Private.ID) %>%
  summarise(MatrixCorrectCount = sum(Correct, na.rm = TRUE)) %>%
  select(Participant.Private.ID, MatrixCorrectCount)
 
-# Omitting data based on matrix_omit
-data_matreasT_final <- merge(data_matreasT, data_matrix_omit, by = "Participant.Private.ID", all = TRUE)
-data_matreasT_final$MatrixCorrectCount[which(data_matreasT_final$Matrix_omit == "1")] <- NA
+# Omit data based on matrix_omit
+data_matreasT_final <- merge(data_matreasT, data_matrix_omit, 
+                             by = "Participant.Private.ID", 
+                             all = TRUE)
+data_matreasT_final[which(data_matreasT_final$Matrix_omit == 1), "MatrixCorrectCount"] <- NA
 data_matreasT_final <- data_matreasT_final %>%
  select(Participant.Private.ID, MatrixCorrectCount)
 
-
-# Excluding participants with invalid responses
+# Exclude participants with invalid responses
 data_ValidityFlag <- data_validQ %>%
- select(Participant.Private.ID, Validity.quantised)
+  select(Participant.Private.ID, Validity.quantised)
 data_Language <- data_demoQ %>%
- select(Participant.Private.ID, Language)
-data_matrixValidity <- merge(data_Language, data_ValidityFlag, by = "Participant.Private.ID", all = TRUE)
+  select(Participant.Private.ID, Language)
+data_matrixValidity <- merge(data_Language, data_ValidityFlag, 
+                             by = "Participant.Private.ID", 
+                             all = TRUE)
 
-data_matreasT_final <- merge(data_matreasT_final, data_matrixValidity, by = "Participant.Private.ID", all = TRUE)
+data_matreasT_final <- merge(data_matreasT_final, data_matrixValidity, 
+                             by = "Participant.Private.ID", 
+                             all = TRUE)
 
 # from main validity, creating separate df for nonvalid ppts, check against other ppt rejection chunks
 data_nonvalid_matrix <- data_matreasT_final %>%
- filter(Validity.quantised %in% c("2", 3, 4))
+  filter(Validity.quantised %in% c(2, 3, 4))
 
 data_Q_lang_omit_matrix <- data_matreasT_final %>%
- filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
+  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
 
 data_matreasT_final <- data_matreasT_final %>%
- filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
 
-#omitting specific participants who commented that they had technical issues with this task or did not understand the task
+# Omit specific participants who commented that they had technical issues with this task or did not understand the task
 data_matreasT_final <- data_matreasT_final %>%
  filter(Participant.Private.ID != "5555882" & Participant.Private.ID != "5608075" & Participant.Private.ID != "4887607")
 
-
-# Deleting the irrelevant columns
+# Delete the irrelevant columns
 data_matreasT_final <- data_matreasT_final %>%
  select(Participant.Private.ID, MatrixCorrectCount)
 
-# merging with the large final dataframe is done in the section Merging 
 # no outliers
 
 #Q1 <- quantile(data_matreasT_final$MatrixCorrectCount, 0.25, na.rm = TRUE)
@@ -1419,11 +1400,12 @@ data_matreasT_final <- data_matreasT_final %>%
 #lowbound
 #highbound
 
-#hist(data_matreasT_final$MatrixCorrectCount, main = "Matrix Score", col = rainbow(14), ylim = c(0, 40), breaks = seq(0, 10, 1), xlab = "")
-
-#Matrix_task <- (describe(data_matreasT_final$MatrixCorrectCount))
-#row.names(Matrix_task) <- c("Correct")
-#View(Matrix_task)
+describe(data_matreasT_final$MatrixCorrectCount)[c("mean", "skew", "kurtosis")]
+shapiro.test(data_matreasT_final$MatrixCorrectCount)
+hist(data_matreasT_final$MatrixCorrectCount,
+     main = "Matrix Score", 
+     col = rainbow(14), 
+     xlab = "")
 
 ```
 
@@ -1434,10 +1416,11 @@ This section has 12 questions with Likert responses that represent a (possible) 
 
 There are 3 additional questions that can be analyzed separately or used in demographic info. We hadn't really decided what to do with those questions yet.
 
+# WHERE YOU LEFT OFF
 
 ```{r Scoring science attitudes, include = FALSE}
 
-## Science Attitudes (range 1-5)
+# Science Attitudes
 
 # a) I am aware of science, scientific research and developments in it.
 # ***b) Science is not for me.
@@ -1455,26 +1438,26 @@ There are 3 additional questions that can be analyzed separately or used in demo
 # ***d) Researchers cannot be trusted because their views are biased.
 
 data_Q_total %>%
- select(Randomise.questionnaire.elements..SCIENCE.ATT:END.QUESTIONNAIRE.SCIENCE.ATT)
+  select(Randomise.questionnaire.elements..SCIENCE.ATT:END.QUESTIONNAIRE.SCIENCE.ATT)
 
 # Science identity
 data_Q_total %>%
- select(sa.1a, sa.1b, sa.1d, sa.1g) #b, d reverse-coded
+  select(sa.1a, sa.1b, sa.1d, sa.1g) # b, d reverse-coded
 
 # Importance of science in everyday life
 data_Q_total %>%
- select(sa.1c, sa.1e, sa.1h, sa.1f)
+  select(sa.1c, sa.1e, sa.1h, sa.1f)
 
 # Trust in scientists
 data_Q_total %>%
- select(sa.2a, sa.2b, sa.2c, sa.2d) #a, b, d reverse-coded
+  select(sa.2a, sa.2b, sa.2c, sa.2d) # a, b, d reverse-coded
 
 # Exclusion criteria
   # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
   # response time (1s/item -> 15000ms total)
 
 data_Q_total <- data_Q_total %>%
- mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) >= .95) | (END.QUESTIONNAIRE.SCIENCE.ATT <= 15000) ~ 1, 
+  mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) >= .95) | (END.QUESTIONNAIRE.SCIENCE.ATT <= 15000) ~ 1, 
      ((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)) < .95) & (END.QUESTIONNAIRE.SCIENCE.ATT > 15000) ~ 0))) 
 
 
