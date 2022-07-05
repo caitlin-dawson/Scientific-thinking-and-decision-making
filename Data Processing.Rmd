@@ -1078,127 +1078,89 @@ alpha(NeedforClos)
 
 ```{r Scoring need for cognition, include = FALSE}
 
-## Need for Cognition (range 1-6)
+# Need for Cognition
 
 # Exclusion criteria
-  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # distribution of responses for each survey per participant: if >= 95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
   # Response time (1s/item -> 18000ms total)
 
-## Distribution of responses & response time
-# Distribution of responses: there probably is an easier way to do this (maybe by creating a function?) but this is the first way I came up with. Here, I look at the table/distribution of responses for each survey for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value)
+need_cog <- c(which(colnames(data_Q_total) == "cognition1"),
+              which(colnames(data_Q_total) == "cognition2"),
+              which(colnames(data_Q_total) == "cognition3.rev"),
+              which(colnames(data_Q_total) == "cognition4.rev"),
+              which(colnames(data_Q_total) == "cognition5.rev"),
+              which(colnames(data_Q_total) == "cognition6"),
+              which(colnames(data_Q_total) == "cognition7.rev"),
+              which(colnames(data_Q_total) == "cognition8.rev"),
+              which(colnames(data_Q_total) == "cognition9.rev"),
+              which(colnames(data_Q_total) == "cognition10"),
+              which(colnames(data_Q_total) == "cognition11"),
+              which(colnames(data_Q_total) == "cognition12.rev"),
+              which(colnames(data_Q_total) == "cognition13"),
+              which(colnames(data_Q_total) == "cognition14"),
+              which(colnames(data_Q_total) == "cognition15"),
+              which(colnames(data_Q_total) == "cognition16.rev"),
+              which(colnames(data_Q_total) == "cognition17.rev"),
+              which(colnames(data_Q_total) == "cognition18"))
 
+need_cog_rev <- c(which(colnames(data_Q_total) == "cognition3.rev"),
+                  which(colnames(data_Q_total) == "cognition4.rev"),
+                  which(colnames(data_Q_total) == "cognition5.rev"),
+                  which(colnames(data_Q_total) == "cognition7.rev"),
+                  which(colnames(data_Q_total) == "cognition8.rev"),
+                  which(colnames(data_Q_total) == "cognition9.rev"),
+                  which(colnames(data_Q_total) == "cognition12.rev"),
+                  which(colnames(data_Q_total) == "cognition16.rev"),
+                  which(colnames(data_Q_total) == "cognition17.rev"))
+
+# Distribution of responses & response time
 data_Q_total <- data_Q_total %>%
- mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) >= .95) | (END.QUESTIONNAIRE.NEED.COG <= 18000) ~ 1, 
+  mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) >= .95) | (END.QUESTIONNAIRE.NEED.COG <= 18000) ~ 1, 
      ((max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)) < .95) & (END.QUESTIONNAIRE.NEED.COG > 18000) ~ 0))) 
 
-# Omitting Need for cognition data based on Cog_omit column
-data_Q_total$cognition1[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition2[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition3.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition4.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition5.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition6[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition7.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition8.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition9.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition10[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition11[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition12.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition13[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition14[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition15[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition16.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition17.rev[which(data_Q_total$Cog_omit == 1)] <- NA
-data_Q_total$cognition18[which(data_Q_total$Cog_omit == 1)] <- NA
-
+# Omit Need for cognition data based on Cog_omit column
+data_Q_total[which(data_Q_total$Cog_omit == 1), need_cog] <- NA
 
 # Reverse-coding
-data_Q_total$cognition3.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition3.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition4.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition4.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition5.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition5.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition7.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition7.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition8.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition8.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition9.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition9.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition12.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition12.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition16.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition16.rev, mini = c(1), maxi = c(6))
-data_Q_total$cognition17.rev2 <- reverse.code(keys = c(-1), items = data_Q_total$cognition17.rev, mini = c(1), maxi = c(6))
+for (i in length(need_cog_rev)) {
+  data_Q_total[, need_cog_rev[i]] <- reverse.code(keys = c(-1), 
+                                              items = data_Q_total[, need_cog_rev[i]], 
+                                              mini = c(1), 
+                                              maxi = c(6))
+}
 
-## Checking structure with CFA
+# Check structure with CFA
 
-## Assumptions
+# Item-level assumptions
 
-# Normality
-#par(mfrow = c(3, 6))
-#hist(data_Q_total$cognition1, main = "Cognition1", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition2, main = "Cognition2", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition3.rev2, main = "Cognition3rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition4.rev2, main = "Cognition4rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition5.rev2, main = "Cognition5rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition6, main = "Cognition6", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition7.rev2, main = "Cognition7rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition8.rev2, main = "Cognition8rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition9.rev2, main = "Cognition9rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition10, main = "Cognition10", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition11, main = "Cognition11", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition12.rev2, main = "Cognition12rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition13, main = "Cognition13", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition14, main = "Cognition14", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition15, main = "Cognition15", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition16.rev2, main = "Cognition16rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition17.rev2, main = "Cognition17rev", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-#hist(data_Q_total$cognition18, main = "Cognition18", col = rainbow(14), breaks = seq(0, 6, 1), xlab = "")
-
-# Summary (mean, skew, kurtosis)
-#Cog_item <- (describe(data_Q_total$cognition1))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition3.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition4.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition5.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition6))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition7.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition8.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition9.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition10))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition11))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition12.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition13))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition14))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition15))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition16.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition17.rev2))
-#Cog_item <- rbind(Cog_item, describe(data_Q_total$cognition18))
-#row.names(Cog_item) <- c("cognition1", "cognition2", "cognition3.rev2", "cognition4.rev2", "cognition5.rev2", "cognition6", "cognition7.rev2", "cognition8.rev2", "cognition9.rev2", "cognition10", "cognition11", "cognition12.rev2", "cognition13", "cognition14", "cognition15", "cognition16.rev2", "cognition17.rev2", "cognition18")
-#View(Cog_item)
-
-
-# Shapiro-Wilks
-# all nonnormal
-#shapiro.test(data_Q_total$cognition1)
-#shapiro.test(data_Q_total$cognition2)
-#shapiro.test(data_Q_total$cognition3.rev2)
-#shapiro.test(data_Q_total$cognition4.rev2)
-#shapiro.test(data_Q_total$cognition5.rev2)
-#shapiro.test(data_Q_total$cognition6)
-#shapiro.test(data_Q_total$cognition7.rev2)
-#shapiro.test(data_Q_total$cognition8.rev2)
-#shapiro.test(data_Q_total$cognition9.rev2)
-#shapiro.test(data_Q_total$cognition10)
-#shapiro.test(data_Q_total$cognition11)
-#shapiro.test(data_Q_total$cognition12.rev2)
-#shapiro.test(data_Q_total$cognition13)
-#shapiro.test(data_Q_total$cognition14)
-#shapiro.test(data_Q_total$cognition15)
-#shapiro.test(data_Q_total$cognition16.rev2)
-#shapiro.test(data_Q_total$cognition17.rev2)
-#shapiro.test(data_Q_total$cognition18)
-
+# Normality assumption
+# Visualize
+par(mfrow = c(3, 6))
+for (i in 1:length(need_cog)) {
+  hist(data_Q_total[, need_cog[i]],
+       main = colnames(data_Q_total[need_cog[i]]),
+       breaks = seq(0, 6, 1),
+       col = sample(colors(), 1),
+       xlab = ""
+       )
+}
+# Describe: skew, kurtosis, mean
+describe(data_Q_total[, need_cog])[, c("mean", "skew", "kurtosis")]
+# Shapiro-Wilks test
+shapiro_p_need_cog <- data.frame(name = rep(0, 18), p_value = rep(0, 18))
+for (i in 1:length(need_cog)) {
+  shapiro_p_need_cog$name[i] <- colnames(data_Q_total[need_cog[i]])
+  shapiro_p_need_cog$p_value[i] <- shapiro.test(data_Q_total[, need_cog[i]])["p.value"][[1]]
+}
 
 # CFA
-names(data_Q_total[, c()])
-round(cor(data_Q_total[, c()], method = "spearman"), 2)
-round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelCog <- 'Cognition =~ cognition1 + cognition2 + cognition3.rev2 + cognition4.rev2 + cognition5.rev2 + cognition6 + cognition7.rev2 + cognition8.rev2 + cognition9.rev2 + cognition10 + cognition11 + cognition12.rev2 + cognition13 + cognition14 + cognition15 + cognition16.rev2 + cognition17.rev2 + cognition18'
-modelCog.est<-cfa(modelCog, data = data_Q_total, std.lv = TRUE) #Same errors
+round(cor(data_Q_total[, need_cog], 
+          method = "spearman",
+          use = "pairwise.complete.obs"), 2)
+modelCog <- 'Cognition =~ cognition1 + cognition2 + cognition3.rev + cognition4.rev + cognition5.rev + cognition6 + cognition7.rev + cognition8.rev + cognition9.rev + cognition10 + cognition11 + cognition12.rev + cognition13 + cognition14 + cognition15 + cognition16.rev + cognition17.rev + cognition18'
+modelCog.est<-cfa(modelCog, 
+                  data = data_Q_total, 
+                  std.lv = TRUE)
 summary(modelCog.est, fit.measures = T, standardized = T)
 modindices(modelCog.est, sort = T)
 
@@ -1206,31 +1168,23 @@ modindices(modelCog.est, sort = T)
 # https://centerofinquiry.org/uncategorized/need-for-cognition-scale-wabash-national-study/
 # According to this source you should calculate the sum score for this scale
 
-# Calculating Sum score
-data_Q_total$CogSum <- rowSums(cbind(data_Q_total$cognition1, data_Q_total$cognition2, data_Q_total$cognition3.rev2, data_Q_total$cognition4.rev2, data_Q_total$cognition5.rev2, data_Q_total$cognition6, data_Q_total$cognition7.rev2, data_Q_total$cognition8.rev2, data_Q_total$cognition9.rev2, data_Q_total$cognition10, data_Q_total$cognition11, data_Q_total$cognition12.rev2, data_Q_total$cognition13, data_Q_total$cognition14, data_Q_total$cognition15, data_Q_total$cognition16.rev2, data_Q_total$cognition17.rev2, data_Q_total$cognition18), na.rm = TRUE)
+# Calculate Sum score
+data_Q_total$CogSum <- rowSums(cbind(data_Q_total$cognition1, data_Q_total$cognition2, data_Q_total$cognition3.rev, data_Q_total$cognition4.rev, data_Q_total$cognition5.rev, data_Q_total$cognition6, data_Q_total$cognition7.rev, data_Q_total$cognition8.rev, data_Q_total$cognition9.rev, data_Q_total$cognition10, data_Q_total$cognition11, data_Q_total$cognition12.rev, data_Q_total$cognition13, data_Q_total$cognition14, data_Q_total$cognition15, data_Q_total$cognition16.rev, data_Q_total$cognition17.rev, data_Q_total$cognition18), na.rm = TRUE)
 
-data_Q_total$CogSum[which(data_Q_total$CogSum == 0)] <- NA
+# NOTE: why?
+# data_Q_total$CogSum[which(data_Q_total$CogSum == 0)] <- NA
 
-# sample level
-
-summary(data_Q_total$CogSum)
-data_Q_total$CogSum[which(data_Q_total$CogSum < 51.5)] <- NA
-
-#NFCog_task <- describe(data_Q_total$CogSum)
-#row.names(NFCog_task) <- c("NFCog")
-#View(NFCog_task)
-
+# Factor/sum score level assumptions
+describe(data_Q_total$CogSum)[c("mean", "skew", "kurtosis")]
+# data_Q_total$CogSum[which(data_Q_total$CogSum < 51.5)] <- NA # ???
 shapiro.test(data_Q_total$CogSum)
+hist(data_Q_total$CogSum,
+     main = "Need for Cognition", 
+     col = rainbow(14), 
+     xlab = "")
 
-#hist(data_Q_total$CogSum, main = "Need for Cognition", col = rainbow(14), ylim = c(0, 15), breaks = seq(40, 110, 1), xlab = "")
-
-#basic alpha reliability
-
-tibble::as_tibble(data_Q_total)
-
-# already reverse scored
-NeedforCog <- select(data_Q_total, cognition1, cognition2, cognition3.rev2, cognition4.rev2, cognition5.rev2, cognition6, cognition7.rev2, cognition8.rev2, cognition9.rev2, cognition10, cognition11, cognition12.rev2, cognition13, cognition14, cognition15, cognition16.rev2, cognition17.rev2, cognition18)
-
+# Cronbach's alpha
+NeedforCog <- data_Q_total[, need_cog]
 alpha(NeedforCog)
 # raw alpha 0.88
 # reliability if item dropped; 2 items higher to .89
