@@ -23,7 +23,7 @@ Version history:
 library(dplyr)
 # library(ggplot2)
 # library(GPArotation)
-# library(lavaan)
+library(lavaan)
 library(psych)
 # library(psycho)
 # library(tidyr)
@@ -614,7 +614,7 @@ data_Q_total <- data_Q_total %>%
   mutate(B5_omit = case_when(((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse))) >= .95) | (END.QUESTIONNAIRE.BIG5 <= 10000) ~ 1, 
      ((max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)))/length(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)) < .95) & (END.QUESTIONNAIRE.BIG5 > 10000) ~ 0))) 
  
-# Omitting B5 data based on the B5_omit column
+# Omit B5 data based on the B5_omit column
 data_Q_total[which(data_Q_total$B5_omit == 1), c("agreeablenessNormal", "agreeablenessReverse", "conscientiousnessNormal", "conscientiousnessReverse", "extroversionNormal", "extroversionReverse", "emotionalStabilityNormal", "emotionalStabilityReverse", "opennessNormal", "opennessReverse")] <- NA
 
 # Reverse-code
@@ -710,91 +710,93 @@ for (i in 1:length(b5_mean)) {
 
 ```
 
+NOTE: I am starting to wonder if it is absolutely necessary to conduct a CFA for each questionnaire. We are using well-established questionnaires so I think we could also skip this step, especially when it adds so much workload for us (check assumptions, check that models look ok). Already the epistemic curiosity one looks like something weird is going on... 
+I'd suggest we ask Johanna (or someone else) what they would suggest in this situation? Or read into it? 
+
+I am also wondering if there is a way to do the big EFA with all the items (i.e., fo do we have access to a powerful computer)?
+
 ## Epistemic Curiosity
 
 ```{r Scoring Epistemic Curiosity, include = FALSE}
 
-## Epistemic Curiosity (range 1-5)
+# Epistemic Curiosity
 
 # Exclusion criteria
   # min response time (1s/item -> 10000ms total)
 
 data_Q_total <- data_Q_total %>%
- mutate(EpiCur_omit = case_when(END.QUESTIONNAIRE.EPISTEMIC < = 10000 ~ 1, 
-                 END.QUESTIONNAIRE.EPISTEMIC > 10000 ~ 0)) # again, if EpiCur_omit = 1, that participant's Epistemic Curiosity data should be omitted
+ mutate(EpiCur_omit = case_when(END.QUESTIONNAIRE.EPISTEMIC <= 10000 ~ 1, 
+                                END.QUESTIONNAIRE.EPISTEMIC > 10000 ~ 0))
 
-# Omitting Epistemic Curiosity data based on the EpiCur_omit column
-data_Q_total$Icuriosity1[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Icuriosity2[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Icuriosity3[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Icuriosity4[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Icuriosity5[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Dcuriosity1[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Dcuriosity2[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Dcuriosity3[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Dcuriosity4[which(data_Q_total$EpiCur_omit == 1)] <- NA
-data_Q_total$Dcuriosity5[which(data_Q_total$EpiCur_omit == 1)] <- NA
+# Omit Epistemic Curiosity data based on the EpiCur_omit column
+data_Q_total[which(data_Q_total$EpiCur_omit == 1), c(paste0("Icuriosity", 1:5), paste0("Dcuriosity", 1:5))] <- NA
 
-## Checking the structure with CFA
+## Item level assumptions
 
-## Assumptions
-# Normality
-#par(mfrow = c(2, 5))
-#hist(data_Q_total$Icuriosity1, main = "I Curiosity 1", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Icuriosity2, main = "I Curiosity 2", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Icuriosity3, main = "I Curiosity 3", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Icuriosity4, main = "I Curiosity 4", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Icuriosity5, main = "I Curiosity 5", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Dcuriosity1, main = "D Curiosity 1", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Dcuriosity2, main = "D Curiosity 2", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Dcuriosity3, main = "D Curiosity 3", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Dcuriosity4, main = "D Curiosity 4", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$Dcuriosity5, main = "D Curiosity 5", col = rainbow(14), ylim = c(0, 100), breaks = seq(0, 5, 1), xlab = "")
+# Normality assumption
+# Visualize
+epicur <- c()
+for (j in 1:2) {
+  if (j == 1) {
+    for (i in 1:5) {
+      epicur <- c(epicur, which(colnames(data_Q_total) == paste0("Icuriosity", i)))
+}
+  } else if (j == 2) {
+    for (i in 1:5) {
+      epicur <- c(epicur, which(colnames(data_Q_total) == paste0("Dcuriosity", i)))
+    }
+  }
+}
+par(mfrow = c(2, 5))
+for (i in 1:length(epicur)) {
+  hist(data_Q_total[, epicur[i]],
+       main = colnames(data_Q_total[epicur[i]]),
+       col = sample(colors(), 1),
+       breaks = seq(0, 5, 1),
+       xlab = ""
+       )
+}
+# Describe: skew, kurtosis, mean
+describe(data_Q_total[, epicur])[, c("mean", "skew", "kurtosis")]
+# Shapiro-Wilks test
+shapiro_p_epicur <- data.frame(name = rep(0, 10), p_value = rep(0, 10))
+for (i in 1:length(epicur)) {
+  shapiro_p_epicur$name[i] <- colnames(data_Q_total[epicur[i]])
+  shapiro_p_epicur$p_value[i] <- shapiro.test(data_Q_total[, epicur[i]])["p.value"][[1]]
+}
 
-
-# Summary (mean, skew, kurtosis)
-#EC_items <- (describe(data_Q_total$Icuriosity1))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Icuriosity2))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Icuriosity3))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Icuriosity4))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Icuriosity5))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Dcuriosity1))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Dcuriosity2))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Dcuriosity3))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Dcuriosity4))
-#EC_items <- rbind(EC_items, describe(data_Q_total$Dcuriosity5))
-#row.names(EC_items) <- c("IC1", "I2C", "IC3", "IC4", "IC5", "DC1", "DC2", "DC3", "DC4", "DC5")
-#View(EC_items)
-
-
-# Shapiro-Wilks
-# all significant
-#shapiro.test(data_Q_total$Icuriosity1)
-#shapiro.test(data_Q_total$Icuriosity2)
-#shapiro.test(data_Q_total$Icuriosity3)
-#shapiro.test(data_Q_total$Icuriosity4)
-#shapiro.test(data_Q_total$Icuriosity5)
-#shapiro.test(data_Q_total$Dcuriosity1)
-#shapiro.test(data_Q_total$Dcuriosity2)
-#shapiro.test(data_Q_total$Dcuriosity3)
-#shapiro.test(data_Q_total$Dcuriosity4)
-#shapiro.test(data_Q_total$Dcuriosity5)
-
-
-# Checking structure with CFA
-round(cor(data_Q_total[, c()], method = "spearman"), 2)
-round(cov(data_Q_total[, c()], method = "spearman"), 2)
-modelEpi <- 'Dcuriosity = ~Dcuriosity1+Dcuriosity2+Dcuriosity3+Dcuriosity4+Dcuriosity5
-       Icuriosity = ~Icuriosity1+Icuriosity2+Icuriosity3+Icuriosity4+Icuriosity5
+# Check structure with CFA
+round(cor(data_Q_total[, epicur], 
+          method = "spearman", 
+          use = "pairwise.complete.obs"), 2)
+modelEpi <- 'Dcuriosity =~ Dcuriosity1 + Dcuriosity2 + Dcuriosity3 + Dcuriosity4 + Dcuriosity5
+             Icuriosity =~ Icuriosity1 + Icuriosity2 + Icuriosity3 + Icuriosity4 + Icuriosity5
 Dcuriosity ~~ Icuriosity'
-modelEpi.est<-cfa(modelEpi, data = data_Q_total, std.lv = TRUE, estimator = "ULS")
-summary(modelEpi.est, fit.measures = T, standardized = T) # American English spelling for "standardized"
+modelEpi.est <- cfa(modelEpi, 
+                    data = data_Q_total, 
+                    std.lv = TRUE, 
+                    estimator = "ULS")
+summary(modelEpi.est, fit.measures = T, standardized = T)
 modindices(modelEpi.est, sort = T)
 
 # Sum scores
-data_Q_total$ICuriositySum <- rowSums(cbind(data_Q_total$Icuriosity1, data_Q_total$Icuriosity2, data_Q_total$Icuriosity3, data_Q_total$Icuriosity4, data_Q_total$Icuriosity5))
-data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_total$Dcuriosity2, data_Q_total$Dcuriosity3, data_Q_total$Dcuriosity4, data_Q_total$Dcuriosity5))
+data_Q_total$ICuriositySum <- rowSums(cbind(data_Q_total$Icuriosity1, data_Q_total$Icuriosity2, data_Q_total$Icuriosity3, data_Q_total$Icuriosity4, data_Q_total$Icuriosity5), na.rm = TRUE)
+data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_total$Dcuriosity2, data_Q_total$Dcuriosity3, data_Q_total$Dcuriosity4, data_Q_total$Dcuriosity5), na.rm = TRUE)
 
+# Factor level assumptions
+# Normality assumption
+# Visualize
+epicur_mean <- c(which(colnames(data_Q_total) == "ICuriositySum"),
+                 which(colnames(data_Q_total) == "DCuriositySum"))
+par(mfrow = c(1, 2))
+for (i in 1:length(epicur_mean)) {
+  hist(data_Q_total[, epicur_mean[i]],
+       main = colnames(data_Q_total[epicur_mean[i]]),
+       col = sample(colors(), 1),
+       xlab = ""
+       )
+}
+# NOTE: what is happening here?
 # sample level sum score descriptives and outliers
 #Q1 <- quantile(data_Q_total$ICuriositySum, 0.25, na.rm = TRUE)
 #Q3 <- quantile(data_Q_total$ICuriositySum, 0.75, na.rm = TRUE)
@@ -805,45 +807,36 @@ data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_tot
 #lowbound
 #highbound
 
-data_Q_total$ICuriositySum[which(data_Q_total$ICuriositySum < 11.5)] <- NA
+# data_Q_total$ICuriositySum[which(data_Q_total$ICuriositySum < 11.5)] <- NA
 # data_Q_total$DCuriositySum[which(data_Q_total$ICuriositySum < )] <- NA #No outliers in D curiosity
 
+# Describe (mean, skew, kurtosis)
+describe(data_Q_total[, c(epicur_mean)])[, c("mean", "skew", "kurtosis")]
 
-# Summary (mean, skew, kurtosis)
-describe(data_Q_total$ICuriositySum)
-describe(data_Q_total$DCuriositySum)
-
-#EC_task <- (describe(data_Q_total$ICuriositySum))
-#EC_task <- rbind(EC_task, describe(data_Q_total$DCuriositySum))
-#row.names(EC_task) <- c("ICurSum", "DCurSum")
-#View(EC_task)
-
-# Shapiro-Wilks
-#ICuriosity nonnormal, DCuriosity normal
-#shapiro.test(data_Q_total$ICuriositySum)
-#shapiro.test(data_Q_total$DCuriositySum)
-
-# plotting task total scores
-#par(mfrow = c(1, 2))
-#hist(data_Q_total$ICuriositySum, main = "Interest Curiosity", col = rainbow(14), breaks = seq(0, 25, 1), ylim = c(0, 30), xlab = "")
-#hist(data_Q_total$DCuriositySum, main = "Deprivation Curiosity", col = rainbow(14), breaks = seq(0, 25, 1), ylim = c(0, 30), xlab = "")'
+# Shapiro-Wilks tests
+shapiro_p_epicur_mean <- data.frame(name = rep(0, 2), p_value = rep(0, 2))
+for (i in 1:length(epicur_mean)) {
+  shapiro_p_epicur_mean$name[i] <- colnames(data_Q_total[epicur_mean[i]])
+  shapiro_p_epicur_mean$p_value[i] <- shapiro.test(data_Q_total[, epicur_mean[i]])["p.value"][[1]]
+}
 
 ```
+NOTE: do we want to already check assumptions for CFA here? it seems very jumpy that we go from exclusion criteria and data cleaning to assumption checks.
 
-##Intellectual Humility
+## Intellectual Humility
 
 ```{r Scoring Intellectual Humility, include = FALSE}
 
-## Intellectual Humility (range 1-4)
+# Intellectual Humility
 
 # Exclusion criteria
-  #distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
+  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
   #response time (1s/item -> 22000ms total)
 
 ## Distribution of responses & min response time
 
 data_Q_total <- data_Q_total %>%
- mutate(IH_omit = case_when(((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4))) > = .95) | (END.QUESTIONNAIRE.INT.HUM < = 22000) ~ 1, 
+ mutate(IH_omit = case_when(((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4))) > = .95) | (END.QUESTIONNAIRE.INT.HUM <= 22000) ~ 1, 
      ((max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)))/length(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)) < .95) & (END.QUESTIONNAIRE.INT.HUM > 22000) ~ 0))) # again, if IH_omit = 1, that participant's Epistemic Curiosity data should be omitted
 
 
@@ -1056,7 +1049,7 @@ data_Q_total$IH4Sum[which(data_Q_total$IH4Sum < 5)] <- NA
 ## min response time
 
 data_Q_total <- data_Q_total %>%
- mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO < = 15000 ~ 1, 
+ mutate(Clo_omit = case_when(END.QUESTIONNAIRE.NEED.CLO <= 15000 ~ 1, 
                END.QUESTIONNAIRE.NEED.CLO > 15000 ~ 0)) 
 
 # add: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
@@ -1206,7 +1199,7 @@ alpha(NeedforClos)
 # Distribution of responses: there probably is an easier way to do this (maybe by creating a function?) but this is the first way I came up with. Here, I look at the table/distribution of responses for each survey for each participant, creating a separate column with values corresponding to whether the participant's data should be omitted (1 = yes = more than 95% of this participant's responses were the same value; 0 = no = less than 95% of this participant's response were the same value)
 
 data_Q_total <- data_Q_total %>%
- mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) > = .95) | (END.QUESTIONNAIRE.NEED.COG < = 18000) ~ 1, 
+ mutate(Cog_omit = case_when((max((table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) > = .95) | (END.QUESTIONNAIRE.NEED.COG <= 18000) ~ 1, 
      ((max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18))) / length(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)) < .95) & (END.QUESTIONNAIRE.NEED.COG > 18000) ~ 0))) 
 
 # Omitting Need for cognition data based on Cog_omit column
@@ -1369,7 +1362,7 @@ alpha(NeedforCog)
 ## Distribution of responses & min response time
 
 data_Q_total <- data_Q_total %>%
- mutate(AOT_omit = case_when(((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) > = .95) | (END.QUESTIONNAIRE.OPEN.THINK < = 7000) ~ 1, 
+ mutate(AOT_omit = case_when(((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) > = .95) | (END.QUESTIONNAIRE.OPEN.THINK <= 7000) ~ 1, 
      ((max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3))) / length(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)) < .95) & (END.QUESTIONNAIRE.OPEN.THINK > 7000) ~ 0))) # again, if AOT_omit = 1, that participant's AOT data should be omitted
 
 # Omitting AOT data based on the AOT_omit column
@@ -1520,7 +1513,7 @@ data_matreasT <- data_matreasT %>%
  group_by(Participant.Private.ID) %>%
  mutate(medianRT = median(Reaction.Time, na.rm = TRUE)) %>%
  mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
-                (medianRT < = 500) ~ 1))
+                (medianRT <= 500) ~ 1))
 
 
 # Creating a separate df for subsetting purposes
@@ -1638,7 +1631,7 @@ data_Q_total %>%
   # response time (1s/item -> 15000ms total)
 
 data_Q_total <- data_Q_total %>%
- mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) > = .95) | (END.QUESTIONNAIRE.SCIENCE.ATT < = 15000) ~ 1, 
+ mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) > = .95) | (END.QUESTIONNAIRE.SCIENCE.ATT <= 15000) ~ 1, 
      ((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)) < .95) & (END.QUESTIONNAIRE.SCIENCE.ATT > 15000) ~ 0))) 
 
 
@@ -1822,7 +1815,7 @@ data_Q_total %>%
   # response time (1s/item -> 4000ms total)
 
 data_Q_total <- data_Q_total %>%
- mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR < = 4000 ~ 1, 
+ mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR <= 4000 ~ 1, 
                  END.QUESTIONNAIRE.SCIENCE.CUR > 4000 ~ 0))
 
 # Omitting SC data based on the Sci.cur_omit column
@@ -1908,7 +1901,7 @@ H-R: #Q4, 5, 6
 
 ## min response time
 data_Q_total <- data_Q_total %>%
- mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC < = 6000 ~ 1, 
+ mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC <= 6000 ~ 1, 
                END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
 
 # Q1
@@ -2096,7 +2089,7 @@ This section is complicated because each question is scored differently. It coul
 
 ## min response time
 data_Q_total <- data_Q_total %>%
- mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB < = 4000 ~ 1, 
+ mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB <= 4000 ~ 1, 
                END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
 
 # Q1
@@ -2441,7 +2434,7 @@ data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time < 150)] <- NA
 data_nogoT <- data_nogoT %>%
  group_by(Participant.Private.ID) %>% 
  mutate(medianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect))) %>% # Creating a new column that gives the median response time for each participant
- mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, (medianRT < = 200 | Accuracy < = .60) ~ 1)) # assigning 1 to rows where median RT is <200ms
+ mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, (medianRT <= 200 | Accuracy <= .60) ~ 1)) # assigning 1 to rows where median RT is <200ms
  
 # Omitting rows based on exclusion criteria
 data_nogoT$Response[which(data_nogoT$go.nogo_omit == 1)] <- NA
