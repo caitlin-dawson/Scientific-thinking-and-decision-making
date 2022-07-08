@@ -31,165 +31,35 @@ library(psych)
 
 ```
 
-# Loading data 
+# Load data 
+
+This chunk loads the data and omits experiment-general columns from all files (except for participant private ID).
+
+# Omit experiment-general columns from all files (except for participant ID)
 
 ```{r Loading data, include = FALSE}
 
 # Versions 22-25
-data_epiQ_v22 <- read.csv("data_exp_55551-v22_questionnaire-2wlk.csv", 
-             sep = ";")
-data_heurQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-79hv.csv', 
-              sep = ";")
-data_openQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-7qsg.csv', 
-              sep = ";")
-data_validQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-81k4.csv', 
-              sep = ";")
-data_demoQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-c7cw.csv', 
-              sep = ";")
-data_sciattQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-cl1u.csv', 
-               sep = ";")
-data_needcogQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-eygv.csv', 
-               sep = ";")
-data_scicurQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-go4a.csv', 
-               sep = ";")
-data_needcloQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-mz16.csv', 
-               sep = ";")
-data_infoQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-o43u.csv', 
-              sep = ";")
-data_rpQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-otb8.csv', 
-             sep = ";")
-data_inthumQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-oyla.csv', 
-               sep = ";")
-data_big5Q_v22 <- read.csv('data_exp_55551-v22_questionnaire-w8n1.csv', 
-              sep = ";")
-data_uutT_v22 <- read.csv('data_exp_55551-v22_task-7mar.csv', 
-             sep = ";")
-data_NavonT_v22 <- read.csv('data_exp_55551-v22_task-8mu5.csv', 
-              sep = ";")
-data_NeckerT_v22 <- read.csv('data_exp_55551-v22_task-9nll.csv', 
-               sep = ";")
-data_nogoT_v22 <- read.csv('data_exp_55551-v22_task-n8ns.csv', 
-              sep = ";")
-data_matreasT_v22 <- read.csv('data_exp_55551-v22_task-tg12.csv', 
-               sep = ";")
-data_citiT_v22 <- read.csv('data_exp_55551-v22_task-zryk.csv', 
-              sep = ";")
+versions <- paste0("v", 22:25)
+questionnaire_types <- c("2wlk", "79hv", "7qsg", "81k4", "c7cw", "cl1u", "eygv", "go4a", "mz16", "o43u", "otb8", "oyla", "w8n1")
+task_types <- c("7mar", "8mu5", "9nll", "n8ns", "tg12", "zryk")
+questionnaire_names <- c("epiQ", "heurQ", "openQ", "validQ", "demoQ", "sciattQ", "needcogQ", "scicurQ", "needcloQ", "infoQ", "rpQ", "inthumQ", "big5Q")
+task_names <- c("uutT", "NavonT", "NeckerT", "nogoT", "matreasT", "citiT")
+names_all <- c(questionnaire_names, task_names)
 
-data_epiQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-2wlk.csv', 
-             sep = ";")
-data_heurQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-79hv.csv', 
-              sep = ";")
-data_openQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-7qsg.csv', 
-              sep = ";")
-data_validQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-81k4.csv', 
-              sep = ";")
-data_demoQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-c7cw.csv', 
-              sep = ";")
-data_sciattQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-cl1u.csv', 
-               sep = ";")
-data_needcogQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-eygv.csv', 
-               sep = ";")
-data_scicurQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-go4a.csv', 
-               sep = ";")
-data_needcloQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-mz16.csv', 
-               sep = ";")
-data_infoQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-o43u.csv', 
-              sep = ";")
-data_rpQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-otb8.csv', 
-             sep = ";")
-data_inthumQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-oyla.csv', 
-               sep = ";")
-data_big5Q_v23 <- read.csv('data_exp_55551-v23_questionnaire-w8n1.csv', 
-              sep = ";")
-data_uutT_v23 <- read.csv('data_exp_55551-v23_task-7mar.csv', 
-             sep = ";")
-data_NavonT_v23 <- read.csv('data_exp_55551-v23_task-8mu5.csv', 
-              sep = ";")
-data_NeckerT_v23 <- read.csv('data_exp_55551-v23_task-9nll.csv', 
-               sep = ";")
-data_nogoT_v23 <- read.csv('data_exp_55551-v23_task-n8ns.csv', 
-              sep = ";")
-data_matreasT_v23 <- read.csv('data_exp_55551-v23_task-tg12.csv', 
-               sep = ";")
-data_citiT_v23 <- read.csv('data_exp_55551-v23_task-zryk.csv', 
-              sep = ";")
+for (j in 1:length(versions)) {
+  for (i in 1:length(questionnaire_types)) {
+  assign(paste0("data_", questionnaire_names[i], "_", versions[j]),
+         read.csv(paste0("data_exp_55551-", versions[j], "_questionnaire-", questionnaire_types[i], ".csv"), sep = ";")[, -c(1:12, 14:31)])
+    }
+}
 
-data_epiQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-2wlk.csv', 
-             sep = ";")
-data_heurQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-79hv.csv', 
-              sep = ";")
-data_openQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-7qsg.csv', 
-              sep = ";")
-data_validQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-81k4.csv', 
-              sep = ";")
-data_demoQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-c7cw.csv', 
-              sep = ";")
-data_sciattQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-cl1u.csv', 
-               sep = ";")
-data_needcogQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-eygv.csv', 
-               sep = ";")
-data_scicurQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-go4a.csv', 
-               sep = ";")
-data_needcloQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-mz16.csv', 
-               sep = ";")
-data_infoQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-o43u.csv', 
-              sep = ";")
-data_rpQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-otb8.csv', 
-             sep = ";")
-data_inthumQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-oyla.csv', 
-               sep = ";")
-data_big5Q_v24 <- read.csv('data_exp_55551-v24_questionnaire-w8n1.csv', 
-              sep = ";")
-data_uutT_v24 <- read.csv('data_exp_55551-v24_task-7mar.csv', 
-             sep = ";")
-data_NavonT_v24 <- read.csv('data_exp_55551-v24_task-8mu5.csv', 
-              sep = ";")
-data_NeckerT_v24 <- read.csv('data_exp_55551-v24_task-9nll.csv', 
-               sep = ";")
-data_nogoT_v24 <- read.csv('data_exp_55551-v24_task-n8ns.csv', 
-              sep = ";")
-data_matreasT_v24 <- read.csv('data_exp_55551-v24_task-tg12.csv', 
-               sep = ";")
-data_citiT_v24 <- read.csv('data_exp_55551-v24_task-zryk.csv', 
-              sep = ";")
-
-data_epiQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-2wlk.csv', 
-             sep = ";")
-data_heurQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-79hv.csv', 
-              sep = ";")
-data_openQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-7qsg.csv', 
-              sep = ";")
-data_validQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-81k4.csv', 
-              sep = ";")
-data_demoQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-c7cw.csv', 
-              sep = ";")
-data_sciattQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-cl1u.csv', 
-               sep = ";")
-data_needcogQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-eygv.csv', 
-               sep = ";")
-data_scicurQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-go4a.csv', 
-               sep = ";")
-data_needcloQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-mz16.csv', 
-               sep = ";")
-data_infoQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-o43u.csv', 
-              sep = ";")
-data_rpQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-otb8.csv', 
-             sep = ";")
-data_inthumQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-oyla.csv', sep = ";")
-data_big5Q_v25 <- read.csv('data_exp_55551-v25_questionnaire-w8n1.csv', 
-              sep = ";")
-data_uutT_v25 <- read.csv('data_exp_55551-v25_task-7mar.csv', 
-             sep = ";")
-data_NavonT_v25 <- read.csv('data_exp_55551-v25_task-8mu5.csv', 
-              sep = ";")
-data_NeckerT_v25 <- read.csv('data_exp_55551-v25_task-9nll.csv', 
-               sep = ";")
-data_nogoT_v25 <- read.csv('data_exp_55551-v25_task-n8ns.csv', 
-              sep = ";")
-data_matreasT_v25 <- read.csv('data_exp_55551-v25_task-tg12.csv', 
-               sep = ";")
-data_citiT_v25 <- read.csv('data_exp_55551-v25_task-zryk.csv', 
-              sep = ";")
+for (j in 1:length(versions)) {
+  for (i in 1:length(task_types)) {
+    assign(paste0("data_", task_names[i], "_", versions[j]),
+           read.csv(paste0("data_exp_55551-", versions[j], "_task-", task_types[i], ".csv"), sep = ";")[, -c(1:12, 14:31)])
+  }
+}
 
 ```
 
@@ -197,228 +67,49 @@ data_citiT_v25 <- read.csv('data_exp_55551-v25_task-zryk.csv',
 
 This series of chunks computes the necessary data cleaning to merge the questionnaire dataframes and merges them.
 
-## Omit experiment-general columns
-
-The first chunk omits experiment-general columns (i.e., columns that take the same value in each task/questionnaire dataframe)
-
-```{r Omit experiment-general columns, include = FALSE}
-
-# Omit experiment-general columns from all files (except for participant ID)
-data_big5Q_v22 <- data_big5Q_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citiT_v22 <- data_citiT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v22))
-data_demoQ_v22 <- data_demoQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epiQ_v22 <- data_epiQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_nogoT_v22 <- data_nogoT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v22))
-data_heurQ_v22 <- data_heurQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_inthumQ_v22 <- data_inthumQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matreasT_v22 <- data_matreasT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v22))
-data_NavonT_v22 <- data_NavonT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v22))
-data_NeckerT_v22 <- data_NeckerT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v22))
-data_needcloQ_v22 <- data_needcloQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_needcogQ_v22 <- data_needcogQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openQ_v22 <- data_openQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_rpQ_v22 <- data_rpQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_sciattQ_v22 <- data_sciattQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_scicurQ_v22 <- data_scicurQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_infoQ_v22 <- data_infoQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_uutT_v22 <- data_uutT_v22 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v22))
-data_validQ_v22 <- data_validQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-data_big5Q_v23 <- data_big5Q_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citiT_v23 <- data_citiT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v23))
-data_demoQ_v23 <- data_demoQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epiQ_v23 <- data_epiQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_nogoT_v23 <- data_nogoT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v23))
-data_heurQ_v23 <- data_heurQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_inthumQ_v23 <- data_inthumQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matreasT_v23 <- data_matreasT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v23))
-data_NavonT_v23 <- data_NavonT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v23))
-data_NeckerT_v23 <- data_NeckerT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v23))
-data_needcloQ_v23 <- data_needcloQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_needcogQ_v23 <- data_needcogQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openQ_v23 <- data_openQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_rpQ_v23 <- data_rpQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_sciattQ_v23 <- data_sciattQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_scicurQ_v23 <- data_scicurQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_infoQ_v23 <- data_infoQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_uutT_v23 <- data_uutT_v23 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v23))
-data_validQ_v23 <- data_validQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-data_big5Q_v24 <- data_big5Q_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citiT_v24 <- data_citiT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v24))
-data_demoQ_v24 <- data_demoQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epiQ_v24 <- data_epiQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_nogoT_v24 <- data_nogoT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v24))
-data_heurQ_v24 <- data_heurQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_inthumQ_v24 <- data_inthumQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matreasT_v24 <- data_matreasT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v24))
-data_NavonT_v24 <- data_NavonT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v24))
-data_NeckerT_v24 <- data_NeckerT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v24))
-data_needcloQ_v24 <- data_needcloQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_needcogQ_v24 <- data_needcogQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openQ_v24 <- data_openQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_rpQ_v24 <- data_rpQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_sciattQ_v24 <- data_sciattQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_scicurQ_v24 <- data_scicurQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_infoQ_v24 <- data_infoQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_uutT_v24 <- data_uutT_v24 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v24))
-data_validQ_v24 <- data_validQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-data_big5Q_v25 <- data_big5Q_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_citiT_v25 <- data_citiT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_citiT_v25))
-data_demoQ_v25 <- data_demoQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_epiQ_v25 <- data_epiQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_nogoT_v25 <- data_nogoT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_nogoT_v25))
-data_heurQ_v25 <- data_heurQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_inthumQ_v25 <- data_inthumQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_matreasT_v25 <- data_matreasT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_matreasT_v25))
-data_NavonT_v25 <- data_NavonT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NavonT_v25))
-data_NeckerT_v25 <- data_NeckerT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_NeckerT_v25))
-data_needcloQ_v25 <- data_needcloQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_needcogQ_v25 <- data_needcogQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_openQ_v25 <- data_openQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_rpQ_v25 <- data_rpQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_sciattQ_v25 <- data_sciattQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_scicurQ_v25 <- data_scicurQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_infoQ_v25 <- data_infoQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_uutT_v25 <- data_uutT_v25 %>%
-  select(Participant.Private.ID, Spreadsheet:ncol(data_uutT_v25))
-data_validQ_v25 <- data_validQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-```
-
 ## Merge the different versions of each task/questionnaire
 
 This chunk combines the different versions of each task/questionnaire (leaving us with one df per task/questionnaire).
 
 ```{r Merge the versions, include = FALSE}
 
-# Concatenate the versions of each task/questionnaire and remove the empty last line of each file 
+# Concatenate the versions of each task/questionnaire
+data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, data_big5Q_v24, data_big5Q_v25) 
+data_citiT <- rbind(data_citiT_v22, data_citiT_v23, data_citiT_v24, data_citiT_v25) 
+data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, data_demoQ_v24, data_demoQ_v25)
+data_epiQ <- rbind(data_epiQ_v22, data_epiQ_v23, data_epiQ_v24, data_epiQ_v25)
+data_nogoT <- rbind(data_nogoT_v22, data_nogoT_v23, data_nogoT_v24, data_nogoT_v25)
+data_heurQ <- rbind(data_heurQ_v22, data_heurQ_v23, data_heurQ_v24, data_heurQ_v25)
+data_inthumQ <- rbind(data_inthumQ_v22, data_inthumQ_v23, data_inthumQ_v24, data_inthumQ_v25)
+data_matreasT <- rbind(data_matreasT_v22, data_matreasT_v23, data_matreasT_v24, data_matreasT_v25)
+data_NavonT <- rbind(data_NavonT_v22, data_NavonT_v23, data_NavonT_v24, data_NavonT_v25)
+data_NeckerT <- rbind(data_NeckerT_v22, data_NeckerT_v23, data_NeckerT_v24, data_NeckerT_v25)
+data_needcloQ <- rbind(data_needcloQ_v22, data_needcloQ_v23, data_needcloQ_v24, data_needcloQ_v25)
+data_needcogQ <- rbind(data_needcogQ_v22, data_needcogQ_v23, data_needcogQ_v24, data_needcogQ_v25)
+data_openQ <- rbind(data_openQ_v22, data_openQ_v23, data_openQ_v24, data_openQ_v25)
+data_rpQ <- rbind(data_rpQ_v22, data_rpQ_v23, data_rpQ_v24, data_rpQ_v25)
+data_sciattQ <- rbind(data_sciattQ_v22, data_sciattQ_v23, data_sciattQ_v24, data_sciattQ_v25)
+data_scicurQ <- rbind(data_scicurQ_v22, data_scicurQ_v23, data_scicurQ_v24, data_scicurQ_v25)
+data_infoQ <- rbind(data_infoQ_v22, data_infoQ_v23, data_infoQ_v24, data_infoQ_v25)
+data_uutT <- rbind(data_uutT_v22, data_uutT_v23, data_uutT_v24, data_uutT_v25)
+data_validQ <- rbind(data_validQ_v22, data_validQ_v23, data_validQ_v24, data_validQ_v25)
 
-data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, data_big5Q_v24, data_big5Q_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_citiT <- rbind(data_citiT_v22, data_citiT_v23, data_citiT_v24, data_citiT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, data_demoQ_v24, data_demoQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_epiQ <- rbind(data_epiQ_v22, data_epiQ_v23, data_epiQ_v24, data_epiQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_nogoT <- rbind(data_nogoT_v22, data_nogoT_v23, data_nogoT_v24, data_nogoT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_heurQ <- rbind(data_heurQ_v22, data_heurQ_v23, data_heurQ_v24, data_heurQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_inthumQ <- rbind(data_inthumQ_v22, data_inthumQ_v23, data_inthumQ_v24, data_inthumQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_matreasT <- rbind(data_matreasT_v22, data_matreasT_v23, data_matreasT_v24, data_matreasT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_NavonT <- rbind(data_NavonT_v22, data_NavonT_v23, data_NavonT_v24, data_NavonT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_NeckerT <- rbind(data_NeckerT_v22, data_NeckerT_v23, data_NeckerT_v24, data_NeckerT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_needcloQ <- rbind(data_needcloQ_v22, data_needcloQ_v23, data_needcloQ_v24, data_needcloQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_needcogQ <- rbind(data_needcogQ_v22, data_needcogQ_v23, data_needcogQ_v24, data_needcogQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_openQ <- rbind(data_openQ_v22, data_openQ_v23, data_openQ_v24, data_openQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_rpQ <- rbind(data_rpQ_v22, data_rpQ_v23, data_rpQ_v24, data_rpQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_sciattQ <- rbind(data_sciattQ_v22, data_sciattQ_v23, data_sciattQ_v24, data_sciattQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_scicurQ <- rbind(data_scicurQ_v22, data_scicurQ_v23, data_scicurQ_v24, data_scicurQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_infoQ <- rbind(data_infoQ_v22, data_infoQ_v23, data_infoQ_v24, data_infoQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_uutT <- rbind(data_uutT_v22, data_uutT_v23, data_uutT_v24, data_uutT_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-data_validQ <- rbind(data_validQ_v22, data_validQ_v23, data_validQ_v24, data_validQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
+# Remove the empty last line of each file
+for (i in 1:length(names_all)) {
+  assign(paste0("data_", names_all[i]),
+         get(paste0("data_", names_all[i]))[which(!is.na(get(paste0("data_", names_all[i]))[, 1])), ])
+}
 
-# Remove to clean up the environment
-rm(data_big5Q_v22, data_citiT_v22, data_demoQ_v22, data_epiQ_v22, data_nogoT_v22, data_heurQ_v22, data_inthumQ_v22, data_matreasT_v22, data_NavonT_v22, data_NeckerT_v22, data_needcloQ_v22, data_needcogQ_v22, data_openQ_v22, data_rpQ_v22, data_sciattQ_v22, data_scicurQ_v22, data_infoQ_v22, data_uutT_v22, data_validQ_v22)
-
-rm(data_big5Q_v23, data_citiT_v23, data_demoQ_v23, data_epiQ_v23, data_nogoT_v23, data_heurQ_v23, data_inthumQ_v23, data_matreasT_v23, data_NavonT_v23, data_NeckerT_v23, data_needcloQ_v23, data_needcogQ_v23, data_openQ_v23, data_rpQ_v23, data_sciattQ_v23, data_scicurQ_v23, data_infoQ_v23, data_uutT_v23, data_validQ_v23)
-
-rm(data_big5Q_v24, data_citiT_v24, data_demoQ_v24, data_epiQ_v24, data_nogoT_v24, data_heurQ_v24, data_inthumQ_v24, data_matreasT_v24, data_NavonT_v24, data_NeckerT_v24, data_needcloQ_v24, data_needcogQ_v24, data_openQ_v24, data_rpQ_v24, data_sciattQ_v24, data_scicurQ_v24, data_infoQ_v24, data_uutT_v24, data_validQ_v24)
-
-rm(data_big5Q_v25, data_citiT_v25, data_demoQ_v25, data_epiQ_v25, data_nogoT_v25, data_heurQ_v25, data_inthumQ_v25, data_matreasT_v25, data_NavonT_v25, data_NeckerT_v25, data_needcloQ_v25, data_needcogQ_v25, data_openQ_v25, data_rpQ_v25, data_sciattQ_v25, data_scicurQ_v25, data_infoQ_v25, data_uutT_v25, data_validQ_v25)
+# Remove version files to clean up the environment
+for (j in 1:length(versions)) {
+  for (i in 1:length(names_all)) {
+    rm(list = paste0("data_", names_all[i], "_", versions[j]))
+  }
+}
 
 ``` 
+
+# CONTINUE HERE
 
 ## Merge questionnaire dataframes
 
@@ -502,11 +193,9 @@ rm(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11
 
 ```
 
-# Participant exclusions and demographics 
+# Participant exclusions
 
-This chunk removes nonvalid participants and computes demographic information.
-
-**NOTE: why are we computing demographics here? I don't think it's necessary as we are still removing participants with exclusion criteria???**
+This chunk removes nonvalid participants.
 
 First, check comments for those who chose something other than "you can use my data" to see what else is chosen and why. Here, there were a few "other, what?" that can be kept, e.g. ppts worried that making mistakes in a few trials of Navon makes their data invalid.
 
@@ -526,30 +215,6 @@ data_Q_lang_omit <- data_Q_total %>%
 data_Q_total <- data_Q_total %>%
  filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.", "Muu, mikÃ¤? ", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
 
-
-# # Demographics: checking the class and range of the data
-# typeof(data_Q_total$gender)
-# data_Q_total$gender <- factor(data_Q_total$gender) # changing gender into factor
-# 
-# typeof(data_Q_total$Age) # Age should be integer so we leave it
-# 
-# typeof(data_Q_total$Country) 
-# data_Q_total$Country <- factor(data_Q_total$Country) # changing country into factor
-# 
-# typeof(data_Q_total$Language)
-# data_Q_total$Language <- factor(data_Q_total$Language) # changing language into factor
-# 
-# typeof(data_Q_total$Education)
-# data_Q_total$Education <- factor(data_Q_total$Education) # changing education into factor
-# 
-# 
-# # Visualize demograhics
-# barplot(table(data_Q_total$gender), ylim = (c(0, 150)), main = "Gender", col = 'skyblue3')
-# barplot(table(data_Q_total$Country), ylim = (c(0, 180)), main = "Country", col = 'skyblue3')
-# barplot(table(data_Q_total$Education.quantised), ylim = (c(0, 80)), col = 'skyblue3', xaxt = "n", main = "Education level", xaxt = "n")
-# axis(1, at = seq(from = 0.75, to = 7.9, length.out = 7), labels = c("Tohtori", "Ylempi KKT", "Alempi KKT", "AMK", "YO", "Peruskoulu", "Muu"), cex.axis = 0.7, las = 2)
-# hist(data_Q_total$Age, xlim = c(15, 80), ylim = c(0, 50), col = 'skyblue3', breaks = 7, xlab = "Age", ylab = "Frequency", main = "Age")
-
 ```
 
 # Questionnaire processing 
@@ -558,11 +223,9 @@ The following chunks deal with TIPI, EC, IH, AOT, NFC, and NFcog. They remove ba
 
 The data from each questionnaire is checked: if a participant was suspiciously quick at responding to the questionnaire (<1s/item), that participant's data for that questionnaire is replaced with NAs. After this, the relevant items are reverse-coded, the structure is checked with CFA (prior to which the distributions of the items are checked so that CFA assumptions are met), and sum scores/mean scores are calculated for each questionnaire according to the scoring instructions.
 
-**NOTE: double FA is not an issue? (i.e., first running CFA for each and then doing the EFA)**
+**NOTE: double FA is not an issue? (i.e., first running CFA for each and then doing the EFA)** -> GET RID + CHECK 95%
 
 Additionally, for scales that have reverse-coded items, if 95% of a participant's responses fall on the same response, their data for that scale are replaced with NAs (this indicates that they have not even read the questions properly).
-
-**NOTE: only for reverse-coded items? Are we sure about the 95% threshold?**
 
 ***Note to self: check the issues with CFA: single factor, methods, nonnormality, model indices***
 
@@ -571,8 +234,6 @@ Additionally, for scales that have reverse-coded items, if 95% of a participant'
 Maximum Likelihood Estimation (MLE) assumes large sample size, normality of data, and continuous data; if data are non-normal, we should use robust MLE; if data are ordinal, we should use unweighted least squares or diagonally weighted least squares.
 
 It is common to still treat data as continuous if there are more than 5 response options in your scale and participants are using the full range of responses. This is due to the fact that MLE has benefits that WLS doesn't have. 
-
-**NOTE: This should be discussed.** 
 
 The default scaling constraint/identifcation constraints imposed when using the cfa() function are to fix the loading of the first item of each latent variable to 1. We can override this by setting std.lv = TRUE. This will instead scale the latent variables by fixing thir variances to 1.
 
@@ -637,6 +298,7 @@ data_Q_total <- data_Q_total %>%
 # Omit B5 data based on the B5_omit column
 data_Q_total[which(data_Q_total$B5_omit == 1), b5] <- NA
 # NOTE: if we want to omit participants with only NAs, we use B5_omit != 0
+# There is a section where we decide how many missing quesstionnaires is too much (should be after this; check)
 
 # Reverse-code
 for (i in 1:length(b5_rev)) {
@@ -800,6 +462,7 @@ for (i in 1:length(epicur_sum)) {
        )
 }
 # NOTE: what is happening here?
+# Outlier detection: is it necessary? look into it
 # sample level sum score descriptives and outliers
 #Q1 <- quantile(data_Q_total$ICuriositySum, 0.25, na.rm = TRUE)
 #Q3 <- quantile(data_Q_total$ICuriositySum, 0.75, na.rm = TRUE)
@@ -825,8 +488,6 @@ for (i in 1:length(epicur_sum)) {
 }
 
 ```
-
-NOTE: do we want to already check assumptions for CFA here? it seems very jumpy that we go from exclusion criteria and data cleaning to assumption checks.
 
 ## Intellectual Humility
 
@@ -1186,6 +847,8 @@ data_Q_total$CogSum <- rowSums(cbind(data_Q_total$cognition1, data_Q_total$cogni
 
 # NOTE: why?
 # data_Q_total$CogSum[which(data_Q_total$CogSum == 0)] <- NA
+# DOUBLE CHECK: are NA scores encoded as 0s or NAs? they need to be NAs
+# Maybe a loop  later on for entire dataset
 
 # Factor/sum score level assumptions
 describe(data_Q_total$CogSum)[c("mean", "skew", "kurtosis")]
@@ -1307,7 +970,6 @@ alpha(AOT)
 
 ```
 
-NOTE: we need to think about what we do with missing data (i.e., actually missing data and not data that we have now marked as NA due to exclusion criteria) / we need to remember that these are separate things
 
 ## Matrix Reasoning
 
@@ -1415,6 +1077,28 @@ hist(data_matreasT_final$MatrixCorrectCount,
 This section has 12 questions with Likert responses that represent a (possible) 3 factor model based on the sources of the questions, from an early version of the Science Capital Scale from the FINSCI population survey study. The first 8 questions originally come from Archer, 2015, and the last 4 are modified from the Trust in Science and Scientists Scale (Nadelson et al., 2014). 
 
 There are 3 additional questions that can be analyzed separately or used in demographic info. We hadn't really decided what to do with those questions yet.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # WHERE YOU LEFT OFF
 
