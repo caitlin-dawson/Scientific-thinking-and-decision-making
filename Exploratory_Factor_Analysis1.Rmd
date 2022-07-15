@@ -630,3 +630,222 @@ bergescores <- factor.scores(Q_new,EFA_6f,method=c("tenBerge"),rho = Q_rho, impu
 View(bergescores$scores)
 
 ```
+
+#EFA using lavaan
+https://solomonkurz.netlify.app/post/2021-05-11-yes-you-can-fit-an-exploratory-factor-analysis-with-lavaan/ 
+
+```{r EFA using lavaan, include=FALSE}
+
+library(tidyverse)
+library(lavaan)
+
+d <- Q_new
+
+
+#EFA in lavaan
+#Consider your estimation method.
+#An important preliminary step before fitting an EFA is getting a good sense of the data. In the last section, we learned the data are composed of three ordinal categories, which means that conventional estimators, such as maximum likelihood, won’t be the best of choices. Happily, lavaan offers several good options for ordinal data, which you can learn more about at https://lavaan.ugent.be/tutorial/cat.html and https://lavaan.ugent.be/tutorial/est.html. The default is the WLSMV estimator (i.e., estimator = "WLSMV"), which our friends in quantitative methodology have shown is generally a good choice (e.g., Flora & Curran, 2004; Li, 2016).
+
+# 3-factor model
+f3 <- '
+efa("efa")*f1 +
+efa("efa")*f2 +
+efa("efa")*f3 =~ AMean + CMean + EMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HEscore + HRscore + RPSum + Sci.cur_Sum + Sci.tru_Sum + Sci.impo_Sum + Sci.id_Sum + MatrixCorrectCount'
+
+
+# 4-factor model
+f4 <- '
+efa("efa")*f1 +
+efa("efa")*f2 +
+efa("efa")*f3 +
+efa("efa")*f4 =~ AMean + CMean + EMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HEscore + HRscore + RPSum + Sci.cur_Sum + Sci.tru_Sum + Sci.impo_Sum + Sci.id_Sum + MatrixCorrectCount'
+
+# 5-factor model
+f5 <- '
+efa("efa")*f1 +
+efa("efa")*f2 +
+efa("efa")*f3 +
+efa("efa")*f4 +
+efa("efa")*f5 =~ AMean + CMean + EMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HEscore + HRscore + RPSum + Sci.cur_Sum + Sci.tru_Sum + Sci.impo_Sum + Sci.id_Sum + MatrixCorrectCount'
+
+# 6-factor model
+f6 <- '
+efa("efa")*f1 +
+efa("efa")*f2 +
+efa("efa")*f3 +
+efa("efa")*f4 +
+efa("efa")*f5 +
+efa("efa")*f6 =~ AMean + CMean + EMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HEscore + HRscore + RPSum + Sci.cur_Sum + Sci.tru_Sum + Sci.impo_Sum + Sci.id_Sum + MatrixCorrectCount'
+
+#fit the EFAs
+#One can currently do so with either the cfa() or sem() functions. The default rotation method is oblique Geomin. If you’re not up on rotation methods, you might check out Sass & Schmitt (2010). Here we’ll give a nod to tradition and use oblique Oblimin by setting rotation = "oblimin". Also, note our use of ordered = TRUE, which explicitly tells lavaan::cfa() to treat all  of our items as ordinal.
+
+#use the ordered argument when using one of the fitting functions (cfa/sem/growth/lavaan), for example, if you have four binary or ordinal variables (say, item1, item2, item3, item4), you can use:
+
+#fit <- cfa(myModel, data = myData,
+#ordered = c("item1","item2","item3","item4"))
+
+#If all the (endogenous) variables are to be treated as categorical, you can use ordered = TRUE as a shortcut. When the ordered= argument is used, lavaan will automatically switch to the WLSMV estimator: it will use diagonally weighted least squares (DWLS) to estimate the model parameters, but it will use the full weight matrix to compute robust standard errors, and a mean- and variance-adjusted test stastistic. Other options are unweighted least squares (ULSMV), or pairwise maximum likelihood (PML). Full information maximum likelihood is currently not supported.
+
+##CD: this works, but I'm not sure about the estimator. With psych efa() I was using minrank and inputting the mixed correlation matrix. These give pretty different results. Specifying the binary variables (and using RP as ordinal) SHOULD deal with those issues, but the estimator is still different. I used minrank because the other methods were producing non positive definite matrices even though according to is.positive.definite() the original correlation matrix was OK. 
+
+efa_f3 <- 
+  cfa(model = f3,
+      data = d,
+      rotation = "oblimin",
+      estimator = "WLSMV",
+      ordered = c("HEscore","HRscore","RPSum"))
+
+summary(efa_f3, fit.measures = TRUE)
+
+efa_f4 <- 
+  cfa(model = f4,
+      data = d,
+      rotation = "oblimin",
+      estimator = "WLSMV",
+      ordered = c("HEscore","HRscore","RPSum"))
+
+summary(efa_f4, fit.measures = TRUE)
+
+efa_f5 <- 
+  cfa(model = f5,
+      data = d,
+      rotation = "oblimin",
+      estimator = "WLSMV",
+      ordered = c("HEscore","HRscore","RPSum"))
+
+summary(efa_f5, fit.measures = TRUE)
+
+efa_f6 <- 
+  cfa(model = f6,
+      data = d,
+      rotation = "oblimin",
+      estimator = "WLSMV",
+      ordered = c("HEscore","HRscore","RPSum"))
+
+summary(efa_f6, fit.measures = TRUE)
+
+#Ccompare the EFAs by some of their fit statistics.
+
+#The parameterEstimates() function returns a data.frame containing all the model parameters in the rows:
+
+#fit <- cfa(HS.model, data=HolzingerSwineford1939)
+#parameterEstimates(fit)
+
+parameterEstimates(efa_f3)
+
+# define the fit measures
+fit_measures_robust <- c("chisq.scaled", "df", "pvalue.scaled", 
+                         "cfi.scaled", "rmsea.scaled", "srmr")
+
+# collect them for each model
+rbind(
+  fitmeasures(efa_f3, fit_measures_robust),
+  fitmeasures(efa_f4, fit_measures_robust),
+  fitmeasures(efa_f5, fit_measures_robust),
+  fitmeasures(efa_f6, fit_measures_robust)) %>% 
+  
+  # wrangle
+  data.frame() %>% 
+  mutate(chisq.scaled  = round(chisq.scaled, digits = 0),
+         df            = as.integer(df),
+         pvalue.scaled = ifelse(pvalue.scaled == 0, "< .001", pvalue.scaled)) %>% 
+  mutate_at(vars(cfi.scaled:srmr), ~round(., digits =  3))
+
+
+##None of the solutions seems particularly better than the others based on these criteria, it's just adding factors till we overfit. So we'll probably take one based on theoretical sense. 
+
+###"As is often the case, the fit got steadily better with each added factor. Here’s how one might work with the output from the standardizedsolution() function to plot the lambda’s for the 3-factor solution."###
+
+# wrangle
+standardizedsolution(efa_f3) %>% 
+  filter(op == "=~") %>% 
+  mutate(item  = str_remove(rhs, "y") %>% as.double(),
+         factor = str_remove(lhs, "f")) %>% 
+  
+  # plot
+  ####this part not working
+  
+  ggplot(aes(x = est.std, xmin = ci.lower, xmax = ci.upper, y = item)) +
+  annotate(geom = "rect",
+           xmin = -1, xmax = 1,
+           ymin = -Inf, ymax = Inf,
+           fill = "grey90") +
+  annotate(geom = "rect",
+           xmin = -0.7, xmax = 0.7,
+           ymin = -Inf, ymax = Inf,
+           fill = "grey93") +
+  annotate(geom = "rect",
+           xmin = -0.4, xmax = 0.4,
+           ymin = -Inf, ymax = Inf,
+           fill = "grey96") +
+  geom_vline(xintercept = 0, color = "white") +
+  geom_pointrange(aes(alpha = abs(est.std) < 0.4),
+                  fatten = 5) +
+  geom_text(aes(label = item, color = abs(est.std) < 0.4),
+            size = 2) +
+  scale_color_manual(values = c("white", "transparent")) +
+  scale_alpha_manual(values = c(1, 1/3)) +
+  scale_x_continuous(expression(lambda[standardized]), 
+                     expand = c(0, 0), limits = c(-1, 1),
+                     breaks = c(-1, -0.7, -0.4, 0, 0.4, 0.7, 1),
+                     labels = c("-1", "-.7", "-.4", "0", ".4", ".7", "1")) +
+  scale_y_continuous(breaks = 1:22, sec.axis = sec_axis(~ . * 1, breaks = 1:22)) +
+  ggtitle("Loadings for the 3-factor model") +
+  theme(legend.position = "none") +
+  facet_wrap(~ factor, labeller = label_both)
+
+#"To reduce visual complexity, lambda’s less than the conventional 0.4 threshold are semitransparent. Those above the threshold have the item number in the dot. I’m not going to offer an interpretation, here, since that’s not really the point of this post. But hopefully this will get you started fitting all the lavaan-based EFAs your heart desires."
+
+
+#View loadings of each model
+model_loadings_3 <- inspect(efa_f3, what = "std")[["lambda"]]
+print(model_loadings_3)
+fa.diagram(model_loadings_3)
+
+model_loadings_4 <- inspect(efa_f4, what = "std")[["lambda"]]
+print(model_loadings_4)
+fa.diagram(model_loadings_4)
+
+model_loadings_5 <- inspect(efa_f5, what = "std")[["lambda"]]
+print(model_loadings_5)
+fa.diagram(model_loadings_5)
+
+model_loadings_6 <- inspect(efa_f6, what = "std")[["lambda"]]
+print(model_loadings_6)
+fa.diagram(model_loadings_6)
+
+
+
+
+```
+
+#Factor scores using lavPredict
+https://rdrr.io/cran/lavaan/man/lavPredict.html 
+https://lavaan.ugent.be/tutorial/tutorial.pdf 
+
+The main purpose of the lavPredict() function is to compute (or ‘predict’) estimated values for the latent variables in the model (‘factor scores’). NOTE: the goal of this function is NOT to predict future values of dependent variables as in the regression framework!
+
+```{r Factor scores using lavPredict,include=FALSE}
+
+#fsm returns factor score matrix as an attribute
+#method Empirical Bayes Modal approach
+#type A character string. If "lv", estimated values for the latent variables in the model are computed. If "ov", model predicted values for the indicators of the latent variables in the model are computed. If "yhat", the estimated value for the observed indicators, given user-specified values for the latent variables provided by de ETA argument. If "fy", densities (or probabilities) for each observed indicator, given user-specified values for the latent variables provided by de ETA argument.
+#se = naive standard errors
+#EBMscores <- lavPredict(efa_f3, newdata = Q_new, type = "yhat", 
+                       # method = "EBM", se = "none", acov = "none",
+                       # label = TRUE, fsm = TRUE, append.data = FALSE, 
+                       # assemble = FALSE, level = 1L, optim.method = 
+                       #   "bfgs", ETA = NULL)
+
+#seems to work but haven't checked it yet
+EBMscores <- lavPredict(efa_f3, method = "EBM")
+
+```
+
+
+
+
+
+
+
