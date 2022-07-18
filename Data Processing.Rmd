@@ -678,7 +678,6 @@ hist(data_matreasT_final$MatrixCorrectCount,
 
 ```
 
-
 ## Science Attitudes Questionnaire
 
 This section has 12 questions with Likert responses that represent a (possible) 3 factor model based on the sources of the questions, from an early version of the Science Capital Scale from the FINSCI population survey study. The first 8 questions originally come from Archer, 2015, and the last 4 are modified from the Trust in Science and Scientists Scale (Nadelson et al., 2014). 
@@ -688,185 +687,65 @@ There are 3 additional questions that can be analyzed separately or used in demo
 ```{r Scoring science attitudes, include = FALSE}
 
 # Science Attitudes
-
-# a) I am aware of science, scientific research and developments in it.
-# ***b) Science is not for me.
-# ***d) I don’t think I’m smart enough to understand science.
-# g) I have a good understanding of scientific terminology such as hypothesis, theory, experiment and clinical testing.
-
-# c) Young people's interest in science is essential to our future well-being.
-# e) Science is so important in our lives that everyone should be interested in it.
-# f) Scientific knowledge is useful in my daily life.
-# h) Science is important for me to understand the world.
-
-# ***a) My confidence in researchers is diminished if they change their perceptions of scientific phenomena.
-# ***b) Investigators will disregard evidence that is inconsistent with their own work.
-# c) Scientific theories are reliable.
-# ***d) Researchers cannot be trusted because their views are biased.
-
-data_Q_total %>%
-  select(Randomise.questionnaire.elements..SCIENCE.ATT:END.QUESTIONNAIRE.SCIENCE.ATT)
-
-# Science identity
-data_Q_total %>%
-  select(sa.1a, sa.1b, sa.1d, sa.1g) # b, d reverse-coded
-
-# Importance of science in everyday life
-data_Q_total %>%
-  select(sa.1c, sa.1e, sa.1h, sa.1f)
-
-# Trust in scientists
-data_Q_total %>%
-  select(sa.2a, sa.2b, sa.2c, sa.2d) # a, b, d reverse-coded
+sci_att <- c("sa.1a", "sa.1b", "sa.1c", "sa.1d", "sa.1e", "sa.1f", "sa.1g", "sa.1h", "sa.2a", "sa.2b", "sa.2c", "sa.2d")
+sci_att_rev <- c("sa.1b", "sa.1d", "sa.2a", "sa.2b", "sa.2d")
 
 # Exclusion criteria
-  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-  # response time (1s/item -> 15000ms total)
+  # >=90% of responses fall on the same response option
+  # <=15000ms response time
+data_Q_total <- data_Q_total %>% 
+  mutate(sciatt_max = max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)), na.rm = TRUE) /
+           sum(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)), na.rm = TRUE))
 
-data_Q_total <- data_Q_total %>%
-  mutate(Sci.att_omit = case_when(((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) >= .95) | (END.QUESTIONNAIRE.SCIENCE.ATT <= 15000) ~ 1, 
-     ((max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d))) / length(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)) < .95) & (END.QUESTIONNAIRE.SCIENCE.ATT > 15000) ~ 0))) 
+data_Q_total <- data_Q_total %>% 
+  mutate(sciatt_omit = case_when(sciatt_max >= .90 | END.QUESTIONNAIRE.SCIENCE.ATT <= 1000*length(sci_att) ~ 1, 
+                             sciatt_max < .90 & END.QUESTIONNAIRE.SCIENCE.ATT> 1000*length(sci_att) ~ 0))
+ 
+# Omit science attitude data based on sciatt_omit column
+data_Q_total[which(data_Q_total$sciatt_omit == 1), sci_att] <- NA
 
+# Reverse-code
+for (i in 1:length(sci_att_rev)) {
+  data_Q_total[, sci_att_rev[i]] <- reverse.code(keys = c(-1), 
+                                             items = data_Q_total[, sci_att_rev[i]], 
+                                             mini = c(1), 
+                                             maxi = c(5))
+}
 
-# Omitting SA data based on the Sci.att_omit column
-data_Q_total$sa.1a[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1b[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1c[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1d[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1e[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1f[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1g[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.1h[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.2a[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.2b[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.2c[which(data_Q_total$Sci.att_omit == 1)] <- NA
-data_Q_total$sa.2d[which(data_Q_total$Sci.att_omit == 1)] <- NA
+# Describe: item-level
+par(mfrow = c(3, 4))
+for (i in 1:length(sci_att)) {
+  hist(data_Q_total[, sci_att[i]], 
+       main = colnames(data_Q_total[sci_att[i]]), 
+       col = sample(colors(), 1), 
+       breaks = seq(0, 7, 1), 
+       xlab = "")
+}
+describe(data_Q_total[, sci_att])
 
+# Cronbach's alphas
+alpha(data_Q_total[, sci_att])
 
-# Reverse-coding
-# there was a mistake and originally sa.1g was coded as reversed, I have now changed the coding for that item
-data_Q_total$sa.1b.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.1b, mini = c(1), maxi = c(5))
-data_Q_total$sa.1d.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.1d, mini = c(1), maxi = c(5))
-data_Q_total$sa.2a.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.2a, mini = c(1), maxi = c(5))
-data_Q_total$sa.2b.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.2b, mini = c(1), maxi = c(5))
-data_Q_total$sa.2d.rev <- reverse.code(keys = c(-1), items = data_Q_total$sa.2d, mini = c(1), maxi = c(5))
+# Calculate sum score
+data_Q_total$sci_id <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b.rev, data_Q_total$sa.1d.rev, data_Q_total$sa.1g), na.rm = TRUE)
+data_Q_total$sci_impo <- rowSums(cbind(data_Q_total$sa.1c, data_Q_total$sa.1e, data_Q_total$sa.1h, data_Q_total$sa.1f), na.rm = TRUE)
+data_Q_total$sci_tru <- rowSums(cbind(data_Q_total$sa.2a.rev, data_Q_total$sa.2b.rev, data_Q_total$sa.2c, data_Q_total$sa.2d.rev), na.rm = TRUE)
 
+# Replace total score zeroes with NA
+data_Q_total$sci_id[which(data_Q_total$sci_id == 0)] <- NA
+data_Q_total$sci_impo[which(data_Q_total$sci_impo == 0)] <- NA
+data_Q_total$sci_tru[which(data_Q_total$sci_tru == 0)] <- NA
 
-## Checking the structure with CFA
-
-## Assumptions
-
-# Normality
-# these HAVE BEEN reverse coded, so 5 is always MORE SCIENCE
-#par(mfrow = c(3, 4))
-#hist(data_Q_total$sa.1a, main = "Science identity 1", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1b.rev, main = "Science identity 2 rev", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1d.rev, main = "Science identity 3 rev", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1g, main = "Science identity 4", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-
-#hist(data_Q_total$sa.1c, main = "Everyday life 1", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1e, main = "Everyday life 2", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1f, main = "Everyday life 3", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.1h, main = "Everyday life 4", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-
-#hist(data_Q_total$sa.2a.rev, main = "Trust in scientists 1 rev", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.2b.rev, main = "Trust in scientists 2 rev", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.2c, main = "Trust in scientists 3", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sa.2d.rev, main = "Trust in scientists 4 rev", col = rainbow(14), ylim = c(0, 90), breaks = seq(0, 5, 1), xlab = "")
-
-
-# Summary (mean, skew, kurtosis)
-#SA_items <- (describe(data_Q_total$sa.1a))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1b.rev))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1c))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1d.rev))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1e))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1f))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1g))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.1h))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.2a.rev))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.2b.rev))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.2c))
-#SA_items <- rbind(SA_items, describe(data_Q_total$sa.2d.rev))
-#row.names(SA_items) <- c("sa.1a", "sa.1b.rev", "sa.1c", "sa.1d.rev", "sa.1e", "sa.1f", "sa.1g", "sa.1h", "sa.2a.rev", "sa.2b.rev", "sa.2c", "sa.2d.rev")
-#View(SA_items)
-
-
-# Shapiro-Wilks
-#shapiro.test(data_Q_total$sa.1a)
-#shapiro.test(data_Q_total$sa.1b.rev)
-#shapiro.test(data_Q_total$sa.1c)
-#shapiro.test(data_Q_total$sa.1d.rev)
-#shapiro.test(data_Q_total$sa.1e)
-#shapiro.test(data_Q_total$sa.1f)
-#shapiro.test(data_Q_total$sa.1g)
-#shapiro.test(data_Q_total$sa.1h)
-#shapiro.test(data_Q_total$sa.2a.rev)
-#shapiro.test(data_Q_total$sa.2b.rev)
-#shapiro.test(data_Q_total$sa.2c)
-#shapiro.test(data_Q_total$sa.2d.rev)
-
-
-# does this hold up?
-# CFA
-names(data_Q_total[, c()])
-round(cor(data_Q_total[, c()], method = "spearman"), 2)
-round(cov(data_Q_total[, c()], method = "spearman"), 2)
-model_Sci.att <- 'Sci_id =~ sa.1a + sa.1b.rev + sa.1d.rev + sa.1g
-         Sci_impo =~ sa.1c + sa.1e + sa.1h + sa.1f
-         Sci_tru =~ sa.2a.rev + sa.2b.rev + sa.2c + sa.2d.rev
-Sci_id ~~ Sci_impo
-Sci_id ~~ Sci_tru
-Sci_impo ~~ Sci_tru'
-model_Sci.att.est<-cfa(model_Sci.att, data = data_Q_total, estimator = "MLF", std.lv = TRUE) 
-summary(model_Sci.att.est, fit.measures = T, standardized = T)
-modindices(model_Sci.att.est, sort = T)
-
-
-# Calculating Sum score
-data_Q_total$Sci.id_Sum <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b.rev, data_Q_total$sa.1d.rev, data_Q_total$sa.1g), na.rm = TRUE)
-data_Q_total$Sci.impo_Sum <- rowSums(cbind(data_Q_total$sa.1c, data_Q_total$sa.1e, data_Q_total$sa.1h, data_Q_total$sa.1f), na.rm = TRUE)
-data_Q_total$Sci.tru_Sum <- rowSums(cbind(data_Q_total$sa.2a.rev, data_Q_total$sa.2b.rev, data_Q_total$sa.2c, data_Q_total$sa.2d.rev), na.rm = TRUE)
-
-# replace total score zeroes with NA
-data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum == 0)] <- NA
-data_Q_total$Sci.impo_Sum[which(data_Q_total$Sci.impo_Sum == 0)] <- NA
-data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum == 0)] <- NA
-
-
-# scale level descriptives
-
-# use this to ID outlier boundaries
-#Q1 <- quantile(data_Q_total$Sci.id_Sum, na.rm = TRUE, 0.25)
-#Q3 <- quantile(data_Q_total$Sci.id_Sum, na.rm = TRUE, 0.75)
-#range <- (IQR(data_Q_total$Sci.id_Sum, na.rm = TRUE)*1.5)
-#lowbound <- (Q1 - range)
-#highbound <- (Q3 + range)
-#summary(data_Q_total$Sci.id_Sum)
-#lowbound
-#highbound
-
-# no outliers in sci.id_sum
-#data_Q_total$Sci.id_Sum[which(data_Q_total$Sci.id_Sum == 0)] <- NA
-data_Q_total$Sci.impo_Sum[which(data_Q_total$Sci.impo_Sum < 11.5)] <- NA
-data_Q_total$Sci.tru_Sum[which(data_Q_total$Sci.tru_Sum < 12)] <- NA
-
-# plot cleaned data
-
-#par(mfrow = c(1, 3))
-#hist(data_Q_total$Sci.id_Sum, main = "Science identity", col = rainbow(14), ylim = c(0, 70), breaks = seq(0, 20, 2), xlab = "")
-#hist(data_Q_total$Sci.impo_Sum, main = "Importance in everyday life", col = rainbow(14), ylim = c(0, 70), breaks = seq(0, 20, 2), xlab = "")
-#hist(data_Q_total$Sci.tru_Sum, main = "Trust in scientists", col = rainbow(14), ylim = c(0, 70), breaks = seq(0, 20, 2), xlab = "")
-
-#shapiro.test(data_Q_total$Sci.id_Sum)
-#shapiro.test(data_Q_total$Sci.impo_Sum)
-#shapiro.test(data_Q_total$Sci.tru_Sum)
-
-#SA_task <- (describe(data_Q_total$Sci.id_Sum))
-#SA_task <- rbind(SA_task, describe(data_Q_total$Sci.impo_Sum))
-#SA_task <- rbind(SA_task, describe(data_Q_total$Sci.tru_Sum))
-#row.names(SA_task) <- c("Sci.id_Sum", "Sci.impo_Sum", "Sci.tru_Sum")
-#View(SA_task)
+# Describe: sum-score level
+sci_att_sum <- c("sci_id", "sci_impo", "sci_tru")
+describe(data_Q_total[, sci_att_sum])
+par(mfrow = c(3, 1))
+for (i in 1:length(sci_att_sum)) {
+  hist(data_Q_total[, sci_att_sum[i]], 
+       main = colnames(data_Q_total[sci_att_sum[i]]), 
+       col = sample(colors(), 1), 
+       xlab = "")
+}
 
 ```
 
@@ -900,82 +779,47 @@ Modified from Landrum et al., 2016 and Motta et al., 2019
  # Agree
  # Completely agree
 
-
-data_Q_total %>%
- select(Randomise.questionnaire.elements..SCIENCE.CUR:END.QUESTIONNAIRE.SCIENCE.CUR) # Note: I am writing the code with the assumption that q2 is a scale as it will be in the later versions
+sci_cur <- c("sc.1.quantised", "sc.2.quantised","sc.3.quantised", "sc.3.quantised")
 
 # Exclusion criteria
-  # response time (1s/item -> 4000ms total)
-
+  # >=4000ms response time
 data_Q_total <- data_Q_total %>%
  mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR <= 4000 ~ 1, 
                  END.QUESTIONNAIRE.SCIENCE.CUR > 4000 ~ 0))
 
-# Omitting SC data based on the Sci.cur_omit column
-data_Q_total$sc.1.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
-data_Q_total$sc.2.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
-data_Q_total$sc.3.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
-data_Q_total$sc.4.quantised[which(data_Q_total$Sci.cur_omit == 1)] <- NA
+# Omit SC data based on the Sci.cur_omit column
+data_Q_total[which(data_Q_total$Sci.cur_omit == 1), sci_cur] <- NA
 
-## Assumptions
+# Describe: item-level
+par(mfrow = c(2, 2))
+for (i in 1:length(sci_cur)) {
+  hist(data_Q_total[, sci_cur[i]], 
+       main = colnames(data_Q_total[sci_cur[i]]), 
+       col = sample(colors(), 1), 
+       breaks = seq(0, 7, 1), 
+       xlab = "")
+}
+describe(data_Q_total[, sci_cur])
 
-# Normality
-#par(mfrow = c(2, 2))
-#hist(data_Q_total$sc.1.quantised, ylim = c(0, 80), main = "Attending public presentations", col = rainbow(14), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sc.2.quantised, ylim = c(0, 80), main = "How many books did you read", col = rainbow(14), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sc.3.quantised, ylim = c(0, 80), main = "Interested in research", col = rainbow(14), breaks = seq(0, 5, 1), xlab = "")
-#hist(data_Q_total$sc.4.quantised, ylim = c(0, 80), main = "Follow new technology", col = rainbow(14), breaks = seq(0, 5, 1), xlab = "")
+# Cronbach's alpha
+alpha(data_Q_total[, sci_cur])
 
-# Summary (mean, skew, kurtosis)
-#SC_items <- (describe(data_Q_total$sc.1.quantised))
-#SC_items <- rbind(SC_items, describe(data_Q_total$sc.2.quantised))
-#SC_items <- rbind(SC_items, describe(data_Q_total$sc.3.quantised))
-#SC_items <- rbind(SC_items, describe(data_Q_total$sc.4.quantised))
-#row.names(SC_items) <- c("sc.1", "sc.2", "sc.3", "sc.4")
-#View(SC_items)
+# Calculate sum score
+data_Q_total$sci_cur <- rowSums(cbind(data_Q_total$sc.1.quantised, data_Q_total$sc.2.quantised, data_Q_total$sc.3.quantised, data_Q_total$sc.4.quantised), na.rm = TRUE)
 
-# Shapiro-Wilks
-#shapiro.test(data_Q_total$sc.1.quantised)
-#shapiro.test(data_Q_total$sc.2.quantised)
-#shapiro.test(data_Q_total$sc.3.quantised)
-#shapiro.test(data_Q_total$sc.4.quantised)
+# Replace sum score 0s with NAs
+data_Q_total$sci_cur[which(data_Q_total$sci_cur == 0)] <- NA
 
-# CFA
-#names(data_Q_total[, c()])
-#round(cor(data_Q_total[, c()], method = "spearman"), 2)
-#round(cov(data_Q_total[, c()], method = "spearman"), 2)
-#model_Sci.cur <- 'Sci_id =~ sc.1.quantised + sc.2.quantised + sc.3.quantised + sc.4.quantised'
-#model_Sci.cur.est<-cfa(model_Sci.cur, data = data_Q_total, std.lv = TRUE)
-#summary(model_Sci.cur.est, fit.measures = T, standardized = T)
-#modindices(model_Sci.cur.est, sort = T)
+# Describe: sum-score level
+describe(data_Q_total$sci_cur)
+hist(data_Q_total$sci_cur, 
+     col = sample(colors(), 1), 
+     xlab = "")
 
-
-# Calculating Sum score
-data_Q_total$Sci.cur_Sum <- rowSums(cbind(data_Q_total$sc.1.quantised, data_Q_total$sc.2.quantised, data_Q_total$sc.3.quantised, data_Q_total$sc.4.quantised), na.rm = TRUE)
-
-data_Q_total$Sci.cur_Sum[which(data_Q_total$Sci.cur_Sum == 0)] <- NA
-
-#Q1 <- quantile(data_Q_total$Sci.cur_Sum, 0.25, na.rm = TRUE)
-#Q3 <- quantile(data_Q_total$Sci.cur_Sum, 0.75, na.rm = TRUE)
-#range <- (IQR(data_Q_total$Sci.cur_Sum, na.rm = TRUE)*1.5)
-#lowbound <- Q1 - range
-#highbound <- Q3 + range
-#highbound
-#lowbound
-# no outliers here
-
-# sum score distribution
-#SC_items <- (describe(data_Q_total$Sci.cur_Sum))
-#row.names(SC_items) <- c("Sci.cur_Sum")
-#View(SC_items)
-
-#shapiro.test(data_Q_total$Sci.cur_Sum)
-
-#hist(data_Q_total$Sci.cur_Sum, ylim = c(0, 40), main = "Science curiosity", col = rainbow(14), breaks = seq(0, 20, 2), xlab = "")
 
 ```
 
-##Heuristic Reasoning
+## Heuristic Reasoning
 
 ***is this scoring method correct??***
 
@@ -983,19 +827,13 @@ data_Q_total$Sci.cur_Sum[which(data_Q_total$Sci.cur_Sum == 0)] <- NA
 
 For these purposes, incorrect answers will be excluded from analysis because they are not useful as most people don't give any wrong answers, and heuristic responses are binned together per participant. Participants each then have an HE score (0 or 1), and an HR score (0 or 1), each representing whether or not they made at least one heuristic mistake of that type (equiprobability or representativeness). 0 0 is a perfect normative tendency. 
 
-H-R: #Q1, 2, 3
-H-R: #Q4, 5, 6
-
 ```{r Scoring heuristic reasoning, include = FALSE}
 
 # Exclusion criteria
-  # distribution of responses for each survey per participant: if >95% of responses fall on the same response option (e.g., 6), data for that participant for that survey should be omitted (because it's a partially reverse-coded scale)
-  # response time (1s/item -> 6000ms total)
-
-## min response time
+  # <=6000ms response time
 data_Q_total <- data_Q_total %>%
  mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC <= 6000 ~ 1, 
-               END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
+                            END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
 
 # Q1
 # Luonnollinen sukupuolijakauma syntyvien lasten osalta on arviolta yksi mies naista kohden. Tämä tarkoittaa sitä, että syntyvä lapsi on 50% todennäköisyydellä poika ja 50 % todennäköisyydellä tyttö. Kuvittele perhe, johon on syntynyt viisi lasta, kaikki heistä poikia. Mikä seuraavista on todennäköisin?
@@ -1004,14 +842,7 @@ data_Q_total <- data_Q_total %>%
  # Kumpikin on yhtä todennäköistä = N
 
 data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
-#data_Q_total$hr.1 <- factor(data_Q_total$hr.1, levels = c(levels(data_Q_total$hr.1), "Kuudes lapsi on tyttÃ¶", "Kuudes lapsi on poika"))
-
-#levels(data_Q_total$hr.1) #I added an empty level here as we do not currently have answers on each level; this enables renaming all the levels **DOES NOT NEED TO BE DONE FOR FINAL DATA**
-
 levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" = "Kuudes lapsi on poika")
-data_Q_total$hr.1
-# Yhta todennakoista = N; Tytto = H-R
-#barplot(table(data_Q_total$hr.1), ylim = (c(0, 160)), main = "H-R child", col = rainbow(14))
 
 # Q2
 # Kolikkoa heitetään kuusi kertaa. Kumpi seuraavista sarjoista on todennäköisempi kuuden kolikonheiton jälkeen? (H: Head = kruuna, T: Tails = klaava)
@@ -1019,12 +850,7 @@ data_Q_total$hr.1
  # HTHTHT
  # Kummatkin sarjat ovat yhtä todennäköisiä
 data_Q_total$hr.2 <- as.factor(data_Q_total$hr.2)
-
-#data_Q_total$hr.2 <- factor(data_Q_total$hr.2, levels = c(levels(data_Q_total$hr.2), "THHTHT", "HTHTHT")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
-
 levels(data_Q_total$hr.2) <- list("N" = "Kummatkin sarjat ovat yhtÃ¤ todennÃ¤kÃ¶isiÃ¤", "H-R" = "THHTHT", "Neither" = "HTHTHT")
-data_Q_total$hr.2
-#Yhta todennakoista = N; THHTHT = H-R
 
 # Q3
 # Terveystutkimus toteutettiin 100 aikuisen miehen otokselle, jossa kaikki ikäluokat ja ammattiryhmät olivat edustettuina. Herra F. valittiin osallistujien joukosta satunnaisesti. Herra F. on johtaja. Hän vietti pitkään todella kiireistä elämää. Hän osallistui useina iltoina yritysillallisiin ja hän oli harvoin lomalla. Hiljattain hänen piti lopettaa työskentely vähäksi aikaa. Hän on aloittanut työskentelyn uudelleen, mutta nykyisin hän ei ole yhtä kiireinen. Aiemmin hän hölkkäsi puistossa, mutta nyt hän menee mieluummin kävelylle. Raahaa seuraavat väittämät järjestykseen siten, että todennäköisin on ylimpänä ja epätodennäköisin alimpana.
@@ -1039,27 +865,20 @@ data_Q_total$hr.2
 
 # 3.1
 data_Q_total$hr.3.1 <- as.factor(data_Q_total$hr.3.1)
-
-#data_Q_total$hr.3.1 <- factor(data_Q_total$hr.3.1, levels = c(levels(data_Q_total$hr.3.1), "Herra F.:llÃ¤ on suuri perhe", "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
-
 levels(data_Q_total$hr.3.1) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
 
 # 3.2
 data_Q_total$hr.3.2 <- as.factor(data_Q_total$hr.3.2)
-#data_Q_total$hr.3.2 <- factor(data_Q_total$hr.3.2, levels = c(levels(data_Q_total$hr.3.2), "Herra F.:llÃ¤ on suuri perhe", "Herra F. sai sydÃ¤nkohtauksen")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
 levels(data_Q_total$hr.3.2) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
 
 # 3.3
 data_Q_total$hr.3.3 <- as.factor(data_Q_total$hr.3.3)
-#data_Q_total$hr.3.3 <- factor(data_Q_total$hr.3.3, levels = c(levels(data_Q_total$hr.3.3), "Herra F. sai sydÃ¤nkohtauksen", "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
-levels(data_Q_total$hr.3.3)
 levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
 
-
-# Creating the variables for the combinations of answers
+# Create the variables for the combinations of answers
 # abc / acb / cab = N; bac / bca /cba = H-R
 data_Q_total <- data_Q_total %>%
- mutate(hr.3.updated = case_when(
+  mutate(hr.3.updated = case_when(
  ((hr.3.1 == "b" & (hr.3.2 == "a"|hr.3.3 == "a")) | hr.3.2 == "b" & hr.3.3 == "a") ~ "H-R", 
  ((hr.3.1 == "a" & (hr.3.2 == "b"|hr.3.3 == "b")) | (hr.3.2 == "a" & hr.3.3 == "b")) ~ "N"
  ))
@@ -1067,16 +886,13 @@ data_Q_total$hr.3.updated <- factor(data_Q_total$hr.3.updated)
 
 
 # Q4
-
 # Kaksi eri tutkimusta selvittivät unettomuuden hoidossa kahden eri hoitomuodon vaikuttavuutta. Ensimmäisessä tutkimuksessa 400 lääkettä saaneesta henkilöstä 140 sai huomattavaa helpotusta. Toisessa tutkimuksessa 40 kognitiivis-behavioraalista terapiaa saaneesta potilaasta 16 kykeni nukkumaan paremmin kuin ennen hoitoa. Kumpaa hoitoa (jos kumpaakaan) suosittelisit unettomalle potilaalle?
  # Lääkehoitoa
  # Kognitiivis-behavioraalista terapiaa
  # Kumpikin on yhtä tehokas
 
 data_Q_total$hr.4 <- as.factor(data_Q_total$hr.4)
-#data_Q_total$hr.4 <- factor(data_Q_total$hr.4, levels = c(levels(data_Q_total$hr.4), "LÃ¤Ã¤kehoitoa", "Kumpikin on yhtÃ¤ tehokas")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
 levels(data_Q_total$hr.4) <- list("H-E" = "Kumpikin on yhtÃ¤ tehokas", "N" = "Kognitiivis-behavioraalista terapiaa", "Neither" = "LÃ¤Ã¤kehoitoa")
-data_Q_total$hr.4
 # Kognitiivis-behavioraalista terapiaa = N; Yhta tehokas = H-E
 
 # Q5
@@ -1086,9 +902,7 @@ data_Q_total$hr.4
  # Huomenna sataa
 
 data_Q_total$hr.5 <- as.factor(data_Q_total$hr.5)
-#data_Q_total$hr.5 <- factor(data_Q_total$hr.5, levels = c(levels(data_Q_total$hr.5), "Huomenna luultavasti sataa", "Huomenna sataa")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
 levels(data_Q_total$hr.5) <- list("N" = "Huomenna luultavasti sataa", "H-E" = "On mahdotonta sanoa sataako huomenna vai ei", "Neither" = "Huomenna sataa")
-data_Q_total$hr.5
 # Huomenna luultavasti sataa = N; On mahdotonta sanoa sataako huomenna vai ei = H-E
 
 # Q6
@@ -1096,14 +910,11 @@ data_Q_total$hr.5
  # Poika
  # Tyttö
  # Kumpikin on yhtä todennäköistä
-
 data_Q_total$hr.6 <- as.factor(data_Q_total$hr.6)
-#data_Q_total$hr.6 <- factor(data_Q_total$hr.6, levels = c(levels(data_Q_total$hr.6), "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤")) #adding empty levels for renaming purposes **DOES NOT NEED TO BE DONE FOR FINAL DATA**
 levels(data_Q_total$hr.6) <- list("N" = "TyttÃ¶", "H-E" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "Neither" = "Poika")
-data_Q_total$hr.6
 # Tytto = N; Kumpikin on yht? todenn?k?ist? = H-E
 
-# Sums
+# Calculate sums
 data_Q_total <- data_Q_total %>%
  mutate(
   total_N = apply(., 1, function(x) length(which(x == "N"))), 
@@ -1112,68 +923,41 @@ data_Q_total <- data_Q_total %>%
   total_Neither = apply(., 1, function(x) length(which(x == "Neither")))
  )
 
-# Omitting heuristic reasoning data based on the HR_omit column
-data_Q_total$total_N[which(data_Q_total$HR_omit == 1)] <- NA
-data_Q_total$total_HR[which(data_Q_total$HR_omit == 1)] <- NA
-data_Q_total$total_HE[which(data_Q_total$HR_omit == 1)] <- NA
-data_Q_total$total_Neither[which(data_Q_total$HR_omit == 1)] <- NA
+# Omit heuristic reasoning data based on the HR_omit column
+heur <- c("total_N", "total_HR", "total_HE", "total_Neither")
+data_Q_total[which(data_Q_total$HR_omit == 1), heur] <- NA
 
 # this replaces the zeroes in these new columns with NA--only if there are zeroes in all 4 of these sum columns, because that indicates missing data (the participant didn't do the task), not true zeroes. The lines going down are different because after the first column's value gets replaced with NA, the logic of the whole set is changed, so there is now a combination of NAs and zeroes
-data_Q_total$total_N[which(data_Q_total$total_N == 0 & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
-data_Q_total$total_HR[which(is.na(data_Q_total$total_N) == TRUE & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
-data_Q_total$total_HE[which(is.na(data_Q_total$total_N) == TRUE & is.na(data_Q_total$total_HR) == TRUE & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0)] <- NA
-data_Q_total$total_Neither[which(is.na(data_Q_total$total_N) == TRUE & is.na(data_Q_total$total_HR) == TRUE & is.na(data_Q_total$total_HE) == TRUE & data_Q_total$total_Neither == 0)] <- NA
+data_Q_total[which(data_Q_total$total_N == 0 & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0), heur] <- NA
 
-# creating the proportion scores per type
-#data_Q_total$Nprop <- (data_Q_total$total_N/6)
-#data_Q_total$HRprop <- (data_Q_total$total_HR/6)
-#data_Q_total$HEprop <- (data_Q_total$total_HE/6)
+# Describe
+describe(data_Q_total[, heur])
+par(mfrow = c(2, 2))
+for (i in 1:length(heur)) {
+  hist(data_Q_total[, heur[i]], 
+       main = colnames(data_Q_total[heur[i]]), 
+       col = sample(colors(), 1), 
+       xlab = "")
+}
 
-# copying the heuristic scores to new variables
-data_Q_total$HEscore <- data_Q_total$total_HE
-data_Q_total$HRscore <- data_Q_total$total_HR
+# Create binary heuristic scores (0=0, 1=everything else)
+data_Q_total <- data_Q_total %>% 
+  mutate(HEscore = case_when(total_HE == 0 ~ 0,
+                             total_HE != 0 ~ 1),
+         HRscore = case_when(total_HR == 0 ~ 0,
+                             total_HR != 0 ~ 1))
 
-# converting the new variables to binary while preserving the original sums. If a ppt's total HE or HR score is 1 or greater, they get a 1 for that category
-data_Q_total$HEscore[which(data_Q_total$HEscore >= 1)] <- 1
-data_Q_total$HRscore[which(data_Q_total$HRscore >= 1)] <- 1
-
-# adding an additional measure of total heuristic response. 1 = at least one mistake in one heuristic category, 2 = at least 1 heuristic mistake in both heuristic categories, 0 = all normative responses
+# Add a measure of total heuristic response, where 1 = at least one mistake in one heuristic category, 2 = at least 1 heuristic mistake in both heuristic categories, 0 = all normative responses
 data_Q_total <- data_Q_total %>%
-group_by(Participant.Private.ID) %>% 
- mutate(HEHRscore = HEscore + HRscore)
-    
-
-# sample wise frequency distributions
-#par(mfrow = c(2, 3))
-#barplot(table(data_Q_total$total_N), ylim = (c(0, 160)), main = "Total N", col = rainbow(14))
-#barplot(table(data_Q_total$total_HR), ylim = (c(0, 160)), main = "Total HR", col = rainbow(14))
-#barplot(table(data_Q_total$total_HE), ylim = (c(0, 160)), main = "Total HE", col = rainbow(14))
-#barplot(table(data_Q_total$total_Neither), ylim = (c(0, 160)), main = "Total X", col = rainbow(14))
-#barplot(table(data_Q_total$HEscore), ylim = (c(0, 160)), main = "HEscore", col = rainbow(14))
-#barplot(table(data_Q_total$HRscore), ylim = (c(0, 160)), main = "HRscore", col = rainbow(14))
-
-#par(mfrow = c(1, 3))
-#hist(data_Q_total$Nprop, main = "Normative %", col = rainbow(14), breaks = seq(0, 1, 0.2), xlab = "")
-#hist(data_Q_total$HRprop, main = "Representativeness %", col = rainbow(14), breaks = seq(0, 1, 0.2), xlab = "")
-#hist(data_Q_total$HEprop, main = "Equiprobability %", col = rainbow(14), breaks = seq(0, 1, 0.2), xlab = "")
-
-#Heuristics_task <- (describe(data_Q_total$HEscore))
-#Heuristics_task <- rbind(Heuristics_task, describe(data_Q_total$HRscore))
-#Heuristics_task <- rbind(Heuristics_task, describe(data_Q_total$HEHRscore))
-#row.names(Heuristics_task) <- c("HEScore", "HRScore", "HEHRScore")
-#View(Heuristics_task)
-
-#sum(as.numeric(data_Q_total$HRscore), na.rm = TRUE)
-#[1] 91 # this means 91 ppts made at least 1 representativeness error 
-#sum(as.numeric(data_Q_total$HEscore), na.rm = TRUE)
-#[1] 94 # this means 94 ppts made at least 1 equiprobability error 
+  group_by(Participant.Private.ID) %>% 
+  mutate(HEHRscore = HEscore + HRscore)
 
 ```
 
+# WHERE YOU LEFT OFF
+# NOTE: all outlier stuff for single items is omitted
 
 ## Randomness and Probability
-
-This section is complicated because each question is scored differently. It could probably use cleaned up, and see if there is a way to more straightforwardly not end up with spurious zeroes. 
 
 ```{r Scoring randomness and probability, include = FALSE}
 
@@ -1281,7 +1065,7 @@ data_Q_total$RPSum[which(is.na(data_Q_total$RP_omit))] <- NA
 
 ## Merging the important columns
 data_Q_sub <- data_Q_total %>%
- select(Participant.Private.ID, gender, Age, Country, Language, Education, AMean, CMean, EMean, ESMean, OMean, ICuriositySum, DCuriositySum, IH1Sum, IH2Sum, IH3Sum, IH4Sum, CloSum, CogSum, AOTSum, HEscore, HRscore, RPSum, Sci.cur_Sum, Sci.tru_Sum, Sci.impo_Sum, Sci.id_Sum)
+ select(Participant.Private.ID, gender, Age, Country, Language, Education, AMean, CMean, EMean, ESMean, OMean, ICuriositySum, DCuriositySum, IH1Sum, IH2Sum, IH3Sum, IH4Sum, CloSum, CogSum, AOTSum, HEscore, HRscore, RPSum, sci_cur, sci_tru, sci_impo, sci_id)
 
 # for now leaving out this variable I created that isn't in the original variable list
 #HEHRscore
@@ -2367,7 +2151,7 @@ all_new <- data_all_sub_cleaned %>%
 Q_new <- data_all_sub_cleaned %>%
  select(AMean:MatrixCorrectCount)
 #Q_new <- na.omit(Q_new) #dont use this, it gets rid of all rows with NAs
- #select(AMean:CMean, ESMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
+ #select(AMean:CMean, ESMean:AOTSum, HRscore:sci_cur, sci_impo:MatrixCorrectCount)
 
 # Task set for EFA process
 # UUT as a task
