@@ -1105,7 +1105,15 @@ After excluding data in accordance with the exclusion criteria above, the follow
 ## Task Data Processing
 
 
-###  Go No Go
+### Go No Go
+
+Trial-level exclusion criteria:
+* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 1025ms (screen time 1000ms + 16.67ms refresh rate + ~8ms latency between computer and mouse -> reaction times higher than this are likely not valid) *or* if it is equal to or lower than 150ms (a human needs time to react)
+
+Participant-level exclusion criteria:
+* A participant's data for the Go No-Go task is replaced with missing values (NAs) if their median reaction time was equal to or lower than 200ms *or* if their accuracy (% of correct trials out of all trials) was equal to or lower than 60%.
+
+Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta,c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
 
 ```{r Go No-Go, include = FALSE}
 
@@ -1212,12 +1220,12 @@ data_nogoT_final <- data_nogoT_final %>%
   select(Participant.Private.ID, GNGHitSum, GNGMissSum, GNGFASum, GNGCRSum, MeanGoRT, SDGoRT, GNGdprime, GNGbeta, GNGaprime, GNGbppd, GNGc) 
 
 # Change columns into numeric
+nogo <- c("GNGHitSum", "GNGMissSum", "GNGFASum", "GNGCRSum", "MeanGoRT", "SDGoRT", "GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc")
 for (i in 1:length(nogo)) {
   data_nogoT_final[, nogo[i]] <- as.numeric(data_nogoT_final[, nogo[i]])
 }
 
 # Describe
-nogo <- c("GNGHitSum", "GNGMissSum", "GNGFASum", "GNGCRSum", "MeanGoRT", "SDGoRT", "GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc")
 describe(data_nogoT_final[, nogo])
 par(mfrow = c(2, 3))
 for (i in 1:length(nogo)) {
@@ -1231,7 +1239,9 @@ for (i in 1:length(nogo)) {
 
 # NOTE: double check go-nogo, lots of things to discuss
 
-## Navon
+# WHERE YOU LEFT OFF
+
+### Navon
 
 The two measures of interest are 1. the global-local precedence index, which quantifies the bias toward a global processing level. Responses are typically faster to a target stimulus that appears in the global condition versus the local; and 2. Global-to-local interference index, for which positive values indicate the extent to which the bias toward global stimuli interferes with processing local information. 
 
