@@ -27,8 +27,8 @@ library(ggplot2)
 library(lavaan)
 library(naniar)
 library(psych)
-# library(psycho)
-# library(tidyr)
+library(psycho)
+library(tidyr)
 # library(tidyverse)
 
 ```
@@ -1066,243 +1066,170 @@ data_Q_sub <- data_Q_sub %>%
 
 ``` 
 
-# Tasks
+## Exclusion Criteria
 
-The following chunks process each task to extract relevant information for each participant (keeping data in wide format). The chunks also include lines to exclude outlier *trials* based on reaction time, since individual trials with outlier RTs probably indicate 1) technical error, 2) ppts pressing buttons without trying, 3) long RTs caused by ppts taking unsanctioned breaks. At the end of each task chunk, participants who did not consent/stated that their data are not valid were omitted. 
+**ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all questionnaire data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
+* stated their data are not valid
+* stated their Finnish is not Äidinkieli or Keskusteleva
 
-Participants who stopped the study during a Task have all their data from that Task excluded, because that data is not Missing At Random and thus affects both total scores/calculations and the validity of the data. 
+**TIPI - RANDOMNESS/PROBABILITY:** Furthermore, a participant's questionnaire data for a particular questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
+* their response time for the questionnaire was shorter than the number of items x 1000 milliseconds
 
-## Go No Go
+**TIPI - RANDOMNESS/PROBABILITY:** For questionnaires that included reverse-coded items, a participant's questionnaire data for that questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
+* 90% or more of their responses for that questionnaire fell on the same response option
+
+## Questionnaire Data Processing
+
+After excluding data in accordance with the exclusion criteria above, the following steps are taken for each questionnaire:
+* reverse-code items (if necessary)
+* visualize and describe each item
+* check the structure of the questionnaire data with Cronbach's alpha
+* calculate mean or sum scores according to the questionnaire instructions
+* replace sum score 0s with NAs (if necessary)
+* visualize and describe mean or sum scores
+
+
+# Task Data
+
+## Exclusion Criteria
+
+**ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all task data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
+* stated their data are not valid
+* stated their Finnish is not Äidinkieli or Keskusteleva
+
+**TASKS**: A participant's data for a questionnaire was replaced with missing values (NAs) if they met the following exclusion criterion:
+* stopped during that task
+
+**For further exclusion criteria for the tasks, please see each chunk.**
+
+## Task Data Processing
+
+
+###  Go No Go
 
 ```{r Go No-Go, include = FALSE}
 
-# potentially problematic ppts, check if data needs to be made NA 
-# 0vnopw72	5845513 : was interrupted in the task 
-
-# It's not really possible to exclude ppts who stopped in the middle of this task any other way. These ppts stopped the experiment during GNG.
-# 7mik8ed5 4886650
-# xt9lwzwk 5117494
-# 73bdl37a 5282634
-# tfn355ew 5500754
-# 5aakmlti 5552405
-# kqn3t62x 5635997
-
 # Omit experiment-general columns & practice (etc.) rows
 data_nogoT <- data_nogoT %>%
- select(Participant.Private.ID, Spreadsheet:Answer) %>%
- filter(display == "Trials")
+  select(Participant.Private.ID, Spreadsheet:Answer) %>%
+  filter(display == "Trials")
 
-# Outlier trial exclusions
-# interquartile range: 1.5*(Q3-Q1), subtract this value from Q1 and add to Q3 to get the outlier boundaries. Here it was 1072. At least everything above 4000 is clearly an outlier, according to boxplots there are 4 trials between 1072 and 3000 that are also outliers. Need to do this first because outlier trials mess up the ppt level calculations. 
-# In GNG the screens advance automatically after 1000ms (250ms stimulus presentation and 750ms wait, so e.g. a no-go response should be recorded as 1000ms). According to Gorilla, there is also the 16.67ms refresh rate and about 8ms latency between a computer and mouse, which adds something. https://support.gorilla.sc/support/info/timing#onlinetimingaccuracy A glance says that most NG responses are only up to about 1004ms, but it could be that there are some up to 1050? 
+# Exclusion Criteria: Trial-Level
+# NOTE: Caitlin had used different ones but I think this might be better?
+  # Reaction time upper boundary: In the Go No-Go task, the screens advance automatically after 1000ms (therefore, a no-go response should be recorded as 1000ms). According to Gorilla, there is also a 16.67ms refresh rate and ~8ms latency between a computer and a mouse. This means that there might be no-go responses up to ~1025ms. This is used as a threshold.
+  # Reaction time lower boundary: the brain needs time to react (Jaana's 2017 paper) -> 150ms
+data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time >= 1025 | data_nogoT$Reaction.Time <= 150)] <- NA
 
-# Min. 1st Qu.  Median   Mean 3rd Qu.   Max. 
-# 0   342   416   1113   634 20694243
-
-# trying to ID a median reaction time overall to reject ppts, but this doesn't work for Matrix because the RTs are so variable
-#Q1 <- quantile(data_nogoT$Reaction.Time, 0.25)
-#Q3 <- quantile(data_nogoT$Reaction.Time, 0.75)
-#range <- (IQR(data_nogoT$Reaction.Time)*1.5)
-#lowbound <- Q1 - range
-#highbound <- Q3 + range
-#summary(data_nogoT$Reaction.Time)
-#lowbound
-#highbound
-#boxplot(data_nogoT$Reaction.Time)
-
-# upper outliers need to be rejected in order to look at mean RT measures
-# the upper bound is reasonable based on what looks like only a few outliers above it
-# there are a lot of responses around 1000ms, these are "no go" responses which moved to the next trial automatically. We will only look at mean/SD RTs of HITS and FA (correct hits and commission errors)
-data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time > 1072)] <- NA
-
-# setting a lower bound based on Jaana's 2017 paper: brain needs this much time to react
-data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time < 150)] <- NA
-
-## Participant exclusion criteria
-#median RT<200ms, accuracy <60%
-#both of these conditions designed to catch ppl who are just pressing buttons too quickly
-
-# Median RT + Accuracy, participant level rejections
-# nobody rejected
+# Exclusion Criteria: Participant-Level
+  # <=200ms median RT
+  # <=60% accuracy
 data_nogoT <- data_nogoT %>%
- group_by(Participant.Private.ID) %>% 
- mutate(medianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect))) %>% # Creating a new column that gives the median response time for each participant
- mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, (medianRT <= 200 | Accuracy <= .60) ~ 1)) # assigning 1 to rows where median RT is <200ms
+  group_by(Participant.Private.ID) %>% 
+  mutate(medianRT = median(Reaction.Time, na.rm = TRUE), 
+         Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE))) %>% 
+  mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, 
+                                  (medianRT <= 200 | Accuracy <= .60) ~ 1)) 
  
-# Omitting rows based on exclusion criteria
+# Omit rows based on exclusion criteria
 data_nogoT$Response[which(data_nogoT$go.nogo_omit == 1)] <- NA
 
-
-## Signal Detection Theory categories for each row
-# can also use the Response and Answer columns but the logic is pretty much the same
+# Create Signal Detection Theory categories for each row
 data_nogoT <- data_nogoT %>%
- filter(display == "Trials") %>%
- mutate(SDT = case_when(((Array == "H.png" | Array == "T.png") & Response == "Go") ~ "Hit", 
-             ((Array == "H.png" | Array == "T.png") & Response == "No Go") ~ "Miss", 
-             (Array == "N.png" & Response == "Go") ~ "False Alarm", 
-             (Array == "N.png" & Response == "No Go") ~ "Correct Rejection")) # This is in case we want to look at how these relate to reaction times or EEG data at some point?
+  filter(display == "Trials") %>%
+  mutate(SDT = case_when((Array %in% c("H.png",  "T.png") & Response == "Go") ~ "Hit", 
+                         (Array %in% c("H.png", "T.png") & Response == "No Go") ~ "Miss", 
+                         (Array == "N.png" & Response == "Go") ~ "False Alarm", 
+                         (Array == "N.png" & Response == "No Go") ~ "Correct Rejection")) %>% 
+    mutate(Hit = case_when(SDT == "Hit" ~ 1, 
+                           SDT != "Hit" ~ 0), 
+           Miss = case_when(SDT == "Miss" ~ 1, 
+                            SDT != "Miss" ~ 0), 
+           FA = case_when(SDT == "False Alarm" ~ 1, 
+                          SDT != "False Alarm" ~ 0), 
+           CR = case_when(SDT == "Correct Rejection" ~ 1, 
+                          SDT != "Correct Rejection" ~ 0))
 
-# Hit = H.png or T.png and Go (Array and Response)
-# Miss = H-png or T.png and No Go
-# False alarm = N.png and Go
-# Correct rejection = N.png and No Go
+# Calculate the mean and SD of hits and FA (trials with a go response)
+data_go_RT <- data_nogoT %>% 
+  filter(SDT %in% c("Hit", "FA")) %>% 
+  group_by(Participant.Private.ID) %>% 
+  summarise(MeanGoRT = mean(Reaction.Time, na.rm = TRUE),
+            SDGoRT = sd(Reaction.Time, na.rm = TRUE))
+# NOTE: Caitlin had removed participants based on these but I think the distributions look ok?
 
-# D-Prime and Bias for each participant
-
+# Compute D-Prime and Bias for each participant
 # https://www.rdocumentation.org/packages/psycho/versions/0.6.1/topics/dprime
 # http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
- 
-library(psycho)
-
-data_nogoT <- data_nogoT %>%
- mutate(Hit = case_when(SDT == "Hit" ~ 1, 
-             SDT != "Hit" ~ 0), 
-     Miss = case_when(SDT == "Miss" ~ 1, 
-             SDT != "Miss" ~ 0), 
-     FA = case_when(SDT == "False Alarm" ~ 1, 
-            SDT != "False Alarm" ~ 0), 
-     CR = case_when(SDT == "Correct Rejection" ~ 1, 
-            SDT != "Correct Rejection" ~ 0))
-
-# calculating the mean and sd of hits and FA
-data_hit <- filter(data_nogoT , SDT == "Hit")
-data_hit_RT <- data_hit %>%
- group_by(Participant.Private.ID) %>%
- summarise(meanHitRT = mean(Reaction.Time, na.rm = TRUE), sdHitRT = sd(Reaction.Time, na.rm = TRUE))
-
-#Q1 <- quantile(data_hit_RT$sdHitRT, 0.25, na.rm = TRUE)
-#Q3 <- quantile(data_hit_RT$sdHitRT, 0.75, na.rm = TRUE)
-#range <- (IQR(data_hit_RT$sdHitRT, na.rm = TRUE)*1.5)
-#lowbound <- (Q1 - range)
-#highbound <- (Q3 + range)
-#summary(data_hit_RT$sdHitRT)
-#lowbound
-#highbound
-
-# one high outlier identified and removed
-data_hit_RT$meanHitRT[which(data_hit_RT$meanHitRT > 593)] <- NA
-# about 6 high outliers removed. They aren't clearly outliers from plotting but are higher values. It helps the skewness only slightly. 
-data_hit_RT$sdHitRT[which(data_hit_RT$sdHitRT > 165)] <- NA
-
-# FAs
-data_FA <- filter(data_nogoT , SDT == "False Alarm")
-data_FA_RT <- data_FA %>%
- group_by(Participant.Private.ID) %>%
- summarise(meanFA_RT = mean(Reaction.Time, na.rm = TRUE), sdFA_RT = sd(Reaction.Time, na.rm = TRUE))
-
-# e.g. remember to change the variables to calculate the quartiles 
-#Q1 <- quantile(data_FA_RT$meanFA_RT, 0.25, na.rm = TRUE)
-#Q3 <- quantile(data_FA_RT$meanFA_RT, 0.75, na.rm = TRUE)
-#range <- (IQR(data_FA_RT$meanFA_RT, na.rm = TRUE)*1.5)
-#lowbound <- (Q1 - range)
-#highbound <- (Q3 + range)
-#summary(data_FA_RT$meanFA_RT)
-#lowbound
-#highbound
-
-#data_FA_RT$meanFA_RT[which(data_FA_RT$meanFA_RT > ??)] <- NA
-# no outliers in the mean 
-data_FA_RT$sdFA_RT[which(data_FA_RT$sdFA_RT > 198)] <- NA
-
-
-# Calculating d-prime + bias
 data_dprime <- data_nogoT %>%
- group_by(Participant.Private.ID) %>%
- summarise(dp = dprime(n_hit = sum(Hit), n_fa = sum(FA), n_miss = sum(Miss), n_cr = sum(CR), n_targets = 300, n_distractors = 100))
+  group_by(Participant.Private.ID) %>%
+  summarise(dp = dprime(n_hit = sum(Hit, na.rm = TRUE), 
+                        n_fa = sum(FA, na.rm = TRUE), 
+                        n_miss = sum(Miss, na.rm = TRUE), 
+                        n_cr = sum(CR, na.rm = TRUE),
+                        n_targets = 300, 
+                        n_distractors = 100))
 
-# Adding a row to specify what the five different values given mean
-names <- c("GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc") # we are interested in dprime and beta which means bias
-value <- rep_len(names, length.out = nrow(data_dprime))
-data_dprime$value <- value
+# Add a row to specify what the five different values given mean
+data_dprime$value <- rep_len(c("GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc"),
+                             length.out = nrow(data_dprime))
 
 # Into wide format
 data_dprime <- data_dprime %>%
- pivot_wider(names_from = value, values_from = dp)
+  pivot_wider(names_from = value, values_from = dp)
 data_GNGdprime <- as.data.frame(data_dprime)
 
-# Creating a sum score of each response category for each participant
+# Create a sum score of each response category for each participant
 data_nogoT_final <- data_nogoT %>%
- select(Participant.Private.ID, Hit, Miss, FA, CR) %>%
- group_by(Participant.Private.ID) %>%
- summarise(GNGHitSum = sum(Hit, na.rm = TRUE), GNGMissSum = sum(Miss, na.rm = TRUE), GNGFASum = sum(FA, na.rm = TRUE), GNGCRSum = sum(CR, na.rm = TRUE))
+  select(Participant.Private.ID, Hit, Miss, FA, CR) %>%
+  group_by(Participant.Private.ID) %>%
+  summarise(GNGHitSum = sum(Hit, na.rm = TRUE), 
+            GNGMissSum = sum(Miss, na.rm = TRUE), 
+            GNGFASum = sum(FA, na.rm = TRUE), 
+            GNGCRSum = sum(CR, na.rm = TRUE))
 
-# Combining the dataframes, keeping all rows
-data_nogoT_final <- merge(data_nogoT_final, data_GNGdprime, by = "Participant.Private.ID", all = TRUE)
-data_nogoT_final <- merge(data_nogoT_final, data_hit_RT, by = "Participant.Private.ID", all = TRUE)
-data_nogoT_final <- merge(data_nogoT_final, data_FA_RT, by = "Participant.Private.ID", all = TRUE)
+# Combine the dataframes (keep all rows)
+data_nogoT_final <- merge(data_nogoT_final, data_GNGdprime, 
+                          by = "Participant.Private.ID", all = TRUE)
+data_nogoT_final <- merge(data_nogoT_final, data_go_RT, 
+                          by = "Participant.Private.ID", all = TRUE)
 
-
-## Excluding participants with invalid responses
-# this contains validity data for all tasks
+# Exclude participants with invalid responses
 data_ConsentValidity <- data_Q_total %>%
- select(Participant.Private.ID, Language, Validity.quantised)
+  select(Participant.Private.ID, Language, Validity.quantised)
  
-data_nogoT_final <- merge(data_nogoT_final, data_ConsentValidity, by = "Participant.Private.ID")
+# Final dataset
+data_nogoT_final <- merge(data_nogoT_final, data_ConsentValidity,
+                          by = "Participant.Private.ID")
 
-####### creating new sets to double check that rejected ppts match the other df
-# I think one ppt was already excluded because of validity etc. These are the ones that didn't complete the task
-#data_nonvalid_gng <- data_nogoT_final %>%
- #filter(Participant.Private.ID %in% c("4886650", "5117494", "5282634", "5500754", "5552405", "5635997"))
- #filter(Validity.quantised %in% c("2", 3, 4))
+# Exclude participants according to validity + language criteria; exclude the participants who stopped mid-task; exclude participants whose sum score for all hit/miss/cr/fa are 0s
+data_nogoT_final <- data_nogoT_final %>% 
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>% 
+  filter(!Participant.Private.ID %in% c("5201242", "4886650", "5117494", "5282634", "5500754", "5552405", "5635997")) %>% 
+  filter(!(GNGHitSum == 0 & GNGMissSum == 0 & GNGFASum == 0 & GNGCRSum == 0))
 
-#data_Q_lang_omit_gng <- data_nogoT_final %>%
- #filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
-
-# final set. Somehow this ppt who didn't actually do the task (zeroes in sum scores) has squeaked through, so removing them now. 
+# Final set of columns
 data_nogoT_final <- data_nogoT_final %>%
- filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?") & Participant.Private.ID != "5201242" & Participant.Private.ID != "4886650" & Participant.Private.ID != "5117494" & Participant.Private.ID != "5282634" & Participant.Private.ID != "5500754" & Participant.Private.ID != "5552405" & Participant.Private.ID != "5635997")
-# there are some rows with NAs or other missing data still but I think those are gotten rid of during the merging or formatting task variables chunks
+  select(Participant.Private.ID, GNGHitSum, GNGMissSum, GNGFASum, GNGCRSum, MeanGoRT, SDGoRT, GNGdprime, GNGbeta, GNGaprime, GNGbppd, GNGc) 
 
-# omitting specific participants who commented that they were interrupted in the task
-# first see if they were included in the first place based on quality
-# it's mostly the hits and misses that are much lower/higher, but they are not the worst score. They are not an outlier. Keep them or no?
+# Change columns into numeric
+for (i in 1:length(nogo)) {
+  data_nogoT_final[, nogo[i]] <- as.numeric(data_nogoT_final[, nogo[i]])
+}
 
-# 7mik8ed5 4886650
-# xt9lwzwk 5117494
-# 73bdl37a 5282634
-# tfn355ew 5500754
-# 5aakmlti 5552405
-# kqn3t62x 5635997
-
-# 5845513 the one who was interrupted during the task 
-
-#######
-
-# Subsetting by validity and consent info + omitting the irrelevant columns
-# Technically we will likely only need d prime and bias but extra columns can easily be dropped later on
-# has 148 ppts now but should eventually be 146
-data_nogoT_final <- data_nogoT_final %>%
- select(Participant.Private.ID, GNGHitSum, GNGMissSum, GNGFASum, GNGCRSum, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GNGdprime, GNGbeta, GNGaprime, GNGbppd, GNGc) 
-
-# no outliers (dprime only??)
-#par(mfrow = c(2, 3))
-#hist(as.numeric(data_nogoT_final$GNGdprime), main = "dprime", ylim = c(0, 40), col = rainbow(14), xlab = "")
-#hist(as.numeric(data_nogoT_final$GNGbeta), main = "beta", col = rainbow(14), xlab = "")
-#hist(as.numeric(data_nogoT_final$GNGaprime), main = "aprime", col = rainbow(14), xlab = "")
-#hist(as.numeric(data_nogoT_final$GNGbppd), main = "bppd", ylim = c(0, 100), col = rainbow(14), xlab = "")
-#hist(as.numeric(data_nogoT_final$GNGc), main = "c", ylim = c(0, 40), col = rainbow(14), xlab = "")
-
-
-#shapiro.test(as.numeric(data_nogoT_final$GNGdprime))
-
-#GNG_task <- (describe(data_nogoT_final$dprime))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGbeta))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGaprime))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGbppd))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGc))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGHitSum))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGMissSum))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGFASum))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$GNGCRSum))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$meanHitRT))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$sdHitRT))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$meanFA_RT))
-#GNG_task <- rbind(GNG_task, describe(data_nogoT_final$sdFA_RT))
-#row.names(GNG_task) <- c("GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc", "GNGHitSum", "GNGMissSum", "GNGFASum", "GNGCRSum", "meanHitRT", "sdHitRT", "meanFA_RT", "sdFA_RT")
-#View(GNG_task)
+# Describe
+nogo <- c("GNGHitSum", "GNGMissSum", "GNGFASum", "GNGCRSum", "MeanGoRT", "SDGoRT", "GNGdprime", "GNGbeta", "GNGaprime", "GNGbppd", "GNGc")
+describe(data_nogoT_final[, nogo])
+par(mfrow = c(2, 3))
+for (i in 1:length(nogo)) {
+  hist(data_nogoT_final[, nogo[i]], 
+       main = colnames(data_nogoT_final[nogo[i]]), 
+       col = sample(colors(), 1), 
+       xlab = "")
+}
 
 ```
 
+# NOTE: double check go-nogo, lots of things to discuss
 
 ## Navon
 
