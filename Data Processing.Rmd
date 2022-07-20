@@ -1418,96 +1418,55 @@ hist(data_NeckerT_final$NeckerTotalRate,
 
 ```
 
-## Unusual Uses Task
+### Unusual Uses Task
 
-NB: FIRST conduct interrater reliability using UUT_Analysis.Rmd. Then create a file that contains at least columns for participant number, fluency and flexibility ratings for at least 2 raters. Rows are individual participant responses. Rows are individual participant responses.
+Exclusion criteria: None for now.
+NOTE: should we have something?
 
-Fluency is a measure of how many unique unusual uses a ppt can think of for each item. FluencySum is the count of all unique uses over all items for a ppt. Flexibility score refers to the uniquenes of the functional categories of items, i.e. a participant gets two point for using a shoe as a doorstop and a flowerpot but only one point for a houseplant pot and a bonsai tree pot (same functional use).FlexSum is the sum of flexibility points over all items for a participant. Refer to UUT scoring instructions for further detail.
-
-N = 150
+Data processing: for each participant, we calculate the average of the fluency sum scores (ratings by two raters) and the flexibility sum scores (ratings by two raters). The fluency/flexibility sum scores capture the number of answers across all trials that were classified as fluent/flexible.
+* Fluency is a measure of how many unique unusual uses a ppt can think of for each item. 
+* Flexibility score refers to the uniqueness of the functional categories of items, i.e. a participant gets two point for using a shoe as a doorstop and a flowerpot but only one point for a houseplant pot and a bonsai tree pot (same functional use). 
 
 ```{r Unusual Uses Task, include = FALSE}
 
-data_UUT <- read.csv('UUT_scoring_COMBINED_REVISED_Rcsv.csv', sep = ";")
-#View(data_UUT)
+# Load data
+data_UUT <- read.csv("UUT_scoring_COMBINED_REVISED_Rcsv.csv", sep = ";")
 
-# potentially problematic ppts: 
-# ghufyqzr	5691497 : wasn't sure if UUT answers were saved
-# 6r93nkqg	5686104 : wasn't sure if UUT answers were saved 
-# sssb0k4g	5507405 : wrote all UUT answers in same space
-## these were checked by hand during rating and are all OK
+# Rename participant ID column
+names(data_UUT)[1] <- "Participant.Private.ID"
 
-########################################################################################################
-## did they use these processing chunks in the reliability analysis?? maybe move them to there? 
-#data_uutT$Participant.Private.ID <- factor(data_uutT$Participant.Private.ID)
+# Select relevant columns + calculate the fluency and flexibility sum score for each participant per rater
+data_UUT <- data_UUT %>% 
+  select(Participant.Private.ID, S.Fluency, S.Flex, K.Fluency, K.Flex) %>%
+  group_by(Participant.Private.ID) %>%
+  summarise(SFlexibilitySum = sum(S.Flex), SFluencySum = sum(S.Fluency),
+            KFlexibilitySum = sum(K.Flex), KFluencySum = sum(K.Fluency))
 
-# Omitting experiment-general columns and excluding practice trials
-#data_uutT <- data_uutT %>%
-# select(Participant.Private.ID, Spreadsheet:text) %>%
-# filter(Screen.Name != "Screen 3")
+# Calculate participant scores as a mean of the two raters' scores (one for fluency, one for flexibility)
+data_UUT$FlexSum <- rowMeans(cbind(data_UUT$SFlexibilitySum,
+                                   data_UUT$KFlexibilitySum), 
+                             na.rm = TRUE)
+data_UUT$FluencySum <- rowMeans(cbind(data_UUT$SFluencySum, 
+                                      data_UUT$KFluencySum), 
+                                na.rm = TRUE)
 
-# Omitting irrelevant rows (with empty cells)
-#data_uutT$Response[which(data_uutT$Response == "")] <- NA
+# Check validity + extract relevant columns
+data_UUT <- merge(data_UUT, data_ConsentValidity, 
+                  by = "Participant.Private.ID")
+data_UUT <- data_UUT %>%
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+  select(Participant.Private.ID, FlexSum, FluencySum)
 
-#data_uutT <- data_uutT %>%
-# filter(!is.na(Response)) #only keeping rows with responses (not NAs)
-
-# Splitting cells that have multiple responses (if participant forgot to press enter between answers)
-#data_uutT <- separate_rows(data_uutT, Response, sep = ", ", convert = TRUE)
-
-# Creating fake columns for flexibility and fluency to demonstrate how they would be calculated
-#data_uutT$Fluency <- rbinom(n = nrow(data_uutT), 1, p = 0.90)
-#data_uutT$Flexibility <- rbinom(n = nrow(data_uutT), 1, p = 0.70)
-
-############################################################################################################
-
-### can put a little section here looking at any differences in Fluency and Flexibility scores per ppt between the different items. probably we don't need to worry about this, but in case someone asks if there are some items that may seem invalid because of weird response patterns####
-
-#######################################################################################
-
-### Calculating the fluency and flexibility sum score for each participant per rater
-data_UUT_scores <- data_UUT %>%
- select(Participant.Private.ID, S.Flex, S.Fluency, K.Flex, K.Fluency) %>%
- group_by(Participant.Private.ID) %>%
- summarise(SFlexibilitySum = sum(S.Flex), SFluencySum = sum(S.Fluency), KFlexibilitySum = sum(K.Flex), KFluencySum = sum(K.Fluency))
-#View(data_UUT_scores)
-
-# participant sum scores as a mean of rater scores
-data_UUT_scores$FlexSum <- rowMeans(cbind(data_UUT_scores$SFlexibilitySum, data_UUT_scores$KFlexibilitySum), na.rm = TRUE)
-data_UUT_scores$FluencySum <-rowMeans(cbind(data_UUT_scores$SFluencySum, data_UUT_scores$KFluencySum), na.rm = TRUE)
-
-# checking distributions
-#par(mfrow = c(2, 2))
-#hist(data_UUT_scores$SFlexibilitySum)
-#hist(data_UUT_scores$SFluencySum)
-#hist(data_UUT_scores$KFlexibilitySum)
-#hist(data_UUT_scores$KFluencySum)
-
-# generally flexibility more normal than fluency
-#(data_UUT_scores$SFlexibilitySum)
-#shapiro.test(data_UUT_scores$SFluencySum)
-#shapiro.test(data_UUT_scores$KFlexibilitySum)
-#shapiro.test(data_UUT_scores$KFluencySum)
-
-# total
-#hist(data_UUT_scores$FlexSum)
-#hist(data_UUT_scores$FluencySum)
-#shapiro.test(data_UUT_scores$FlexSum)
-#shapiro.test(data_UUT_scores$FluencySum)
-
-# checking validity
-data_UUT_scores <- merge(data_UUT_scores, data_ConsentValidity, by = "Participant.Private.ID")
-
-#data_nonvalid_UUT <- data_UUT_scores %>%
- #filter(Validity.quantised %in% c(2, 3, 4))
-
-#data_UUT_lang_omit <- data_UUT_scores %>%
- #filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
-
-# extracting the columns we want
-data_UUT_scores <- data_UUT_scores %>%
- filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
- select(Participant.Private.ID, FlexSum, FluencySum)
+# Describe
+uut <- c("FlexSum", "FluencySum")
+describe(data_UUT[, uut])
+par(mfrow = c(2, 1))
+for (i in 1:length(uut)) {
+  hist(data_UUT[, uut[i]], 
+       main = colnames(data_UUT[uut[i]]), 
+       col = sample(colors(), 1), 
+       xlab = "")
+}
 
 ```
 
