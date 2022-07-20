@@ -1375,68 +1375,46 @@ for (i in 1:length(Navon)) {
 ```
 NOTE: also discuss navon
 
-## Necker
+### Necker
 
-about 7 ppts didn't experience switching at all, which is a valid option
-6 are outliers according to IQR
-no exclusions made currently
-N = 153
+Exclusion criteria: none for now
+NOTE: could consider high outliers (right tail of the distribution) or participants who reported no switching
 
-```{r Necker cube, include = FALSE}
+Data processing: for each participant, we calculate the average rate of space bar hits (switches the participant experienced) per second. 
 
-# Necker: switches per second for each session
+```{r Necker Cube, include = FALSE}
 
-data_NeckerT$Participant.Private.ID <- factor(data_NeckerT$Participant.Private.ID)
-
-# Omitting irrelevant columns
+# Omit irrelevant rows and columns
 data_NeckerT <- data_NeckerT %>%
- select(Participant.Private.ID, Spreadsheet:Image)
+  select(Participant.Private.ID, Spreadsheet:Image) %>%
+  filter(display %in% c("Trial 1", "Trial 2"))
 
-# Omitting irrelevant rows (Instructions / empty rows)
-data_NeckerT <- data_NeckerT %>%
- filter(display %in% c("Trial 1", "Trial 2"))
-
-# Exclusion criteria: none for now, but consider high outliers and ppts who reported no switching--can check later if there is a difference there
-
-# this ppt stopped during Necker
-# t98f4qif 5385143
-
-## Sum score for how many times space bar was hit in total
+# Calculate sum score for how many times space bar was hit in total
 data_NeckerT_final <- data_NeckerT %>%
- select(Participant.Private.ID, Response) %>%
- group_by(Participant.Private.ID) %>%
- summarise(NeckerCountTotal = sum(Response == "space", na.rm = TRUE))
+  select(Participant.Private.ID, Response) %>%
+  group_by(Participant.Private.ID) %>%
+  summarise(NeckerCountTotal = sum(Response == "space", na.rm = TRUE))
 
-## Switches per second
+# Calculate switches per second
 data_NeckerT_final <- data_NeckerT_final %>%
- mutate(NeckerTotalRate = NeckerCountTotal/60)
+  mutate(NeckerTotalRate = NeckerCountTotal/60)
 
-# rate interquartile max 0.35832, 6 ppts NA'd here
-#  Min. 1st Qu. Median  Mean 3rd Qu.  Max. 
-#0.00000 0.06667 0.11667 0.13647 0.18333 0.48333 
+# Merge to exclude participants
+data_NeckerT_final <- merge(data_NeckerT_final, data_ConsentValidity, 
+                            by = "Participant.Private.ID")
 
-#data_NeckerT_final$NeckerTotalRate[which(data_NeckerT_final$NeckerTotalRate > 0.35832)] <- NA
-#data_NeckerT_final$NeckerCountTotal[which(data_NeckerT_final$NeckerTotalRate > 0.35832)] <- NA
-
-data_NeckerT_final <- merge(data_NeckerT_final, data_ConsentValidity, by = "Participant.Private.ID")
-
-# creating ppt omit sets
-#data_nonvalid_Necker <- data_NeckerT_final %>%
-# filter(Validity.quantised %in% c(2, 3, 4))
-
-#data_Necker_lang_omit <- data_NeckerT_final %>%
-# filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
-
-# Subsetting by validity and consent info + omitting the irrelevant columns
+# Subset by validity and consent info + omit the irrelevant columns
 data_NeckerT_final <- data_NeckerT_final %>%
- filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
- select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+  filter(Participant.Private.ID != "5385143") %>% 
+  select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
 
-# ppt 5385143 stopped during necker, exclude their data (already NA) Participant.Private.ID != "5385143" 
-
-#boxplot(data_NeckerT_final$NeckerTotalRate)
-#boxplot(data_NeckerT_final$NeckerCountTotal)
-#hist(data_NeckerT_final$NeckerTotalRate, main = "Perceptual Switching Rate", col = "blue", breaks = seq(0, .35, .01), xlab = "")
+# Describe
+describe(data_NeckerT_final$NeckerTotalRate)
+hist(data_NeckerT_final$NeckerTotalRate, 
+       main = "Necker Total Rate", 
+       col = sample(colors(), 1), 
+       xlab = "")
 
 ```
 
