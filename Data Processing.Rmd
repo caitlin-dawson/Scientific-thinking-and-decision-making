@@ -1113,7 +1113,7 @@ Trial-level exclusion criteria:
 Participant-level exclusion criteria:
 * A participant's data for the Go No-Go task is replaced with missing values (NAs) if their median reaction time was equal to or lower than 200ms *or* if their accuracy (% of correct trials out of all trials) was equal to or lower than 60%.
 
-Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta,c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
+Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta, c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
 
 ```{r Go No-Go, include = FALSE}
 
@@ -1237,239 +1237,143 @@ for (i in 1:length(nogo)) {
 
 ```
 
-# NOTE: double check go-nogo, lots of things to discuss
-
-# WHERE YOU LEFT OFF
+NOTE: double check go no-go, lots of things to discuss
 
 ### Navon
 
-The two measures of interest are 1. the global-local precedence index, which quantifies the bias toward a global processing level. Responses are typically faster to a target stimulus that appears in the global condition versus the local; and 2. Global-to-local interference index, for which positive values indicate the extent to which the bias toward global stimuli interferes with processing local information. 
+Trial-level exclusion criteria:
+* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 2000ms
+NOTE: should we also have a lower boundary as in go no-go?
 
-N = 135 usable ppts
-started with 140 who finished 
+Participant-level exclusion criteria:
+* A participant's data for the Navon task is replaced with missing values (NAs) if their median reaction time was equal to or lower than 50ms *or* if their accuracy (% of correct trials out of all trials) was equal to or lower than 60% *or* if the ratio of the most frequent response to all responses is equal to or higher than .95.
+NOTE: why 50ms and not 200ms?
 
-***is using the interquartile method to delete trials based on reaction time OK for this task with this RT distribution??? ***
+Data processing: for each participant, we calculate the global-local precedence index (bias toward a global processing level), and global-to-local interference index (positive values indicate the extent to which the bias toward global stimuli interferes with processing local information).
+* Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
+* Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only 
+These are described and visualized.
 
 ```{r Navon task, include = FALSE}
 
-# potentially problematic ppts, replace data with NA if necessary
-# qphf172f	5867681: thought their handedness would affect Navon (unlikely) 
-# 7mr6hy7i	5446208: probably 25% of their responses are wrong--did not fully get the task/realized they were doing it wrong
-
-# these ppts stopped the experiment during Navon, and thus don't have a full dataset for this task
-# xb2ctdsi 4907987
-# u7uqmiee 4960307
-# qxvqj34s 5317567
-# huo5rege 5372338
-# uy3ewu4f 5526450
-# 1jssdk6e 5578226
-# ajrc2dxp 5626669
-# l802ayaq 5808176
-
-# Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
-
-# Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only 
-
-# Positive values indicate the extent to which global stimuli interfere with the local info 
-
-# I calculated these manually. I first extracted the SDs for the reaction times for the two conditions in question (global consistent and local consistent for global precedence, local consistent and local inconsistent for global-to-local interference). I then calculated the pooled mean (https://www.statisticshowto.com/pooled-standard-deviation/). After that, I calculated the mean reaction time to the two trial types for each participant (e.g., global consistent and local consistent for global precedence). Finally, I compared the difference between these means for each participant to the pooled SD (https://www.statisticshowto.com/cohens-d/).
-
-data_NavonT$Participant.Private.ID <- factor(data_NavonT$Participant.Private.ID)
-
-## Omitting experiment-general columns & practice (etc.) rows
+# Omit experiment-general columns & practice (etc.) rows
 data_NavonT <- data_NavonT %>%
- select(Participant.Private.ID, Spreadsheet:Image) %>%
- filter(display %in% c("task1", "task2"))
+  select(Participant.Private.ID, Spreadsheet:Image) %>%
+  filter(display %in% c("task1", "task2")) %>% 
+  filter(Screen.Name == "Screen 3")
 
-## Only Including the relevant rows for us: this means rows where Screen.name = "Screen 3" 
+# Create a column for consistency
 data_NavonT <- data_NavonT %>%
- filter(Screen.Name == "Screen 3")
+  mutate(Consistency = case_when((Image == "bigHsmallH.png" | Image == "bigSsmallS.png") ~ "Consistent", 
+                                 (Image == "bigHsmallS.png" | Image == "bigSsmallH.png") ~ "Inconsistent"))
+data_NavonT$Consistency <- as.factor(data_NavonT$Consistency)
+data_NavonT$display <- as.factor(data_NavonT$display)
 
-# Creating a column for consistency
-data_NavonT <- data_NavonT %>%
- mutate(Consistency = case_when((Image == "bigHsmallH.png" | Image == "bigSsmallS.png") ~ "Consistent", 
-                 (Image == "bigHsmallS.png" | Image == "bigSsmallH.png") ~ "Inconsistent"))
-data_NavonT$Consistency <- factor(data_NavonT$Consistency)
-
-data_NavonT$display <- factor(data_NavonT$display)
-## Checking the accuracy per group (global/local + consistent/inconsistent)
-
-# Accuracy is now its own df, summary(Accuracy_Navon) gives Accuracy_cond minimum 91.21%
+# Accuracy for each task and consistency
 Accuracy_Navon <- data_NavonT %>%
- group_by(Consistency, display) %>%
- summarise(Accuracy_cond = sum(Correct)/(sum(Correct)+sum(Incorrect)))
+  group_by(Consistency, display) %>%
+  summarise(Accuracy_cond = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE)))
 
-## Exclusion criteria
+# Exclusion Criteria: Trial-Level
+# NOTE: Caitlin had used different ones (interquartile range or trials that are outside 2.5 SDs of the mean per participant); we should discuss this; WHY 50ms median RT and not 200ms like in gonogo?
+  # Based on the histogram, I picked an arbitrary cut-off point of 2000ms to maintain a less skewed distribution but also keep most of the data.
+data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time >= 2000)] <- NA
 
-# for ppt level median RT<50ms (this is arbitrary, I've just chosen 50ms here (so that actually means 250+50 = 300 in this task), i.e. the previous screen is stimulus presentation and advances automatically after 250ms, while the response screen advances only on response, but we should probably look at the distribution of RTs later on), accuracy <60%, <95% RESPONSES fall on the same value
- 
-# Outlier trial exclusions first
-# interquartile range: 1.5*(Q3-Q1), subtract this value from Q1 and add to Q3 to get the outlier boundaries. Here it was 671.8. Need to do this first because outlier trials mess up the ppt level calculations. There seem to be a lot of outliers on a gradient from around 5000ms up to 20000ms, different to GNG 
-
-#Min. 1st Qu.  Median   Mean 3rd Qu.   Max. 
-#0.6  211.0  307.1  389.2  441.4 183064.1 
-
-#store_data_Navon <- data_NavonT
-#data_NavonT <- store_data_Navon 
-
-# getting rid of trials outside of range -- IQR method doesn't really work here because of an extreme skew
-# instead, start with an arbitrary cutoff of 3000 (3s)
-data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time > 3000)] <- NA
-
-# this removes TRIALS that are outside 2.5 standard deviations of the mean PER PARTICIPANT
-#########keep this or no?##############
-
+# Exclusion Criteria: Participant-Level
+  # <= 50ms median RT
+  # <= 60% accuracy
+  # ratio of most frequent answer to all answers >= .95
 data_NavonT <- data_NavonT %>%
- group_by(Participant.Private.ID) %>%
- filter(between(Reaction.Time, mean(Reaction.Time, na.rm = TRUE) - (2.5 * sd(Reaction.Time, na.rm = TRUE)), 
-           mean(Reaction.Time, na.rm = TRUE) + (2.5 * sd(Reaction.Time, na.rm = TRUE))))
+  group_by(Participant.Private.ID) %>%
+  mutate(MedianRT = median(Reaction.Time, na.rm = TRUE), 
+         Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE)), 
+         Ratio = max(table(Response), na.rm = TRUE) / length(Response)) %>%
+  mutate(Navon_omit = case_when(MedianRT > 50 & MedianRT < 1000 & Accuracy > .60 & Ratio < .95 ~ 0, 
+                MedianRT <= 50 | MedianRT >= 1000 | Accuracy <= .60 | Ratio >= .95 ~ 1))
 
-#Q1 <- quantile(data_NavonT$Reaction.Time, 0.25)
-#Q3 <- quantile(data_NavonT$Reaction.Time, 0.75)
-#range <- (IQR(data_NavonT$Reaction.Time)*1.5)
-#lowbound <- Q1 - range
-#highbound <- Q3 + range
-
-
-# this rejects PARTICIPANTS based on their MEDIAN RT being too short or too long 
-#1 ppt has a clearly too high median RT
-#no ppt has a median RT of 50ms or less
-
-# Median RT & Accuracy
-data_NavonT <- data_NavonT %>%
- group_by(Participant.Private.ID) %>%
- mutate(MedianRT = median(Reaction.Time), Accuracy = sum(Correct)/(sum(Correct)+sum(Incorrect)), Ratio = max(table(Response))/length(Response)) %>%
- mutate(Navon_omit = case_when(MedianRT > 50 & MedianRT < 1000 & Accuracy > .60 & Ratio < .95 ~ 0, 
-                MedianRT <= 50 | Accuracy <= .60 | Ratio >= .95 ~ 1))
-
-# Omitting data based on Navon_omit
+# Omit data based on Navon_omit
 data_NavonT$Reaction.Time[which(data_NavonT$Navon_omit == 1)] <- NA
 
-## Subsetting: only looking at the correct answers
+# Subset to only look at correct answers
 data_NavonT <- data_NavonT %>%
- filter(Correct == "1")
+  filter(Correct == "1")
 
-## Calculating pooled SDs
-
+# Ungroup df
 data_NavonT <- ungroup(data_NavonT)
 
-#Global SD 1 (consistent trials only)
-#again need to include the argument na.rm = TRUE otherwise NA values will cause the sd calculation to return empty
+# Global SD 1 (consistent trials only)
 sd_Global_con <- data_NavonT %>%
- filter((Consistency == "Consistent") & display == "task1") %>%
- summarise(sd(Reaction.Time, na.rm = TRUE))
+  filter((Consistency == "Consistent") & display == "task1") %>%
+  summarise(sd(Reaction.Time, na.rm = TRUE))
+sd_Global_con <- sd_Global_con[[1]]
 
 # Local SD 1 (consistent trials only)
 sd_Local_con <- data_NavonT %>%
- filter((Consistency == "Consistent") & display == "task2") %>%
- summarise(sd(Reaction.Time, na.rm = TRUE))
+  filter((Consistency == "Consistent") & display == "task2") %>%
+  summarise(sd(Reaction.Time, na.rm = TRUE))
+sd_Local_con <- sd_Local_con[[1]]
 
 # Local SD 2 (inconsistent trials only)
 sd_Local_incon <- data_NavonT %>%
- filter((Consistency == "Inconsistent") & display == "task2") %>%
- summarise(sd(Reaction.Time, na.rm = TRUE))
+  filter((Consistency == "Inconsistent") & display == "task2") %>%
+  summarise(sd(Reaction.Time, na.rm = TRUE))
+sd_Local_incon <- sd_Local_incon[[1]]
  
-# Calculating pooled SD
-# https://www.statisticshowto.com/pooled-standard-deviation/
-# I used the simplest formula and calculated it manually but there might be a quicker way to do it
-# The more complex formula on the website is to correct for small sample sizes but this shouldn't be a problem once we have our data, so I just used the simpler formula.
+# Calculate pooled SD
+# https://www.statisticshowto.com/pooled-standard-deviation/ 
 
 # Pooled SD consistent (local and global)
 pooled_SD_con <- sqrt((sd_Global_con^2 + sd_Local_con^2)/2)
-pooled_SD_con
 
 # Pooled SD local (consistent and inconsistent)
 pooled_SD_local <- sqrt((sd_Local_incon^2 + sd_Local_con^2)/2)
-pooled_SD_local
 
-#pooled_SD_con
- #sd(Reaction.Time, na.rm = TRUE)
-#1             130.033
-
-#pooled_SD_local
- #sd(Reaction.Time, na.rm = TRUE)
-#1            137.5748
-
-# Final form of the Navon data: selecting relevant columns and transforming the data so that the columns reflect mean reaction times in each of the four conditions (local/global x consistent/inconsistent)
+# Final form of the Navon data 
+  # Select relevant columns and transform the data so columns reflect mean reaction times in each of the four conditions (local/global x consistent/inconsistent)
 data_NavonT_final <- data_NavonT %>% 
- select(Participant.Private.ID, Consistency, display, Reaction.Time) %>%
- group_by(Participant.Private.ID, Consistency, display) %>%
- summarise(NavonReactionTimeMean = mean(Reaction.Time, na.rm = TRUE), .groups = "keep") %>%
- pivot_wider(names_from = c(Consistency, display), values_from = NavonReactionTimeMean)
-
-
+  select(Participant.Private.ID, Consistency, display, Reaction.Time) %>%
+  group_by(Participant.Private.ID, Consistency, display) %>%
+  summarise(NavonReactionTimeMean = mean(Reaction.Time, na.rm = TRUE), 
+            .groups = "keep") %>%
+  pivot_wider(names_from = c(Consistency, display), 
+              values_from = NavonReactionTimeMean)
 
 # Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
 data_NavonT_final <- data_NavonT_final %>%
- mutate(GlobalToLocalPrecedence = ((Consistent_task1 - Consistent_task2)/as.numeric(pooled_SD_con)))
+  mutate(GlobalToLocalPrecedence = ((Consistent_task1 - Consistent_task2) / as.numeric(pooled_SD_con)))
 
-## Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only
+# Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only
 data_NavonT_final <- data_NavonT_final %>%
- mutate(GlobalToLocalInterference = ((Inconsistent_task1 - Consistent_task2)/as.numeric(pooled_SD_local)))
+  mutate(GlobalToLocalInterference = ((Inconsistent_task1 - Consistent_task2) / as.numeric(pooled_SD_local)))
 
-## Excluding nonvalid participants
-data_NavonT_final <- merge(data_NavonT_final, data_ConsentValidity, by = "Participant.Private.ID")
+# Exclude nonvalid participants
+data_NavonT_final <- merge(data_NavonT_final, data_ConsentValidity, 
+                           by = "Participant.Private.ID")
 
-# xb2ctdsi 4907987
-# u7uqmiee 4960307
-# qxvqj34s 5317567
-# huo5rege 5372338
-# uy3ewu4f 5526450
-# 1jssdk6e 5578226
-# ajrc2dxp 5626669
-# l802ayaq 5808176
-
-#data_NavonT_final <- data_NavonT_final %>%
- #filter(ConsentFlag == 1 & Validity.quantised == 1 & Language == "Sujuva / Ã¤idinkieli") %>%
- #select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
-
-# getting rid of ppts who stopped halfway through, some have already been caught by quality control
+# Validity/languege filter + get rid of participants who stopped mid-task + select relevant columns
 data_NavonT_final <- data_NavonT_final %>%
- filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176")
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>%  
+  filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176") %>%
+  select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
 
-# validity filter
-data_NavonT_final <- data_NavonT_final %>%
- filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
- select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
-# there are 3 rows of NAN 
+# NOTE: for some reason there are two NaN rows, removing them here but we should look into why this is?
+  # one of them was omitted (all RTs replaced with NA), one did not have recorded reaction times in the original data?
+data_NavonT_final <- data_NavonT_final %>% 
+  filter(Participant.Private.ID != "5608075" & Participant.Private.ID != "5411218")
 
-# final score outlier exclusions
-# not going to do this right now. The spread seems to include some upper and lower extremes, but the distribution shape is good 
-
-#Q1 <- quantile(data_NavonT_final$GlobalToLocalInterference, 0.25, na.rm = TRUE)
-#Q3 <- quantile(data_NavonT_final$GlobalToLocalInterference, 0.75, na.rm = TRUE)
-#range <- (IQR(data_NavonT_final$GlobalToLocalInterference, na.rm = TRUE)*1.5)
-#lowbound <- (Q1 - range)
-#highbound <- (Q3 + range)
-#summary(data_NavonT_final$GlobalToLocalInterference)
-#lowbound
-#highbound
-
-#plot(data_NavonT_final$GlobalToLocalPrecedence)
-#plot(data_NavonT_final$GlobalToLocalInterference)
-
-#summary(data_NavonT_final$GlobalToLocalPrecedence)
-#summary(data_NavonT_final$GlobalToLocalInterference)
-#mean(data_NavonT_final$GlobalToLocalPrecedence, na.rm = TRUE) + (2.5 * sd(data_NavonT_final$GlobalToLocalPrecedence, na.rm = TRUE))
-#mean(data_NavonT_final$GlobalToLocalPrecedence, na.rm = TRUE) - (2.5 * sd(data_NavonT_final$GlobalToLocalPrecedence, na.rm = TRUE))
-
-#data_NavonT_final$GlobalToLocalPrecedence[which(data_NavonT_final$GlobalToLocalPrecedence < -1.29128)] <- NA
-#data_NavonT_final$GlobalToLocalInterference[which(data_NavonT_final$GlobalToLocalInterference > 1.16392)] <- NA
-
-#they're "almost normal"
-#shapiro.test(data_NavonT_final$GlobalToLocalPrecedence)
-#shapiro.test(data_NavonT_final$GlobalToLocalInterference)
-
-#par(mfrow = c(1, 2))
-#hist(data_NavonT_final$GlobalToLocalPrecedence, main = "GlobalToLocalPrecedence", ylim = c(0, 60), col = rainbow(14), breaks = seq(-2, 2, .5), xlab = "")
-#hist(data_NavonT_final$GlobalToLocalInterference, main = "GlobalToLocalInterference", ylim = c(0, 60), col = rainbow(14), breaks = seq(-2, 2, .5), xlab = "")
-
-#Navon_task <- (describe(data_NavonT_final$GlobalToLocalPrecedence))
-#Navon_task <- rbind(Navon_task, describe(data_NavonT_final$GlobalToLocalInterference))
-#row.names(Navon_task) <- c("GlobalToLocalPrecedence", "GlobalToLocalInterference")
-#View(Navon_task)
+# Describe
+Navon <- c("Consistent_task1", "Consistent_task2", "Inconsistent_task1", "Inconsistent_task2", "GlobalToLocalPrecedence", "GlobalToLocalInterference")
+describe(data_NavonT_final[, Navon])
+par(mfrow = c(2, 3))
+for (i in 1:length(Navon)) {
+  hist(data_NavonT_final[, Navon[i]], 
+       main = colnames(data_NavonT_final[Navon[i]]), 
+       col = sample(colors(), 1), 
+       xlab = "")
+}
 
 ```
+NOTE: also discuss navon
 
 ## Necker
 
