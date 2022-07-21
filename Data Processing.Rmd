@@ -977,7 +977,7 @@ hist(data_matreasT_final$MatrixCorrectCount,
 
 ## Merge Questionnaire Variables
 
-```{r Merging questionnaire variables, include = FALSE}
+```{r Merge questionnaire variables, include = FALSE}
 
 # Merge the important columns
 data_Q_sub <- data_Q_total %>%
@@ -1066,29 +1066,6 @@ data_Q_sub <- data_Q_sub %>%
 
 ``` 
 
-## Exclusion Criteria
-
-**ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all questionnaire data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
-* stated their data are not valid
-* stated their Finnish is not Äidinkieli or Keskusteleva
-
-**TIPI - RANDOMNESS/PROBABILITY:** Furthermore, a participant's questionnaire data for a particular questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
-* their response time for the questionnaire was shorter than the number of items x 1000 milliseconds
-
-**TIPI - RANDOMNESS/PROBABILITY:** For questionnaires that included reverse-coded items, a participant's questionnaire data for that questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
-* 90% or more of their responses for that questionnaire fell on the same response option
-
-## Questionnaire Data Processing
-
-After excluding data in accordance with the exclusion criteria above, the following steps are taken for each questionnaire:
-* reverse-code items (if necessary)
-* visualize and describe each item
-* check the structure of the questionnaire data with Cronbach's alpha
-* calculate mean or sum scores according to the questionnaire instructions
-* replace sum score 0s with NAs (if necessary)
-* visualize and describe mean or sum scores
-
-
 # Task Data
 
 ## Exclusion Criteria
@@ -1104,6 +1081,7 @@ After excluding data in accordance with the exclusion criteria above, the follow
 
 ## Task Data Processing
 
+See each chunk.
 
 ### Go No Go
 
@@ -1470,112 +1448,68 @@ for (i in 1:length(uut)) {
 
 ```
 
-
-# Merging task variables
+# Merge task variables
 
 Doesn't yet include the CI task! 
 
-N = 155
+```{r Combine the Task Dataframes, include = FALSE}
 
-```{r Combining the task dataframes, include = FALSE}
-
-data_T_total1 <- merge(data_nogoT_final, data_NavonT_final, by = "Participant.Private.ID", all = TRUE)
-data_T_total2 <- merge(data_UUT_scores, data_NeckerT_final, by = "Participant.Private.ID", all = TRUE)
-#data_T_total <- merge(data_T_total, data_NeckerT_final, by = "Participant.Private.ID", all = TRUE)
-data_T_total <- merge(data_T_total1, data_T_total2, by = "Participant.Private.ID", all = TRUE)
+# Merge dataframes
+data_T_total1 <- merge(data_nogoT_final, data_NavonT_final, 
+                       by = "Participant.Private.ID", all = TRUE)
+data_T_total2 <- merge(data_UUT, data_NeckerT_final, 
+                       by = "Participant.Private.ID", all = TRUE)
+data_T_total <- merge(data_T_total1, data_T_total2, 
+                      by = "Participant.Private.ID", all = TRUE)
 rm(data_T_total1, data_T_total2)
 
-
-## Extracting the relevant columns
-
+# Extract the relevant columns
 data_T_sub <- data_T_total %>%
- select(Participant.Private.ID, GNGdprime, GNGbeta, meanHitRT, sdHitRT, meanFA_RT, sdFA_RT, GlobalToLocalPrecedence, GlobalToLocalInterference, NeckerTotalRate, FlexSum, FluencySum)
+  select(Participant.Private.ID, GNGdprime, GNGbeta, MeanGoRT, SDGoRT, GlobalToLocalPrecedence, GlobalToLocalInterference, NeckerTotalRate, FlexSum, FluencySum)
 
-
-# getting rid of values that should be NAs 
-#is.nan.data.frame <- function(x)
-# do.call(cbind, lapply(x, is.nan))
-#data_T_sub[is.nan(data_T_sub)] <- NA
-
-# need to coerce the numeric variables to numeric through unlist and get rid of the NULLs in the meantime
-data_T_sub$GNGdprime[which(data_T_sub$GNGdprime == "NULL")] <- NA
-data_T_sub$GNGbeta[which(data_T_sub$GNGbeta == "NULL")] <- NA
-data_T_sub$GNGdprime <- as.numeric(unlist(data_T_sub$GNGdprime))
-data_T_sub$GNGbeta <- as.numeric(unlist(data_T_sub$GNGbeta))
-
-str(data_T_sub)
-
+# Participant ID into factor
+data_T_sub$Participant.Private.ID <- as.factor(data_T_sub$Participant.Private.ID)
 
 ```
 
 
-# T missing data
+## Analyze Missing Data in Tasks
 
-Better to do this for tasks and questionnaires separately, because they have different reasons for being missing and different implications. Do this before checking distributions because ppts with large amounts of missing data or suspicious patterns of missing data are removed here from the final dataset.
+Participants with large amounts of missing data or suspicious patterns of missing data are removed here. It should be noted that missing data refers to data that was missing from the start *and* data that was replaced with missing values if the participant met one of the exclusion criteria. Done separately for questionnaires and tasks.
 
-Final N after cleaning: N = 143 ppts with task data
+```{r Analyze Missing Data in Tasks}
 
-```{r}
+# Add a column for count of missing data per ppt
+data_T_sub <- data_T_sub %>%
+  mutate(missingtasks = rowSums(is.na(data_T_sub)))
+table(data_T_sub$missingtasks)
+plot(sort(data_T_sub$missingtasks))
 
-library(ggplot2)
-library(naniar)
+# NOTE: which cut off? 4 was used before but not sure as there is no elbow here
 
-# add a column for count of missing data per ppt, to task sub df
-data_T_sub1 <- data_T_sub %>%
- mutate(missingtasks = rowSums(is.na(data_T_sub)))
-
-View(data_T_sub)
-
-# there is a clear elbow at around 3 missing variables, the next step is 6 missing which adds 2 more ppts, and above that is 8 missing
-# so for this I'll choose to cut off at below 4 missing
-ggplot(data_T_sub, aes(x = as.factor(Participant.Private.ID), y = missingtasks)) +
-   geom_boxplot(fill = "slateblue", alpha = 0.2) + 
-   xlab("Missing variables count")
-
-# try to see if there's an elbow in the number of missing variables per ppt 
-MissingTasks<-sort(data_T_sub$missingtasks, decreasing = FALSE)
-plot(MissingTasks)
-
-# just temporarily getting the demographic info to the task df so I can investigate missingness
+# Merge demographic information to investigate missingness
+# NOTE: what to do about the age correlation?
 data_T_all <- data_Q_total %>%
- select(Participant.Private.ID, gender, Age, Country, Language, Education)
-
-data_T_sub <- merge(data_T_all, data_T_sub, by = "Participant.Private.ID", all = TRUE)
-
-# getting rid of some NaNs in the Navon variables
-is.nan.data.frame <- function(x)
- do.call(cbind, lapply(x, is.nan))
-data_T_sub[is.nan(data_T_sub)] <- NA
-
-# there is a significant correlation between age and missing data in the tasks before ppt removal, probably because older ppts struggle more in the timed tasks
+  select(Participant.Private.ID, gender, Age, Country, Language, Education)
+data_T_sub <- merge(data_T_all, data_T_sub, 
+                    by = "Participant.Private.ID", all = TRUE)
 gg_miss_fct(x = data_T_sub, fct = Age)
-cor.test(data_T_sub$Age, data_T_sub$missing, method = "spearman", exact = FALSE)
+cor.test(data_T_sub$Age, data_T_sub$missing, 
+         method = "spearman", exact = FALSE)
 
-#gg_miss_fct(x = data_T_sub, fct = Language)
-#gg_miss_fct(x = data_T_sub, fct = Country)
-#gg_miss_fct(x = data_T_sub, fct = gender)
-#gg_miss_fct(x = data_T_sub, fct = Education)
-
-
-# removing ppts with 5 or more task variables missing (total 9 variables, looks like most ppts have no more than 3 missing)
+# Remove participants with 5 or more missing task variables
 data_T_sub <- data_T_sub %>%
- group_by(Participant.Private.ID) %>%
- filter(missing < 4)
+  group_by(Participant.Private.ID) %>%
+  filter(missingtasks < 4)
 
-# checking whether there is still a correlation between age and missing data--it's better but still there
-gg_miss_fct(x = data_T_sub, fct = Age)
-cor.test(data_T_sub$Age, data_T_sub$missing, method = "spearman", exact = FALSE)
-
-# removing the columns we don't need again
+# Omit irrelevant columns
 data_T_sub <- data_T_sub %>%
- select(GNGdprime:FluencySum)
-
-View(data_T_sub)
+  select(-missingtasks)
 
 ```
 
 
-# T distributions and correlations
+## Check Task Distributions and Correlations
 
 Done according to our plan: 
 Transform GNGbeta, meanHitRT and sdHitRT and sdFA_RT
