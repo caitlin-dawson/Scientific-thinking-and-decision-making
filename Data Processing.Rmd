@@ -1508,117 +1508,44 @@ data_T_sub <- data_T_sub %>%
 
 ```
 
-
 ## Check Task Distributions and Correlations
 
-Done according to our plan: 
-Transform GNGbeta, meanHitRT and sdHitRT and sdFA_RT
-Removing meanFA_RT and GlobalLocalInterference for having high correlations >.85 with other variables in the same measure
+This chunk checks distributions of task variables and correlations between them:
+* If distributions are highly skewed, transformations are applied to decrease skewness
+* If two variables are highly correlated, one of them is dropped (Eisenberg et al.)
 
-NB: not entirely sure about the processing here. 
+```{r Normality and Correlations of Tasks, include = FALSE}
 
+# Normality of variables: visualize with histograms
+data_T_sub <- as.data.frame(data_T_sub)
+vars_T <- c("GNGdprime", "GNGbeta", "MeanGoRT", "SDGoRT", "GlobalToLocalPrecedence", "GlobalToLocalInterference", "NeckerTotalRate", "FlexSum", "FluencySum")
+par(mfrow = c(2, 2))
+for (i in 1:length(vars_T)) {
+  hist(data_T_sub[, vars_T[i]],
+       main = colnames(data_T_sub[vars_T[i]]),
+       col = sample(colors(), 1),
+       xlab = "")
+}
 
-```{r Checking the normality of the task variables, include = FALSE}
+# Describe: mean, skew, kurtosis
+describe(data_T_sub[, vars_T])[c("mean", "skew", "kurtosis")]
 
-# each of the measures (mean, skew, kurtosis) should be inspected and transformations should be conducted accordingly
+# Correlation matrix
+round(cor(data_T_sub[, vars_T], method = "pearson", 
+          use = "pairwise.complete.obs"), 2)
+abs(round(cor(data_T_sub[, vars_T], method = "pearson", 
+              use = "pairwise.complete.obs"), 2)) > .85
+corrplot(cor(data_T_sub[, vars_T], method = "pearson", 
+             use = "pairwise.complete.obs"))
 
-# this has already basically been checked in each processing section
+# NOTE: we should discuss this, only transforming GNGbeta for now
+data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
 
-## Normality of variables: visualising with histograms
-#GNGdprime <- ggplot(data_T_sub, aes(x = GNGdprime)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#GNGdprime
-#GNGbeta <- ggplot(data_T_sub, aes(x = GNGbeta)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#GNGbeta
-#meanHitRT <- ggplot(data_T_sub, aes(x = meanHitRT)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#meanHitRT
-#meanFA_RT <- ggplot(data_T_sub, aes(x = meanFA_RT)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#meanFA_RT
-#sdHitRT <- ggplot(data_T_sub, aes(x = sdHitRT)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#sdHitRT
-#sdFA_RT <- ggplot(data_T_sub, aes(x = sdFA_RT)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#sdFA_RT
-#GlobalToLocalPrecendence <- ggplot(data_T_sub, aes(x = GlobalToLocalPrecendence)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#GlobalToLocalPrecendence
-#GlobalToLocalInterference <- ggplot(data_T_sub, aes(x = GlobalToLocalInterference)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#GlobalToLocalInterference
-#NeckerTotalRate <- ggplot(data_T_sub, aes(x = NeckerTotalRate)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#NeckerTotalRate
-
-# Transformations 
-
-## Normality of variables: skewness
-#which(abs(skew(data_T_sub))>1) #The variables that need to be transformed (no code for this yet)
-#which(abs(skew(data_T_total))>1)
-
-# I think the task variables need to be transformed
-
-## Correlation matrix
-#If two (or more) variables from the same questionnaire or task correlate so that r>.85, one of them should be omitted (from Eisenberg et al.)
-#no omissions needed from questionnaires
-
-# check the indexes, it changes if you've deleted the demographic columns
-#GNG variables
-#mean hit RT and mean FA RT are correlated 0.8775609 
-cor(data_T_sub[, 2:7], method = "pearson", use = "pairwise.complete.obs") 
-abs(cor(data_T_sub[, 2:7], method = "pearson", use = "pairwise.complete.obs")) > .85 #TRUE values: we should consider omitting one of the variables 
-
-# Navon variables
-#correlated with each other 0.8947398    
-cor(data_T_sub[, 8:9], method = "pearson", use = "pairwise.complete.obs") 
-abs(cor(data_T_sub[, 8:9], method = "pearson", use = "pairwise.complete.obs")) > .85
-
-# UUT variables
-# correlated with each other .984135
-cor(data_T_sub[, 11:12], method = "pearson", use = "pairwise.complete.obs") 
-abs(cor(data_T_sub[, 11:12], method = "pearson", use = "pairwise.complete.obs")) > .85
-
-
-# GNGbeta has high positive skew; transforming it and replacing it in the df 
-
-# the mean and sd hit and FA RTs are also skewed positively, so trying to transform them too just to see how it goes 
-
-
-data_T_sub$GNGbetalog<-log10(data_T_sub$GNGbeta)
-#GNGbetalog <- ggplot(data_T_sub, aes(x = GNGbetalog)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#GNGbetalog
-#qqnorm(data_T_sub$GNGbetalog)
-#it's not as bad as it could be? keeping for now?? 
-
-data_T_sub$meanHitRTlog<-log10(data_T_sub$meanHitRT)
-#meanHitRTlog <- ggplot(data_T_sub, aes(x = meanHitRTlog)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#meanHitRTlog
-#good enough according to shapiro. The original wasn't that bad. 
-
-data_T_sub$sdHitRTlog<-log10(data_T_sub$sdHitRT)
-#sdHitRTlog <- ggplot(data_T_sub, aes(x = sdHitRTlog)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#sdHitRTlog
-#again wasn't that bad but helped
-
-data_T_sub$sdFA_RTlog<-log10(data_T_sub$sdFA_RT)
-#sdFA_RTlog <- ggplot(data_T_sub, aes(sdFA_RTlog)) +
-# geom_histogram(color = "black", fill = "lightblue")
-#sdFA_RTlog
-# was a bit worse but helped, still not great
-
-# selecting a final set of task variables including the transformed ones
-#here abribtrarily remove variables that were highly correlated with others from the same task
+# NOTE: we should also discuss which variables to remove; here removing GlobalToLocalInterference and FluencySum  
 data_T_sub <- data_T_sub %>%
- select(GNGdprime, GNGbetalog, meanHitRTlog, sdHitRTlog, sdFA_RTlog, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
+  select(GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
 
 ```
-
 
 # Formatting T & Q dataframes 
 
