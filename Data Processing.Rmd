@@ -1062,7 +1062,7 @@ corrplot(cor(data_Q_sub[, vars], method = "pearson", use = "pairwise.complete.ob
 
 # Subset data: exclude demographic variables
 data_Q_sub <- data_Q_sub %>%
- select(AMean:MatrixCorrectCount)
+ select(Participant.Private.ID, AMean:MatrixCorrectCount)
 
 ``` 
 
@@ -1543,75 +1543,41 @@ data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
 
 # NOTE: we should also discuss which variables to remove; here removing GlobalToLocalInterference and FluencySum  
 data_T_sub <- data_T_sub %>%
-  select(GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
+  select(Participant.Private.ID, GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
 
 ```
 
-# Formatting T & Q dataframes 
+# Format the Task and Questionnaire Dataframes 
 
-there are now N = 163 in the full set (data_all_sub_cleaned) because there is one ppt who has NA for all Q data but has some T data. Q set N = 162, T set N = 143
+```{r Combine Task and Questionnaire Dataframes, include = FALSE}
 
-These dfs have the final full set of variables and ppts, including transformed variables and cleaned data. 
+data_all_sub_cleaned <- merge(data_Q_sub, data_T_sub, 
+                              by = "Participant.Private.ID", 
+                              all = TRUE)
 
-```{r Combining task and questionnaire dataframes, include = FALSE}
+# NOTE: should we check missingness again?
+missing_data <- data_all_sub_cleaned %>%
+  mutate(missing = rowSums(is.na(data_all_sub_cleaned))) %>% 
+  select(Participant.Private.ID, missing)
 
-data_all_sub_cleaned <- merge(data_Q_sub, data_T_sub, by = "Participant.Private.ID", all = TRUE)
-View(data_all_sub_cleaned)
-
-#ungroup(data_all_sub_cleaned)
-#clustdata <- data_all_sub_cleaned %>%
- #select(Participant.Private.ID:AOTSum, RPSum:FluencySum)
-
-# need to ungroup and select to get rid of ppt private id. This can also be done earlier. Ungrouping turns the df into a tibble, so have to coerce back to a df before selecting to remove ppt private id
+# Ungroup the dataframe
 ungroup(data_all_sub_cleaned)
 data_all_sub_cleaned <- data_all_sub_cleaned %>%
- select(AMean:FluencySum)
-View(data_all_sub_cleaned)
+  select(AMean:FlexSum)
 
-ungroup(data_Q_sub)
-data_Q_sub<-data.frame(data_Q_sub)
-data_Q_sub <- data_Q_sub %>%
- select(AMean:MatrixCorrectCount)
+```
 
-ungroup(data_T_sub)
-data_T_sub<-data.frame(data_T_sub)
-data_T_sub <- data_T_sub %>%
- select(GNGdprime:NeckerTotalRate)
+# Further Subsetting?
 
-# this set removes GNGbetalog and the other RT based GNG measures which are generally correlated and clustered with themselves and nothing else 
-# trying this to see if it solves the ultra-Heywood case issue
-data_all_without_GNG <- data_all_sub_cleaned %>%
- select(AMean:GNGdprime, GlobalToLocalPrecedence:FlexSum)
+```{r Possible Subsetting?}
 
-# without binary variables, use this for clustering raw (not correlation matrix)
-data_all_without_binary <- data_all_sub_cleaned %>%
- select(AMean:AOTSum, RPSum:FlexSum)
+# Binary variables
+binary <- c("HEscore", "HRscore")
 
-# data without GNG or binary, use this for the cross validated ridge regression predictions of tasks by surveys etc. 
-data_without_GNG_or_binary <- data_all_without_GNG %>%
- select(AMean:AOTSum, RPSum:FlexSum)
+# Go No-Go variables
+gng <- c("GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRT")
 
-# data set based on predictions: surveys plus navon and necker
-data_from_predictions <- data_all_sub_cleaned %>%
- select(AMean:MatrixCorrectCount, GlobalToLocalPrecedence:NeckerTotalRate)
-
-#########################################################################
-# First start from the beginning---sets for EFA process
-# no need to worry about correlated variables, they were removed in the previous section
-# whole set
-all_new <- data_all_sub_cleaned %>%
- select(AMean:FlexSum)
-
-# eventually leaving out HEscore, EMean, sci.tru.sum
-Q_new <- data_all_sub_cleaned %>%
- select(AMean:MatrixCorrectCount)
-#Q_new <- na.omit(Q_new) #dont use this, it gets rid of all rows with NAs
- #select(AMean:CMean, ESMean:AOTSum, HRscore:sci_cur, sci_impo:MatrixCorrectCount)
-
-# Task set for EFA process
-# UUT as a task
-T_new <- data_T_sub %>%
- select(GNGdprime:FlexSum)
+# NOTE: do we want to get rid of them for analysis? binary might be an issue still but gng are ok in terms of correlations
  
 ```
 
