@@ -5,7 +5,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 ---
 
-# Notes: 
+# Notes 
 * takes data downloaded from Gorilla **blinded, semicolon separated, csv format, short form, versions 22-25**
 * cleans and processes data for the study 'Scientific thinking and decision-making in everyday life'
 
@@ -19,17 +19,14 @@ Version history:
 
 ```{r Load Packages, include = FALSE}
 
-# library(car)
 library(corrplot)
 library(dplyr)
 library(ggplot2)
-# library(GPArotation)
 library(lavaan)
 library(naniar)
 library(psych)
 library(psycho)
 library(tidyr)
-# library(tidyverse)
 
 ```
 
@@ -37,7 +34,7 @@ library(tidyr)
 
 This chunk loads the data and omits experiment-general columns from all files (except for participant private ID).
 
-```{r Load data, include = FALSE}
+```{r Load Data, include = FALSE}
 
 # Versions 22-25
 versions <- paste0("v", 22:25)
@@ -71,9 +68,9 @@ This series of chunks computes the necessary data cleaning to merge the question
 
 This chunk combines the different versions of each questionnaire (leaving us with one df per questionnaire).
 
-```{r Merge the versions, include = FALSE}
+```{r Merge the Versions, include = FALSE}
 
-# Concatenate the versions of each task/questionnaire
+# Concatenate the versions of each questionnaire
 data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, data_big5Q_v24, data_big5Q_v25) 
 data_citiT <- rbind(data_citiT_v22, data_citiT_v23, data_citiT_v24, data_citiT_v25) 
 data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, data_demoQ_v24, data_demoQ_v25)
@@ -1232,7 +1229,7 @@ Data processing: for each participant, we calculate the global-local precedence 
 * Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only 
 These are described and visualized.
 
-```{r Navon task, include = FALSE}
+```{r Navon Task, include = FALSE}
 
 # Omit experiment-general columns & practice (etc.) rows
 data_NavonT <- data_NavonT %>%

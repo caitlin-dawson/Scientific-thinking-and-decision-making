@@ -22,145 +22,33 @@ Version history:
 - version 23 has fewer rows per ppt because of only 5 sources. All sources are links. 
 - versions 24 and 25 have all sources but one source as a PDF. Find the source implementation in the column 'display'
 
+# Check the Validity and Demographics
 
-# Loading packages
+This chunk removes nonvalid participants according to the validity check and language exclusion criteria.
 
-```{r Loading packages, include=FALSE}
+```{r Load Data, include=FALSE}
 
-library(tidyverse)
-library(psych)
-library(lavaan)
-library(dplyr)
-library(ggplot2)
-library(psycho)
-library(tidyr)
-library(GPArotation)
-library(car)
+# Exclude nonvalid participants
+data_citiT <- merge(data_citiT, data_ConsentValidity, 
+                    by = "Participant.Private.ID")
 
-```
+# Validity/languege filter + select relevant columns
+data_citiT <- data_citiT %>%
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>% 
+  select(Participant.Private.ID, Spreadsheet.Row:Reaction.Time, Response, display, Text, Source_topic)
 
-# Loading Data
-
-```{r Loading Data, include=FALSE}
-#Remember to set working directory that includes the csv files!
-#this should work and load in all the relevant files
-
-data_citizen.initiativeT_v22 <- read.csv('data_exp_55551-v22_task-zryk.csv', sep = ";")
-data_citizen.initiativeT_v23 <- read.csv('data_exp_55551-v23_task-zryk.csv', sep = ";")
-data_citizen.initiativeT_v24 <- read.csv('data_exp_55551-v24_task-zryk.csv', sep = ";")
-data_citizen.initiativeT_v25 <- read.csv('data_exp_55551-v25_task-zryk.csv', sep = ";")
-```
-
-# Cleaning data
-
-This section has bits of code copied from the main Notebook that can be used as a starting point to process the CI task. Some of these will be done by the initial processing stages in the main script. 
-
-```{r Loading Data, include=FALSE}
-#This omits experiment-general columns from all files (except for participant ID)
-data_citizen.initiativeT_v22 <- data_citizen.initiativeT_v22 %>%
-  select(Participant.Private.ID, Experiment.Version,Spreadsheet:ncol(data_citizen.initiativeT_v22))
-
-data_citizen.initiativeT_v23 <- data_citizen.initiativeT_v23 %>%
-  select(Participant.Private.ID, Experiment.Version,Spreadsheet:ncol(data_citizen.initiativeT_v23))
-
-data_citizen.initiativeT_v24 <- data_citizen.initiativeT_v24 %>%
-  select(Participant.Private.ID, Experiment.Version,Spreadsheet:ncol(data_citizen.initiativeT_v24))
-
-data_citizen.initiativeT_v25 <- data_citizen.initiativeT_v25 %>%
-  select(Participant.Private.ID, Experiment.Version,Spreadsheet:ncol(data_citizen.initiativeT_v25))
-
-#This combines the versions of each task and removes the empty first and last lines of each file
-data_citizen.initiativeT <- rbind(data_citizen.initiativeT_v22,data_citizen.initiativeT_v23,data_citizen.initiativeT_v24,data_citizen.initiativeT_v25) %>%
-  filter(!is.na(Spreadsheet.Row))
-```
-
-#Validity and demographics
-
-This chunk appends the validity check and demographics columns to the CI task df and removes nonvalid participants according to the validity check and language exclusion criteria
-
-```{r Loading Data, include=FALSE}
-#processing validity sheet again so we can add it to the end of the CI task file and check validity of these ppts: the processing bit can be deleted after adding to the main code because it's already in the beginning sections, then we can start with the appending 
-data_validityQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-81k4.csv', sep = ";")
-data_validityQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-81k4.csv', sep = ";")
-data_validityQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-81k4.csv', sep = ";")
-data_validityQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-81k4.csv', sep = ";")
-
-data_validityQ_v22 <- data_validityQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_validityQ_v23 <- data_validityQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_validityQ_v24 <- data_validityQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_validityQ_v25 <- data_validityQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-data_validityQ <- rbind(data_validityQ_v22,data_validityQ_v23,data_validityQ_v24,data_validityQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-names(data_validityQ)[names(data_validityQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.VALIDITY"
-names(data_validityQ)[names(data_validityQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..VALIDITY"
-
-#this line appends validity columns to the CI df
-#merging with all=TRUE is critical because not all ppts who completed the CI task will have made it all the way through to the validity check. We still want to keep those ppts, they just don't have any data in the validity columns
-data_CI_total <- merge(data_citizen.initiativeT, data_validityQ, by = "Participant.Private.ID", all=TRUE)
-
-
-##appending language from demographics file
-data_demographicsQ_v22 <- read.csv('data_exp_55551-v22_questionnaire-c7cw.csv', sep = ";")
-data_demographicsQ_v23 <- read.csv('data_exp_55551-v23_questionnaire-c7cw.csv', sep = ";")
-data_demographicsQ_v24 <- read.csv('data_exp_55551-v24_questionnaire-c7cw.csv', sep = ";")
-data_demographicsQ_v25 <- read.csv('data_exp_55551-v25_questionnaire-c7cw.csv', sep = ";")
-
-data_demographicsQ_v22 <- data_demographicsQ_v22 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_demographicsQ_v23 <- data_demographicsQ_v23 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_demographicsQ_v24 <- data_demographicsQ_v24 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-data_demographicsQ_v25 <- data_demographicsQ_v25 %>%
-  select(Participant.Private.ID, Randomise.questionnaire.elements.:END.QUESTIONNAIRE)
-
-data_demographicsQ <-  rbind(data_demographicsQ_v22,data_demographicsQ_v23,data_demographicsQ_v24,data_demographicsQ_v25) %>%
-  filter(!is.na(Participant.Private.ID))
-names(data_demographicsQ)[names(data_demographicsQ) == "END.QUESTIONNAIRE"] <- "END.QUESTIONNAIRE.DEMOGRAPHICS"
-names(data_demographicsQ)[names(data_demographicsQ) == "Randomise.questionnaire.elements."] <- "Randomise.questionnaire.elements..DEMOGRAPHICS"
-
-data_CI_total <- merge(data_CI_total,data_demographicsQ, by = "Participant.Private.ID", all=TRUE)
-
-
-#here are the validity filters, use these to check
-#there should be 2 ppts captured here
-data_CI_nonvalid <- data_CI_total %>%
-  filter(Validity == "Ã„lÃ¤ huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity == "Ã„lÃ¤ huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiÃ¤ kunnolla.")
-
-#nonvalid language answers: there was one "muu" who said they had fluent but not native level, included them
-#the remaining "ei ole" is a test by CD
-data_CI_lang_omit <- data_CI_total %>%
-  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
-
-#actual validity filter
-data_CI_total <- data_CI_total %>%
-  filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.","Muu, mikÃ¤? ",NA,"") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?"))
-
-
-#removing columns we don't need; now keeping most columns that help define the variables
-
-data_CI <- data_CI_total %>%
-  select(Participant.Private.ID, Experiment.Version, Spreadsheet.Row:Reaction.Time, Response, display, Text,Source_topic,gender, Age, Country, Education)
-
-#removing the rows Instructions and Finish which we don't need
-data_CI <- data_CI %>%
+# Remove the Instructions/Finish rows
+data_citiT <- data_citiT %>%
   filter(display != "Instructions" & display!= "Finish")
+
 ```
 
-#Coding source types
+# Code Source Types
 
-```{r Loading Data, include=FALSE}
-#NB: implementation can be checked from Display column: 'Reading'=link presentation, 'PDF'=article presented as an image
-#version 23 has only 5 sources, and versions 24 and 25 have one source as the PDF. Version 22 has all sources as links
+```{r Code Source Types}
 
-#adding a column to code the source authority: 1=Authority, 2=Personal
-
-data_CI <- data_CI %>%
+# Add a column to code the source authority: 1=Authority, 2=Personal
+data_citiT <- data_citiT %>%
   mutate(source_authority = case_when((Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 1,
                                       (Source_topic == "Suo syntyy uudestaan") ~ 1,
                                       (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 1,
@@ -168,171 +56,187 @@ data_CI <- data_CI %>%
                                       (Source_topic == "Turve on uusiutuva luonnonvara") ~ 2,
                                       (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2))
 
-#adding a column to code the source quality: 1=Reliable, 2=Unreliable, 3=irrelevant
-
-data_CI <- data_CI %>%
+# Add a column to code the source quality: 1=Reliable, 2=Unreliable, 3=irrelevant
+data_citiT <- data_citiT %>%
   mutate(source_quality = case_when((Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 1,
-                                      (Source_topic == "Suo syntyy uudestaan") ~ 2,
-                                      (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 3,
-                                      (Source_topic == "Punnittua puhetta turpeesta") ~ 1,
-                                      (Source_topic == "Turve on uusiutuva luonnonvara") ~ 2,
-                                      (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 3))
+                                    (Source_topic == "Suo syntyy uudestaan") ~ 2,
+                                    (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 3,
+                                    (Source_topic == "Punnittua puhetta turpeesta") ~ 1,
+                                    (Source_topic == "Turve on uusiutuva luonnonvara") ~ 2,
+                                    (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 3))
 
 ```
 
-#Recoding the SAM responses as Likert Intensity and Valence scores
+# Extract Reaction Times
 
-And add a line to extract the relevant rows e.g. emotional state associated with the source topic, authority and quality, add that to the reading time df (we don't need RTs for the emotional state)
+```{r Extract Reaction Times}
 
-##check the pngs, add something for baseline emotion (it doesn't have a source attached)
-something similar for extracting the topics 
+# Extract reaction time for the entire task to a different df
+data_citiT_RTs <- data_citiT %>% 
+  filter(Trial.Number == "END TASK") %>% 
+  select(Participant.Private.ID, Reaction.Time)
+names(data_citiT_RTs)[2] <- "overall_rt"
 
-####this should work but I think because some of the Likert options are the same e.g. 'varmasti en' it's not working. Need to define the new column not only by the response but also the screen name I think? Check spreadsheet, not sure how to add another pipe to define this
+# Remove BEGIN TASK and END TASK rows from df
+data_citiT <- data_citiT %>% 
+  filter(!Trial.Number %in% c("END TASK", "BEGIN TASK"))
 
+# Extract reaction times for each source
+# NOTE: NOT SURE ABOUT THIS
+# Baseline SAM and 4 baseline topic questions (about the petition) coded as order = 1; Rest of the trials coded based on Source_topic so that order numbers always refer to the same source
+data_citiT <- data_citiT %>% 
+  mutate(Order = case_when((Source_topic == "") ~ 1,
+                           (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2,
+                           (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 3,
+                           (Source_topic == "Punnittua puhetta turpeesta") ~ 4,
+                           (Source_topic == "Suo syntyy uudestaan") ~ 5,
+                           (Source_topic == "Turve on uusiutuva luonnonvara") ~ 6,
+                           (Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 7))
+data_citiT_srcRTs <- data_citiT %>% 
+  filter(Zone.Name == "advancementZone") %>% 
+  select(Participant.Private.ID, Order, Reaction.Time)
+names(data_citiT_srcRTs)[3] <- "src_rt"
 
-```{r}
+# Combine overall RTs and source RTs
+data_citiT_RTs <- merge(data_citiT_RTs, data_citiT_srcRTs,
+                        by = "Participant.Private.ID",
+                        all = TRUE)
 
-#SAM intensity
-data_CI <- data_CI %>%
+# Extract reaction times for the questions
+data_citiT_likertRTs <- data_citiT %>% 
+  filter(Zone.Type != "continue_button") %>% 
+  select(Participant.Private.ID, Reaction.Time, Zone.Type)
+# NOTE: what do we want to know about these?
+
+```
+
+# Recode the SAM Responses as Likert Intensity and Valence Scores
+
+Recode the SAM responses as Likert intensity and valence scores and add a line to extract the relevant rows, e.g. emotional state associated with the source topic, authority and quality. Add that to the reading time df.
+
+```{r Recode the SAM + Petition + Source Responses}
+
+# SAM intensity
+data_citiT <- data_citiT %>%
   mutate(SAMintensity = case_when((Response == "SAM_1.1.PNG") ~ 1,
-                                      (Response == "SAM_1.2.PNG") ~ 2,
-                                      (Response == "SAM_1.3.PNG") ~ 3,
-                                      (Response == "SAM_1.4.PNG") ~ 4,
-                                      (Response == "SAM_1.5.PNG") ~ 5,
-                                      (Response == "SAM_1.6.PNG") ~ 6,
-                                      (Response == "SAM_1.7.PNG") ~ 7,
-                                      (Response == "SAM_1.8.PNG") ~ 8,
-                                      (Response == "SAM_1.9.PNG") ~ 9))
-#SAM valence
-data_CI <- data_CI %>%
+                                  (Response == "SAM_1.2.PNG") ~ 2,
+                                  (Response == "SAM_1.3.PNG") ~ 3,
+                                  (Response == "SAM_1.4.PNG") ~ 4,
+                                  (Response == "SAM_1.5.PNG") ~ 5,
+                                  (Response == "SAM_1.6.PNG") ~ 6,
+                                  (Response == "SAM_1.7.PNG") ~ 7,
+                                  (Response == "SAM_1.8.PNG") ~ 8,
+                                  (Response == "SAM_1.9.PNG") ~ 9))
+
+# SAM valence
+data_citiT <- data_citiT %>%
   mutate(SAMvalence = case_when((Response == "SAM_2.1.PNG") ~ 1,
-                                      (Response == "SAM_2.2.PNG") ~ 2,
-                                      (Response == "SAM_2.3.PNG") ~ 3,
-                                      (Response == "SAM_2.4.PNG") ~ 4,
-                                      (Response == "SAM_2.5.PNG") ~ 5,
-                                      (Response == "SAM_2.6.PNG") ~ 6,
-                                      (Response == "SAM_2.7.PNG") ~ 7,
-                                      (Response == "SAM_2.8.PNG") ~ 8,
-                                      (Response == "SAM_2.9.PNG") ~ 9))
+                                (Response == "SAM_2.2.PNG") ~ 2,
+                                (Response == "SAM_2.3.PNG") ~ 3,
+                                (Response == "SAM_2.4.PNG") ~ 4,
+                                (Response == "SAM_2.5.PNG") ~ 5,
+                                (Response == "SAM_2.6.PNG") ~ 6,
+                                (Response == "SAM_2.7.PNG") ~ 7,
+                                (Response == "SAM_2.8.PNG") ~ 8,
+                                (Response == "SAM_2.9.PNG") ~ 9))
 
-#baseline SAM and 4 baseline topic questions recoded as order=1 and the rest of the trials recoded based on Trial.Number. Now Order=1 is the baseline trial, and trials 2-7 reflect SAM and questions asked after reading each source. Could recode baseline as zero and not bother recoding the trial numbers? 
-data_CI <- data_CI %>%
-  mutate(Order = case_when((display == "SAM1") ~ 1,
-                                      (display == "Initial_assessment") ~ 1,
-                                      (Trial.Number == "1") ~ 2,
-                                      (Trial.Number == "2") ~ 3,
-                                      (Trial.Number == "3") ~ 4,
-                                      (Trial.Number == "4") ~ 5,
-                                      (Trial.Number == "5") ~ 6,
-                                      (Trial.Number == "6") ~ 7))
-
-#recoding the topic and source assessment questions into Likert variables
-################do we need to specify topic vs source? or will the analysis sort that out based on the other variables? 
-data_CI <- data_CI %>%
+# Curiosity (petition)
+data_citiT <- data_citiT %>%
   mutate(Curiosity = case_when((Response == "En ollenkaan uteliaasti") ~ 1,
-                                      (Response == "Hiukan uteliaasti") ~ 2,
-                                      (Response == "Jokseenkin uteliaasti") ~ 3,
-                                      (Response == "Hyvin uteliaasti") ~ 4,
-                                      (Response == "Erittäin uteliaasti") ~ 5))
-#En ollenkaan uteliaasti, Hiukan uteliaasti, Jokseenkin uteliaasti, Hyvin uteliaasti, Erittäin uteliaasti
+                               (Response == "Hiukan uteliaasti") ~ 2,
+                               (Response == "Jokseenkin uteliaasti") ~ 3,
+                               (Response == "Hyvin uteliaasti") ~ 4,
+                               (Response == "ErittÃ¤in uteliaasti") ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Interest = case_when((Response == "En ollenkaan kiinnostavana") ~ 1,
-                                      (Response == "Hiukan kiinnostavana") ~ 2,
-                                      (Response == "Jokseenkin kiinnostavana") ~ 3,
-                                      (Response == "Hyvin kiinnostavana") ~ 4,
-                                      (Response == "Erittäin kiinnostavana") ~ 5))
-#En ollenkaan kiinnostavana, Hiukan kiinnostavana, Jokseenkin kiinnostavana, Hyvin kiinnostavana, Erittäin kiinnostavana
+# Interest (petition)
+data_citiT <- data_citiT %>%
+  mutate(Interest = case_when(((Response == "Ei ollenkaan kiinnostava") | 
+                              (Response == "En ollenkaan kiinnostavana")) ~ 1,
+                              ((Response == "Hiukan kiinnostava") | 
+                              (Response == "Hiukan kiinnostavana")) ~ 2,
+                              ((Response == "Jokseenkin kiinnostava") | 
+                              (Response == "Jokseenkin kiinnostavana")) ~ 3,
+                              ((Response == "Hyvin kiinnostava") | 
+                              (Response == "Hyvin kiinnostavana")) ~ 4,
+                              ((Response == "ErittÃ¤in kiinnostava") | 
+                              (Response == "ErittÃ¤in kiinnostavana")) ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Familiarity = case_when((Response == "En ollenkaan tuttu") ~ 1,
-                                      (Response == "Hiukan tuttu") ~ 2,
-                                      (Response == "Jokseenkin tuttu") ~ 3,
-                                      (Response == "Hyvin tuttu") ~ 4,
-                                      (Response == "Erittäin tuttu") ~ 5))
-#Ei ollenkaan tuttu, Hiukan tuttu, Jokseenkin tuttu, Hyvin tuttu, Erittäin tuttu
+# Familiar (petition)
+data_citiT <- data_citiT %>%
+  mutate(Familiarity = case_when((Response == "Ei ollenkaan tuttu") ~ 1,
+                                 (Response == "Hiukan tuttu") ~ 2,
+                                 (Response == "Jokseenkin tuttu") ~ 3,
+                                 (Response == "Hyvin tuttu") ~ 4,
+                                 (Response == "ErittÃ¤in tuttu") ~ 5))
+# Support (petition)
+data_citiT <- data_citiT %>%
+  mutate(Support = case_when(((Response == "Varmasti en" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "Varmasti en" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "Varmasti en" & display == "PDF" & Screen.Name == "Screen 8")) ~ 1,
+                                  ((Response == "Luultavasti en" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "Luultavasti en" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "Luultavasti en" & display == "PDF" & Screen.Name == "Screen 8")) ~ 2,
+                                  ((Response == "En osaa sanoa" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "En osaa sanoa" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "En osaa sanoa" & display == "PDF" & Screen.Name == "Screen 8")) ~ 3,
+                                  ((Response == "Luultavasti kyllÃ¤" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "Luultavasti kyllÃ¤" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "Luultavasti kyllÃ¤" & display == "PDF" & Screen.Name == "Screen 8")) ~ 4,
+                                  ((Response == "Varmasti kyllÃ¤" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "Varmasti kyllÃ¤" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "Varmasti kyllÃ¤" & display == "PDF" & Screen.Name == "Screen 8")) ~ 5))
 
-#this one and the next need to be recoded screen 8 and 11
-data_CI <- data_CI %>%
-  mutate(Petition_support = case_when((Response == "Varmasti en") ~ 1,
-                                      (Response == "Luultavasti en") ~ 2,
-                                      (Response == "En osaa sanoa") ~ 3,
-                                      (Response == "Luultavasti kyllä") ~ 4,
-                                      (Response == "Varmasti kyllä") ~ 5))
-#Varmasti en, Luultavasti en, En osaa sanoa, Luultavasti kyllä, Varmasti kyllä
+# Shareability (source)
+data_citiT <- data_citiT %>%
+  mutate(Shareability = case_when(((Response == "Varmasti en" & display == "Reading" & Screen.Name == "Screen 2") | (Response == "Varmasti en" & display == "PDF" & Screen.Name == "Screen 7")) ~ 1,
+                                      ((Response == "Luultavasti en" & display == "Reading" & Screen.Name == "Screen 2") | (Response == "Luultavasti en" & display == "PDF" & Screen.Name == "Screen 7")) ~ 2,
+                                      ((Response == "En osaa sanoa" & display == "Reading" & Screen.Name == "Screen 2") | (Response == "En osaa sanoa" & display == "PDF" & Screen.Name == "Screen 7")) ~ 3,
+                                      ((Response == "Luultavasti kyllÃ¤" & display == "Reading" & Screen.Name == "Screen 2") | (Response == "Luultavasti kyllÃ¤" & display == "PDF" & Screen.Name == "Screen 7")) ~ 4,
+                                      ((Response == "Varmasti kyllÃ¤" & display == "Reading" & Screen.Name == "Screen 2") | (Response == "Varmasti kyllÃ¤" & display == "PDF" & Screen.Name == "Screen 7")) ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Shareability = case_when((Response == "Varmasti en") ~ 1,
-                                      (Response == "Luultavasti en") ~ 2,
-                                      (Response == "En osaa sanoa") ~ 3,
-                                      (Response == "Luultavasti kyllä") ~ 4,
-                                      (Response == "Varmasti kyllä") ~ 5))
-#Varmasti en, Luultavasti en, En osaa sanoa, Luultavasti kyllä, Varmasti kyllä
+# Convincingness (source)
+data_citiT <- data_citiT %>%
+  mutate(Convincingness = case_when((Response == "Ei ollenkaan vakuuttava") ~ 1,
+                                    (Response == "Ei vakuuttava") ~ 2,
+                                    (Response == "Neutraali") ~ 3,
+                                    (Response == "Vakuuttava") ~ 4,
+                                    (Response == "ErittÃ¤in vakuuttava") ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Convincingness = case_when((Response == "En ollenkaan vakuuttava") ~ 1,
-                                      (Response == "Ei vakuuttava") ~ 2,
-                                      (Response == "Neutraali") ~ 3,
-                                      (Response == "Vakuuttava") ~ 4,
-                                      (Response == "Erittäin vakuuttava") ~ 5))
-#Ei ollenkaan vakuuttava,Ei vakuuttava,Neutraali,Vakuuttava,Erittäin vakuuttava
+# Expertise (source)
+data_citiT <- data_citiT %>%
+  mutate(Expertise = case_when((Response == "Ei ollenkaan") ~ 1,
+                               (Response == "VÃ¤hÃ¤n") ~ 2,
+                               (Response == "Jonkin verran") ~ 3,
+                               (Response == "Paljon") ~ 4,
+                               (Response == "Hyvin paljon") ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Expertise = case_when((Response == "En ollenkaan") ~ 1,
-                                      (Response == "Vähän") ~ 2,
-                                      (Response == "Jonkin verran") ~ 3,
-                                      (Response == "Paljon") ~ 4,
-                                      (Response == "Hyvin paljon") ~ 5))
-#Ei ollenkaan,Vähän,Jonkin verran,Paljon,Hyvin paljon
+# Reliability (source)
+data_citiT <- data_citiT %>%
+  mutate(Reliability = case_when((Response == "ErittÃ¤in epÃ¤luotettava") ~ 1,
+                                 (Response == "EpÃ¤luotettava") ~ 2,
+                                 (Response == "Ei epÃ¤luotettava eikÃ¤ luotettava") ~ 3,
+                                 (Response == "Luotettava") ~ 4,
+                                 (Response == "ErittÃ¤in luotettava") ~ 5))
 
-data_CI <- data_CI %>%
-  mutate(Reliability = case_when((Response == "Erittäin epäluotettava") ~ 1,
-                                      (Response == "Epäluotettava") ~ 2,
-                                      (Response == "Ei epäluotettava eikä luotettava") ~ 3,
-                                      (Response == "Luotettava") ~ 4,
-                                      (Response == "Erittäin luotettava") ~ 5))
-#Erittäin epäluotettava,Epäluotettava,Ei epäluotettava eikä luotettava,Luotettava,Erittäin luotettava
+# Extract relevant information per participant per source
+data_citiT_ratings <- data_citiT %>% 
+  group_by(Participant.Private.ID, Order) %>% 
+  summarise(SAMintensity_final = mean(SAMintensity, na.rm = TRUE),
+            SAMvalence_final = mean(SAMvalence, na.rm = TRUE),
+            Curiosity_pet = mean(Curiosity, na.rm = TRUE),
+            Interest_pet = mean(Interest, na.rm = TRUE),
+            Familiarity_pet = mean(Familiarity, na.rm = TRUE),
+            Support_pet = mean(Support, na.rm = TRUE),
+            Shareability_src = mean(Shareability, na.rm = TRUE),
+            Convincingness_src = mean(Convincingness, na.rm = TRUE),
+            Expertise_src = mean(Expertise, na.rm = TRUE),
+            Reliability_src = mean(Reliability, na.rm = TRUE))
 
+# Replace NaNs with NAs
+data_citiT_ratings[is.nan(data_citiT_ratings)] <- NA
 
-#extracting qualitiatve data: reason for rating, with source rating variables
-data_CI_reasons <- data_CI %>%
-  select(Participant.Private.ID,Source_topic,source_authority,source_quality,Reliability,Expertise,Convincingness,Shareability,Petition_support,Zone.Type,Response)%>%
- filter(Zone.Type == "response_text_area")
-View(data_CI_reasons)
+# Check row sum NAs
+colSums(is.na(data_citiT_ratings))
+# source columns should have 174 NAs except for reliability, which can have more as the participant could skip the Likert scale and only respond to the open question; the petition columns should not have any missing values
 
-
-
-
-
-############################
-
-data_CI_emotions <- data_CI %>%
-  select(Participant.Private.ID,Trial.Number,Source_topic,display,source_authority,source_quality,SAMintensity,SAMvalence)%>%
- filter(display == "Initial_assessment")
-View(data_CI_emotions)
-
-data_CI_emotions <- data_CI %>%
-  select(Participant.Private.ID,Trial.Number,Order,display,SAMintensity,SAMvalence)
-View(data_CI_emotions)
-
-data_CI_emotions <- data_CI %>%
-  select(Participant.Private.ID,Trial.Number,Order,display,SAMintensity,SAMvalence)
-View(data_CI_emotions)
-
-
-data_CI <- merge(data_CI, data_CI_emotions, by = "Participant.Private.ID", all=TRUE)
-
-
-
-all_reactiontime <- all_reactiontime %>%
-  group_by(Participant.Private.ID) %>%
-  mutate(medianRT = median(Reaction.Time, na.rm = TRUE))
-
+# Extract qualitative data: reason for rating, with source rating variables
+data_citiT_reasons <- data_citiT %>%
+  select(Participant.Private.ID, Source_topic, source_authority, source_quality, Reliability, Expertise, Convincingness, Shareability, Support, Zone.Type, Response) %>%
+  filter(Zone.Type == "response_text_area")
 
 ```
 
-
-# Reading times
+# Reading Times
 
 This section excludes data points based on reaction time and investigates RT in linked sources vs. pdf source. Lower threshold set as 150 for cognitive processing, same as other tasks. 
 
@@ -343,12 +247,10 @@ RT data has issues for outlier removal due to the distribution, not sure yet the
 - can reading times be analyzed like reaction times, or is there another way? 
 
 
-```{r Loading Data, include=FALSE}
+```{r Reading Times, include = FALSE}
 
-
-##################################################3
-#just the same source as the pdf
-reading_reactiontime <- data_CI %>%
+# just the same source as the pdf
+reading_reactiontime <- data_citiT %>%
   filter(display == "Reading" & Zone.Name == "advancementZone" & Source_topic == "Turve on uusiutuva luonnonvara")
 
 Q1 <- quantile(reading_reactiontime$Reaction.Time, 0.25,na.rm=TRUE)
@@ -368,7 +270,7 @@ hist(reading_reactiontime$Reaction.Time)
 
 ######################################################
 #pdfs
-PDF_reactiontime <- data_CI %>%
+PDF_reactiontime <- data_citiT %>%
   filter(display == "PDF" & Screen.Name == "Screen 12")
 
 Q1 <- quantile(PDF_reactiontime$Reaction.Time, 0.25,na.rm=TRUE)
@@ -396,7 +298,7 @@ boxplot(PDF_reactiontime$Reaction.Time)
 #overall RT outlier exclusion
 
 #select reaction time data associated with reading the articles
-all_reactiontime <- data_CI %>%
+all_reactiontime <- data_citiT %>%
   filter(display == "Reading" & Zone.Name == "advancementZone" | display == "PDF" & Screen.Name == "Screen 12")
 
 
