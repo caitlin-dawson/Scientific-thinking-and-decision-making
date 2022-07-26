@@ -79,6 +79,7 @@ From Caitlin: RT data has issues for outlier removal due to the distribution, no
 From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
 * also need to think about whether we want to set maximum time limits (and if so, what these would reflect)
 * can we have some missing data on a participant-level for this task (from an analysis point of view)?
+* should we have exclusion criteria for someone just choosing the same response over and over again? Not sure if this is relevant here as all likert scales are presented on different pages (there is not the same effect of just clicking though buttons on the same page)
 
 ```{r Extract Reading Times}
 
