@@ -300,24 +300,3 @@ data_citiT_reasons <- data_citiT %>%
   filter(Zone.Type == "response_text_area")
 
 ```
-
-# Missing data and participant exclusions
-
-NB: there is no missing data in the CI task per se. We only kept data if a participant at least completed the whole CI task. 
-
-```{r}
-
-cor.test(all_reactiontime$Age, all_reactiontime$Reaction.Time, 
-         method="spearman", exact=FALSE)
-cor.test(all_reactiontime$gender, all_reactiontime$Reaction.Time, 
-         method="spearman", exact=FALSE)
-cor.test(all_reactiontime$Education, all_reactiontime$Reaction.Time, 
-         method="spearman", exact=FALSE)
-
-```
-
-
-
-
-
-
