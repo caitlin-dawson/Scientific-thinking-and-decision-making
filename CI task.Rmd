@@ -69,13 +69,24 @@ data_citiT <- data_citiT %>%
 
 # Extract Reaction Times
 
-```{r Extract Reaction Times}
+## Reading Times
+
+From Caitlin: RT data has issues for outlier removal due to the distribution, not sure yet the best method for this kind of task. We don't set an automatic upper limit and we cannot assume that the reading times represent a single cognitive process. However, I don't think we can keep all times in, since they range from one second to over an hour, with the mean around 3 minutes. The goal should be to capture as much valid data as possible, with the acknowledgement that times e.g. 1 second are valid but mean something different than longer times, e.g. someone has skimmed or skipped that source. 
+* should we look into the thresholds for skimming and reading comprehension to make a point about which times we can expect to mean actually reading and which are skipping? 
+* it is clear where obviously meaningless long outliers are in this data, but the question is how to justify their removal 
+* can reading times be analyzed like reaction times, or is there another way? 
+
+From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
+* also need to think about whether we want to set maximum time limits (and if so, what these would reflect)
+* can we have some missing data on a participant-level for this task (from an analysis point of view)?
+
+```{r Extract Reading Times}
 
 # Extract reaction time for the entire task to a different df
-data_citiT_RTs <- data_citiT %>% 
+data_citiT_overallRTs <- data_citiT %>% 
   filter(Trial.Number == "END TASK") %>% 
   select(Participant.Private.ID, Reaction.Time)
-names(data_citiT_RTs)[2] <- "overall_rt"
+names(data_citiT_overallRTs)[2] <- "overall_rt"
 
 # Remove BEGIN TASK and END TASK rows from df
 data_citiT <- data_citiT %>% 
@@ -94,21 +105,75 @@ data_citiT <- data_citiT %>%
                            (Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 7))
 data_citiT_srcRTs <- data_citiT %>% 
   filter(Zone.Name == "advancementZone") %>% 
-  select(Participant.Private.ID, Order, Reaction.Time)
-names(data_citiT_srcRTs)[3] <- "src_rt"
+  select(Participant.Private.ID, Order, display, Reaction.Time)
+names(data_citiT_srcRTs)[4] <- "src_rt"
 
 # Combine overall RTs and source RTs
-data_citiT_RTs <- merge(data_citiT_RTs, data_citiT_srcRTs,
+data_citiT_RTs <- merge(data_citiT_overallRTs, data_citiT_srcRTs,
                         by = "Participant.Private.ID",
                         all = TRUE)
 
-# Extract reaction times for the questions
-data_citiT_likertRTs <- data_citiT %>% 
-  filter(Zone.Type != "continue_button") %>% 
-  select(Participant.Private.ID, Reaction.Time, Zone.Type)
-# NOTE: what do we want to know about these?
+# Overall RTs
+describe(data_citiT_overallRTs$overall_rt/60000) # in minutes
+hist(data_citiT_overallRTs$overall_rt/60000) # in minutes
+plot(sort(data_citiT_overallRTs$overall_rt/60000)) # in minutes
+# NOTE: do we want to exclude based on overall task completion time? There is a clear "gap" between 122min and 292min; or maybe we want to exclude participants who took less then x minutes to finish the task?
+
+# Reading RTs (for all sources)
+describe(data_citiT_RTs$src_rt/60000) # in minutes
+hist(data_citiT_RTs$src_rt/60000,
+     main = "Online source RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+plot(sort(data_citiT_RTs$src_rt/60000)) # in minutes
+# NOTE: again, what should we exclude based upon? what should the minimum be? what about the maximum? I feel IQR is not good with skewed data, we should rather base it on something else
+
+# Reading RTs: Grouped summaries by display (online source vs PDF)
+tapply(X = data_citiT_RTs$src_rt/60000, # in minutes
+       INDEX = data_citiT_RTs$display, 
+       FUN = summary)
+par(mfrow = c(1, 2))
+hist(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "Reading")]/60000,
+     main = "Online source RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+hist(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "PDF")]/60000,
+     main = "PDF RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+plot(sort(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "Reading")]/60000),
+     ylab = "Online source")
+plot(sort(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "PDF")]/60000),
+     ylab = "PDF")
 
 ```
+
+## Likert Response Times
+
+```{r Extract Likert Response Times}
+
+# Extract reaction times for the Likert questions
+data_citiT_likertRTs <- data_citiT %>% 
+  filter(Zone.Type != "continue_button") %>% 
+  select(Participant.Private.ID, Order, Reaction.Time, Zone.Type)
+# NOTE: what do we want to know about these?
+# The other continue_button rows (ones where Zone.Name != advancementZone) are the same reaction times as the response_text_area rows before them; they are not needed here
+
+# Describe
+describe(data_citiT_likertRTs$Reaction.Time/1000) # in seconds
+hist(data_citiT_likertRTs$Reaction.Time/1000, # in seconds
+      main = "Likert RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+plot(sort(data_citiT_likertRTs$Reaction.Time/1000)) # in seconds
+# NOTE: exclusion criteria???
+
+```
+
 
 # Recode the SAM Responses as Likert Intensity and Valence Scores
 
@@ -227,7 +292,7 @@ data_citiT_ratings[is.nan(data_citiT_ratings)] <- NA
 
 # Check row sum NAs
 colSums(is.na(data_citiT_ratings))
-# source columns should have 174 NAs except for reliability, which can have more as the participant could skip the Likert scale and only respond to the open question; the petition columns should not have any missing values
+# Source columns should have 174 NAs except for reliability, which can have more as the participant could skip the Likert scale and only respond to the open question; the petition columns or SAM items should not have any missing values
 
 # Extract qualitative data: reason for rating, with source rating variables
 data_citiT_reasons <- data_citiT %>%
@@ -236,123 +301,18 @@ data_citiT_reasons <- data_citiT %>%
 
 ```
 
-# Reading Times
-
-This section excludes data points based on reaction time and investigates RT in linked sources vs. pdf source. Lower threshold set as 150 for cognitive processing, same as other tasks. 
-
-RT data has issues for outlier removal due to the distribution, not sure yet the best method for this kind of task. We don't set an automatic upper limit and we cannot assume that the reading times represent a single cognitive process. However, I don't think we can keep all times in, since they range from one second to over an hour, with the mean around 3 minutes. The goal should be to capture as much valid data as possible, with the acknowledgement that times e.g. 1 second are valid but mean something different than longer times, e.g. someone has skimmed or skipped that source. 
-
-- should we look into the thresholds for skimming and reading comprehension to make a point about which times we can expect to mean actually reading and which are skipping? 
-- it is clear where obviously meaningless long outliers are in this data, but the question is how to justify their removal 
-- can reading times be analyzed like reaction times, or is there another way? 
-
-
-```{r Reading Times, include = FALSE}
-
-# just the same source as the pdf
-reading_reactiontime <- data_citiT %>%
-  filter(display == "Reading" & Zone.Name == "advancementZone" & Source_topic == "Turve on uusiutuva luonnonvara")
-
-Q1 <- quantile(reading_reactiontime$Reaction.Time, 0.25,na.rm=TRUE)
-Q3 <- quantile(reading_reactiontime$Reaction.Time, 0.75,na.rm=TRUE)
-range <- (IQR(reading_reactiontime$Reaction.Time,na.rm=TRUE)*1.5)
-lowbound <- (Q1 - range)
-highbound <- (Q3 + range)
-summary(reading_reactiontime$Reaction.Time)
-lowbound
-highbound
-
-reading_reactiontime$Reaction.Time[which(reading_reactiontime$Reaction.Time > 362246 )] <- NA #this is the IQR threshold
-reading_reactiontime$Reaction.Time[which(reading_reactiontime$Reaction.Time < 150 )] <- NA
-
-plot(reading_reactiontime$Reaction.Time)
-hist(reading_reactiontime$Reaction.Time)
-
-######################################################
-#pdfs
-PDF_reactiontime <- data_citiT %>%
-  filter(display == "PDF" & Screen.Name == "Screen 12")
-
-Q1 <- quantile(PDF_reactiontime$Reaction.Time, 0.25,na.rm=TRUE)
-Q3 <- quantile(PDF_reactiontime$Reaction.Time, 0.75,na.rm=TRUE)
-range <- (IQR(PDF_reactiontime$Reaction.Time,na.rm=TRUE)*1.5)
-lowbound <- (Q1 - range)
-highbound <- (Q3 + range)
-summary(PDF_reactiontime$Reaction.Time)
-lowbound
-highbound
-
-PDF_reactiontime$Reaction.Time[which(PDF_reactiontime$Reaction.Time > 365674 )] <- NA
-PDF_reactiontime$Reaction.Time[which(PDF_reactiontime$Reaction.Time < 150 )] <- NA 
-
-plot(PDF_reactiontime$Reaction.Time)
-hist(PDF_reactiontime$Reaction.Time)
-
-wilcox.test(reading_reactiontime$Reaction.Time, PDF_reactiontime$Reaction.Time, alternative = "two.sided")
-
-par(mfrow = c(1, 2))
-boxplot(reading_reactiontime$Reaction.Time)
-boxplot(PDF_reactiontime$Reaction.Time)
-
-###################################################
-#overall RT outlier exclusion
-
-#select reaction time data associated with reading the articles
-all_reactiontime <- data_citiT %>%
-  filter(display == "Reading" & Zone.Name == "advancementZone" | display == "PDF" & Screen.Name == "Screen 12")
-
-
-#links
-Q1 <- quantile(all_reactiontime$Reaction.Time, 0.25,na.rm=TRUE)
-Q3 <- quantile(all_reactiontime$Reaction.Time, 0.75,na.rm=TRUE)
-range <- (IQR(all_reactiontime$Reaction.Time,na.rm=TRUE)*1.5)
-lowbound <- (Q1 - range)
-highbound <- (Q3 + range)
-summary(all_reactiontime$Reaction.Time)
-lowbound
-highbound
-
-all_reactiontime$Reaction.Time[which(all_reactiontime$Reaction.Time > 486923 )] <- NA 
-all_reactiontime$Reaction.Time[which(all_reactiontime$Reaction.Time < 150 )] <- NA
-
-plot(all_reactiontime$Reaction.Time)
-hist(all_reactiontime$Reaction.Time)
-
-
-boxplot(all_reactiontime$Reaction.Time~all_reactiontime$source_quality)
-boxplot(all_reactiontime$Reaction.Time~all_reactiontime$source_authority)
-boxplot(all_reactiontime$Reaction.Time~all_reactiontime$Source_topic)
-
-wilcox.test(all_reactiontime$Reaction.Time~all_reactiontime$source_authority, alternative = "two.sided")
-
-plot(all_reactiontime$Participant.Private.ID,all_reactiontime$medianRT)
-
-all_reactiontime <- all_reactiontime %>%
-  group_by(Participant.Private.ID) %>%
-  mutate(medianRT = median(Reaction.Time, na.rm = TRUE))
-
-plot(all_reactiontime$Participant.Private.ID,all_reactiontime$medianRT)
-hist(all_reactiontime$medianRT)
-```
-
-
-
-
-#Missing data and participant exclusions
+# Missing data and participant exclusions
 
 NB: there is no missing data in the CI task per se. We only kept data if a participant at least completed the whole CI task. 
 
 ```{r}
 
-
-cor.test(all_reactiontime$Age,all_reactiontime$Reaction.Time,method="spearman",exact=FALSE)
-cor.test(all_reactiontime$gender,all_reactiontime$Reaction.Time,method="spearman",exact=FALSE)
-cor.test(all_reactiontime$Education,all_reactiontime$Reaction.Time,method="spearman",exact=FALSE)
-
-
-
-
-
+cor.test(all_reactiontime$Age, all_reactiontime$Reaction.Time, 
+         method="spearman", exact=FALSE)
+cor.test(all_reactiontime$gender, all_reactiontime$Reaction.Time, 
+         method="spearman", exact=FALSE)
+cor.test(all_reactiontime$Education, all_reactiontime$Reaction.Time, 
+         method="spearman", exact=FALSE)
 
 ```
 
