@@ -5,6 +5,17 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 ---
 
+# Milla's notes / Things to discuss re exclusion criteria
+Eisenberg et al. (2018) used the following exclusion criteria for **tasks**:
+* median response time <= 200ms
+* > 25% of responses missing
+* accuracy <= 60%
+* no single response was given > 95% of the time
+If any of these criteria were fulfilled, the participant's data for that task were replaced with missing values. If any participant had missing data for 4 or more tasks, their data were omitted completely. **They also mention they had slightly different exclusion criteria for some of the tasks but I cannot find more details on this.** 
+The same paper reports no exclusion criteria for self-report variables (questionnaires). They only say that they checked the descriptives (mean, skew, distribution etc.) of each item and the structure of each questionnaire with CFA. **They do not report any exclusion criteria, or excluding any items.** Again, not sure if I just didn't know where to find this info.
+Finally, once the variables are retrieved, they exclude a variable if it is skewed > 1 after transforming it, or if two variables from the same task/questionnaire correlate > 0.85.
+Relevance for us: I think it would be good if we could find the specific exclusion criteria for each task to get an idea of when they made exceptions. **I think it would also be good if we could figure out if they used any exclusion criteria for the questionnaires / if they excluded any questionnaire data based on item-level characteristics.**
+
 # Notes 
 * takes data downloaded from Gorilla **blinded, semicolon separated, csv format, short form, versions 22-25**
 * cleans and processes data for the study 'Scientific thinking and decision-making in everyday life'
