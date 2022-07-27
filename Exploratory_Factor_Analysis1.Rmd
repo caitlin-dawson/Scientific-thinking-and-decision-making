@@ -5,7 +5,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
-#Cross-method prediction
+# Cross-method prediction
 
 10-fold cross validated ridge regression to predict survey and task variables *within* and *between* measure types following Eisenberg et al. Intended to help decide whether to factor tasks and surveys together or separately, and also to see if some variables should be left out. 
 
@@ -29,22 +29,22 @@ The question here is, can X variable be predicted equally well by surveys vs. ta
 *******NB: UUT has not yet been added into this section***********
 
 ```{r}
-#creating some task and survey-only sets (probably we can just designate which variables are used as the predictors but I'm not sure of the syntax)
+
+# creating some task and survey-only sets (probably we can just designate which variables are used as the predictors but I'm not sure of the syntax)
 
 surveys <- data_all_without_binary %>%
   select(AMean:MatrixCorrectCount)
 
-#remove missing data
+# remove missing data
 surveys <- na.omit(surveys)
 
 tasks <- data_all_without_binary %>%
   select(GNGdprime:FlexSum)
 
-#remove missing data
+# remove missing data
 tasks <- na.omit(tasks)
 
-
-#10 fold cross validated ridge regression to estimate prediction error
+# 10 fold cross validated ridge regression to estimate prediction error
 
 library(ISLR) 
 library(glmnet) 
@@ -54,28 +54,25 @@ library(tidyverse)
 library(caret)
 library(glmnet)
 
+# This section uses caret package
 
-### This section uses caret package
+# first use a set that doesn't include binary variables
+# data_all_without_binary
+# data_without_GNG_or_binary
 
-#first use a set that doesn't include binary variables
-#data_all_without_binary
-#data_without_GNG_or_binary
-
-#remove missing data
-#data_without_GNG_or_binary <- na.omit(data_without_GNG_or_binary)
+# remove missing data
+# data_without_GNG_or_binary <- na.omit(data_without_GNG_or_binary)
 
 # Train the model 
-#the first argument is the column (variable) we want to predict, using the other variables
-#this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
-#other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
-
+# the first argument is the column (variable) we want to predict, using the other variables
+# this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
+# other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
 
 # Define training control 
-#set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it. 
-#cross-validation will have 10 folds
-#actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there 
+# set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it. 
+# cross-validation will have 10 folds
+# actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there 
  
-
 set.seed(123) 
 model <- train( 
   IH3Sum ~ ., 
@@ -88,20 +85,20 @@ model <- train(
 # Summarize the results 
 model
 
-#tune different values of lambda
-#I'm not sure yet how to feed it back to the original model 
+# tune different values of lambda
+# I'm not sure yet how to feed it back to the original model 
 
-#these lines for making dfs that include the 1 cross-method outcome and the predictors
+# these lines for making dfs that include the 1 cross-method outcome and the predictors
 NeckerTotalRate_target <- data_all_without_binary %>%
-  select(AMean:MatrixCorrectCount,NeckerTotalRate)
+  select(AMean:MatrixCorrectCount, NeckerTotalRate)
 NeckerTotalRate_target <- na.omit(NeckerTotalRate_target)
 View(NeckerTotalRate_target)
 
 ctrl <- trainControl(method = "cv", number = 10)
 tuneGrid <- expand.grid( 
-  .lambda = seq(0, 2, by = 0.01)) #trying to find a lambda value that minimizes RMSE
-  #RMSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) #.lambda = seq(0, .1, by = 0.01)
-set.seed(123) #have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
+  .lambda = seq(0, 2, by = 0.01)) # trying to find a lambda value that minimizes RMSE
+  # R MSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) # .lambda = seq(0, .1, by = 0.01)
+set.seed(123) # have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
 model2 <- train( 
   NeckerTotalRate ~ ., 
   data = NeckerTotalRate_target, 
@@ -112,66 +109,65 @@ model2 <- train(
 ) 
 
 model2
-plot(model2) #this plot shows the lambda value that minimizes RMSE
+plot(model2) # this plot shows the lambda value that minimizes RMSE
 
-#this is an interesting plot showing the importance of the different variables to the model
-#but remember that this probably doesn't mean much unless it's a well fitting model 
+# this is an interesting plot showing the importance of the different variables to the model
+# but remember that this probably doesn't mean much unless it's a well fitting model 
 plot(varImp(model2))
 
-##as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid =NULL)? It uses some reasonable standard tuning parameter (e.g. lambda=0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this. 
-#I'm also not sure what set.seed is doing here
+# as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this. 
+# I'm also not sure what set.seed is doing here
 #the model results and best lambda tend to be slightly different each time, but within a couple of hundredths, generally, in R2
 
-
-#make a violin plot to show the distributions of R2 for the 4 types of predictions 
+# make a violin plot to show the distributions of R2 for the 4 types of predictions 
 
 library(ggplot2)
 library(dplyr)
-predictions <- read.csv('4xpredictions.csv',sep=";")
+predictions <- read.csv('4xpredictions.csv', sep = ";")
 predictions$Method <- as.factor(predictions$Method)
 
 p <- predictions %>%
-ggplot(aes(x=Method,y=Rsquared,fill=Method))+
-  geom_violin()+
-  coord_flip()+
-  theme(legend.position = "none")+
-  xlab("")+
+ggplot(aes(x = Method, y = Rsquared, fill = Method)) +
+  geom_violin() +
+  coord_flip() +
+  theme(legend.position = "none") +
+  xlab("") +
   ylab("R-squared")
-
-
 p
 
 library(ggridges)
 library(viridis)
 
-#ridge plot of all the distributions of the variables
-#need to install ggridges
+# ridge plot of all the distributions of the variables
+# need to install ggridges
 
 library(tidyr)
-datalong <- gather(data_all_without_binary,task,measurement,AMean:NeckerTotalRate,factor_key = TRUE)
+datalong <- gather(data_all_without_binary, task, measurement,
+                   AMean:NeckerTotalRate, factor_key = TRUE)
 datalong
 
-ggplot(datalong,aes(x=task,y=measurement))+
+ggplot(datalong, aes(x = task, y = measurement)) +
   geom_density2d_filled()
-  labs(title="All variable distributions")+
+  labs(title = "All variable distributions") +
   scale_fill_viridis_c()
 
 ```
 
 
-#Exploratory factor analysis
+# Exploratory factor analysis
 
 This section includes three series of EFAs: all variables, surveys only, and tasks only. In the preregistration, we promised to start with these. 
 
 Correlations are mixed because of the binary variables from the heuristics task
 
-##Creating correlation matrices
+## Creating correlation matrices
 
-```{r Creating correlation matrices, include=FALSE}
-## A general note: we probably need to justify putting a bunch of task and self-report items in the same factor analysis / at least mention it !
-#https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3268653/
+```{r Creating correlation matrices, include = FALSE}
 
-#make sure these packages are loaded
+# A general note: we probably need to justify putting a bunch of task and self-report items in the same factor analysis / at least mention it !
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3268653/
+
+# make sure these packages are loaded
 library(tidyverse)
 library(tidyselect)
 library(psych)
@@ -187,446 +183,481 @@ library(sjPlot)Vi
 library(glasso)
 
 
-#Descriptive statistics for the EFA sample
-describe(data_all_sub_cleaned) #all variables
-table(data_all_sub_cleaned$HEscore) #binary variable, 1=at least one HE (equiprobability heuristic) mistake, 0=no HE mistakes
-table(data_all_sub_cleaned$HRscore) #binary variable, 1=at least one HR (representativeness heuristic) mistake, 0=no HR mistakes
+# Descriptive statistics for the EFA sample
+describe(data_all_sub_cleaned) # all variables
+table(data_all_sub_cleaned$HEscore) # binary variable, 1 = at least one HE (equiprobability heuristic) mistake, 0 = no HE mistakes
+table(data_all_sub_cleaned$HRscore) # binary variable, 1 = at least one HR (representativeness heuristic) mistake, 0 = no HR mistakes
 
 ##############################
 
-#SECTION 1 EXPLORING FACTORABILITY
+# SECTION 1 EXPLORING FACTORABILITY
 
-#Let's create a correlation matrix, polychoric/mixed correlations (two items dichotomous)
-#d=the set of dichotomous items, c=the set of continuous variables, ncat=detect continuous variables with response options above this number. not sure what ncat is doing, need c, otherwise it doesn't detect any continuous variables
-#If the number of alternatives in the polychoric data differ and there are some dicthotomous data, it is advisable to set correct=0.
+# Let's create a correlation matrix, polychoric/mixed correlations (two items dichotomous)
+# d = the set of dichotomous items, c = the set of continuous variables, ncat = detect continuous variables with response options above this number. not sure what ncat is doing, need c, otherwise it doesn't detect any continuous variables
+# If the number of alternatives in the polychoric data differ and there are some dicthotomous data, it is advisable to set correct = 0.
 
-#check the indices
-all_cor <- mixedCor(data = all_new, d=c(15:16), c=c(1:14,17:30), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
+# check the indices
+all_cor <- mixedCor(data = all_new, d = c(15:16), c = c(1:14, 17:30),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
+                    use = "pairwise.complete.obs", method = "spearman",
+                    weight = NULL)
 
-#nothing else would need to be treated as polychotomous
+# nothing else would need to be treated as polychotomous
 
-Q_cor <- mixedCor(data = Q_new, d=c(15,16), c=c(1:14,17:22), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
+Q_cor <- mixedCor(data = Q_new, d = c(15, 16), c = c(1:14, 17:22), 
+                  smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
+                  use = "pairwise.complete.obs", method = "spearman", 
+                  weight = NULL)
 
-T_cor <- mixedCor(data = data_T_sub, c=c(1:7), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
+T_cor <- mixedCor(data = data_T_sub, c = c(1:7), smooth = TRUE, 
+                  correct = 0, ncat = 3, global = FALSE,
+                  use = "pairwise.complete.obs", method = "spearman",
+                  weight = NULL)
 
-
-#Store correlation matrix
+# Store correlation matrix
 all_rho <- all_cor$rho
-
 Q_rho <- Q_cor$rho
-
 T_rho <- T_cor$rho
 
-
-#Mean correlation across items
+# Mean correlation across items
 mean(abs(all_rho[lower.tri(all_rho)]))
-
 mean(abs(Q_rho[lower.tri(Q_rho)]))
-
 mean(abs(T_rho[lower.tri(T_rho)]))
+# mean(abs(all_2_rho[lower.tri(all_2_rho)]))
 
-#mean(abs(all_2_rho[lower.tri(all_2_rho)]))
-
-#Histogram of correlations
+# Histogram of correlations
 hist(abs(all_rho))
-
 hist(abs(Q_rho))
-
 hist(abs(T_rho))
+
 ```
 
-##Factorability
+## Factorability
 
-```{r Factorability, include=FALSE}
-#Bartlett's test of sphericity tests the hypothesis that your correlation matrix is an identity matrix, which would indicate that your variables are unrelated and therefore unsuitable for structure detection. 
-#Small values (less than 0.05) of the significance level indicate that a factor analysis may be useful with your data.
+```{r Factorability, include = FALSE}
+
+# Bartlett's test of sphericity tests the hypothesis that your correlation matrix is an identity matrix, which would indicate that your variables are unrelated and therefore unsuitable for structure detection. 
+# Small values (less than 0.05) of the significance level indicate that a factor analysis may be useful with your data.
 ###### produces Bartletts test of sphericity (you want this to be significant)
 
-#Bartlett test
+# Bartlett test
 cortest.bartlett(all_rho, n = 163)
-#p=6.149377e-149
-#chisq=1701.473
-#df=435
+# p = 6.149377e-149
+# chisq = 1701.473
+# df = 435
 
-cortest.bartlett(Q_rho, n = 163)#should be 162, something happened to the last row
-#chisq=915.2938
-#p=3.68588e-82
-#df=231
+cortest.bartlett(Q_rho, n = 163) # should be 162, something happened to the last row
+# chisq = 915.2938
+# p = 3.68588e-82
+# df = 231
 
-###### Kaiser-Meyer-Olkin measure, you want to be above .7
-KMO(r = all_rho)      #Overall MSA =  0.57, 0.29 - 0.75
-
-KMO(r = Q_rho)      #Overall MSA =  0.66, 0.68 for all removed HEscore, .7 for also removing sci tru and EMean
-
-KMO(r = T_rho)      #Overall MSA =  0.63
+# Kaiser-Meyer-Olkin measure, you want to be above .7
+KMO(r = all_rho) # Overall MSA =  0.57, 0.29 - 0.75
+KMO(r = Q_rho) # Overall MSA =  0.66, 0.68 for all removed HEscore, .7 for also removing sci tru and EMean
+KMO(r = T_rho) # Overall MSA =  0.63
 
 ```
 
-##Identify number of factors to extract
+## Identify number of factors to extract
 
 Method is "minrank" minimum rank or MRFA. Recommended for polychoric/tetrachoric correlation matrices with Heywood cases https://www.tandfonline.com/doi/pdf/10.1080/10705511.2020.1735393 
 
-```{r Number of factors, include=FALSE}
-###ALL
-#Scree plot
-#3-10 factors
-plot(eigen(all_rho)$values, type="b", pch=20, col="red",
-     main="Scree Plot", ylab="Eigenvalues",
-     xlab="No. Factors")
+```{r Number of factors, include = FALSE}
 
+# ALL
+# Scree plot
+# 3-10 factors
+plot(eigen(all_rho)$values, type = "b", pch = 20, col = "red",
+     main = "Scree Plot", ylab = "Eigenvalues",
+     xlab = "No. Factors")
 
-###QUESTIONNAIRES
-#Scree plot
-#2-8 factors
-plot(eigen(Q_rho)$values, type="b", pch=20, col="red",
-     main="Scree Plot", ylab="Eigenvalues",
-     xlab="No. Factors")
+# QUESTIONNAIRES
+# Scree plot
+# 2-8 factors
+plot(eigen(Q_rho)$values, type = "b", pch = 20, col = "red",
+     main = "Scree Plot", ylab = "Eigenvalues",
+     xlab = "No. Factors")
 
-#warning: The estimated weights for the factor scores are probably incorrect.  Try a different factor score estimation method.
-#An ultra-Heywood case was detected.  Examine the results carefully
-#this happens when using wls but not other methods
+# warning: The estimated weights for the factor scores are probably incorrect.  Try a different factor score estimation method.
+# An ultra-Heywood case was detected.  Examine the results carefully
+# this happens when using wls but not other methods
 
 ################NFactors###############
-#ALL
-nfactors(all_rho,n=6, n.obs =163,rotate="oblimin",diagonal=FALSE,fm="minrank") 
-#VSS complexity 1 achieves a maximimum of Although the vss.max shows  5  factors, it is probably more reasonable to think about  2  factors
-#VSS complexity 2 achieves a maximimum of 0.62  with  5  factors
-#The Velicer MAP achieves a minimum of 0.02  with  2  factors 
-#Empirical BIC achieves a minimum of  -823.91  with  5  factors
-#Sample Size adjusted BIC achieves a minimum of  97.98  with  6  factors
+# ALL
+nfactors(all_rho, n = 6, n.obs  = 163, 
+         rotate = "oblimin", diagonal = FALSE, 
+         fm = "minrank") 
+# VSS complexity 1 achieves a maximimum of Although the vss.max shows  5  factors, it is probably more reasonable to think about  2  factors
+# VSS complexity 2 achieves a maximimum of 0.62  with  5  factors
+# The Velicer MAP achieves a minimum of 0.02  with  2  factors 
+# Empirical BIC achieves a minimum of  -823.91  with  5  factors
+# Sample Size adjusted BIC achieves a minimum of  97.98  with  6  factors
 
-#Questionnaires
-nfactors(Q_rho,n=6, n.obs =163,rotate="oblimin",diagonal=FALSE,fm="minrank") 
-#VSS complexity 1 achieves a maximimum of 0.48  with  3  factors
-#VSS complexity 2 achieves a maximimum of 0.61  with  3  factors
-#The Velicer MAP achieves a minimum of 0.02  with  1  factors 
-#Empirical BIC achieves a minimum of  -405.84  with  4  factors
-#Sample Size adjusted BIC achieves a minimum of  31.17  with  5  factors
+# Questionnaires
+nfactors(Q_rho, n = 6, n.obs  = 163, 
+         rotate = "oblimin", diagonal = FALSE,
+         fm = "minrank") 
+# VSS complexity 1 achieves a maximimum of 0.48  with  3  factors
+# VSS complexity 2 achieves a maximimum of 0.61  with  3  factors
+# The Velicer MAP achieves a minimum of 0.02  with  1  factors 
+# Empirical BIC achieves a minimum of  -405.84  with  4  factors
+# Sample Size adjusted BIC achieves a minimum of  31.17  with  5  factors
 
-
-###Parallel Analysis###
-#All
-fa.parallel(all_rho, n.obs = 163,fm="minrank",fa="both",nfactors=12) #8 factors
+# Parallel Analysis
+# All
+fa.parallel(all_rho, n.obs = 163, fm = "minrank", 
+            fa = "both", nfactors = 12) #8 factors
 cor.plot(all_rho)
 
-#Questionnaires
-fa.parallel(Q_rho, n.obs = 162,fm="wls",fa="both",nfactors=6) #8 factors
+# Questionnaires
+fa.parallel(Q_rho, n.obs = 162, fm = "wls", 
+            fa = "both", nfactors = 6) # 8 factors
 cor.plot(Q_rho)
 
-#Eisenberg used EBIC
-#specifying gls gives heywood case, pa refuses to do it, wls says factor scores are probably incorrect but doesn't specify heywood case, ml and uls don't give any warnings
-#I can't fully replicate this effect trying again. WLS still gives heywood cases but 'pa' now runs (now so does pa...). Even though minrank suggests 8 factors, there are only 3-4 with eigenvalues above 1 in the plot
+# Eisenberg used EBIC
+# specifying gls gives heywood case, pa refuses to do it, wls says factor scores are probably incorrect but doesn't specify heywood case, ml and uls don't give any warnings
+# I can't fully replicate this effect trying again. WLS still gives heywood cases but 'pa' now runs (now so does pa...). Even though minrank suggests 8 factors, there are only 3-4 with eigenvalues above 1 in the plot
 
+# Q ONLY
+# Scree plot
+# plot(eigen(Q_rho)$values, type = "b", pch = 20, col = "red",
+     # main = "Scree Plot", ylab = "Eigenvalues",
+     # xlab = "No. Factors")
+# maybe 8 factors above 1?
 
-###Q ONLY
-#Scree plot
-#plot(eigen(Q_rho)$values, type="b", pch=20, col="red",
-     #main="Scree Plot", ylab="Eigenvalues",
-     #xlab="No. Factors")
-#maybe 8 factors above 1?
-
-#NFactors
-#An ultra-Heywood case was detected.  Examine the results carefully
-#solved by using fm=minrank instead
-#nfactors(Q_rho,n=6, n.obs =162,rotate="oblimin",diagonal=FALSE,fm="wls") 
-#VSS: 1 or 5 factors
-#MAP: 1 factor
-#EBIC: 4 factors 
-#SS adjusted BIC: 6 factors
-
-#nfactors(Q_rho,n=6, n.obs =162,rotate="oblimin",diagonal=FALSE,fm="minrank") 
-#VSS: 3 factors
-#MAP: 1 factor
-#EBIC: 4 factors 
-#SS adjusted BIC: 5 factors
-
-
-
-#Parallel Analysis
-#fa.parallel(Q_rho, n.obs = 162) 
-#5 factors (or maybe 6?)
-#cor.plot(Q_rho)
-
-
-###T ONLY
-#Scree plot
-#plot(eigen(T_rho)$values, type="b", pch=20, col="red",
-     #main="Scree Plot", ylab="Eigenvalues",
-     #xlab="No. Factors")
-
-#NFactors
-#nfactors(T_rho,n=12, n.obs =146,rotate="oblimin",diagonal=FALSE,fm="wls") 
-#VSS: 1 or 3 factors
-#MAP: 2 factors
-#BIC: 2 or 3 factors 
-
-#Parallel Analysis
+# NFactors
 # An ultra-Heywood case was detected.  Examine the results carefully
-#fa.parallel(T_rho, n.obs = 146) 
-#3 factors
-#cor.plot(T_rho)
+# solved by using fm = minrank instead
+# nfactors(Q_rho,n = 6, n.obs  = 162,rotate = "oblimin",diagonal = FALSE,fm = "wls") 
+# VSS: 1 or 5 factors
+# MAP: 1 factor
+# EBIC: 4 factors 
+# SS adjusted BIC: 6 factors
+
+# nfactors(Q_rho,n = 6, n.obs  = 162,rotate = "oblimin",diagonal = FALSE,fm = "minrank") 
+# VSS: 3 factors
+# MAP: 1 factor
+# EBIC: 4 factors 
+# SS adjusted BIC: 5 factors
+
+# Parallel Analysis
+# fa.parallel(Q_rho, n.obs = 162) 
+# 5 factors (or maybe 6?)
+# cor.plot(Q_rho)
+
+# T ONLY
+# Scree plot
+# plot(eigen(T_rho)$values, type = "b", pch = 20, col = "red",
+     # main = "Scree Plot", ylab = "Eigenvalues",
+     # xlab = "No. Factors")
+
+# NFactors
+# nfactors(T_rho,n = 12, n.obs  = 146,rotate = "oblimin",diagonal = FALSE,fm = "wls") 
+# VSS: 1 or 3 factors
+# MAP: 2 factors
+# BIC: 2 or 3 factors 
+
+# Parallel Analysis
+# An ultra-Heywood case was detected.  Examine the results carefully
+# fa.parallel(T_rho, n.obs = 146) 
+# 3 factors
+# cor.plot(T_rho)
+
 ```
 
-##Choosing a factor solution
+## Choosing a factor solution
 
-```{r Choosing a solution, include=FALSE}
+```{r Choosing a solution, include = FALSE}
 
-#Oblimin rotation allows the factors to correlate, which is definitely what we would expect with so many conceptually overlapping surveys/tasks
+# Oblimin rotation allows the factors to correlate, which is definitely what we would expect with so many conceptually overlapping surveys/tasks
 
-#https://www.rdocumentation.org/packages/psych/versions/2.1.6/topics/fa
-#explains the different factoring methods, not sure which one would be best for us to use
-#PAF is recommended for nonnormal datasets, ML for "relatively normal"  (Costello & Osborne, 2005)
-#ML gives fit statistics but they are biased in small samples, missing data and may be too sensitive
-#do these points matter if the input is the correlation matrix?
+# https://www.rdocumentation.org/packages/psych/versions/2.1.6/topics/fa
+# explains the different factoring methods, not sure which one would be best for us to use
+# PAF is recommended for nonnormal datasets, ML for "relatively normal"  (Costello & Osborne, 2005)
+# ML gives fit statistics but they are biased in small samples, missing data and may be too sensitive
+# do these points matter if the input is the correlation matrix?
 
-#because there are technically ordinal variables here (with less than 10 response options)??
-#https://stats.oarc.ucla.edu/stata/faq/how-can-i-perform-a-factor-analysis-with-categorical-or-categorical-and-continuous-variables/#:~:text=When%20both%20variables%20have%2010,than%2010%20values%20a%20Pearson's
-#When both variables have 10 or fewer observed values, a polychoric correlation is calculated, when only one of the variables takes on 10 or fewer values ( i.e., one variable is continuous and the other categorical) a polyserial correlation is calculated, and if both variables take on more than 10 values a Pearson’s correlation is calculated. Once we have a polychoric correlation matrix, we can use the factormat command to perform an exploratory factor analysis using the matrix as input, rather than raw variables.
+# because there are technically ordinal variables here (with less than 10 response options)??
+# https://stats.oarc.ucla.edu/stata/faq/how-can-i-perform-a-factor-analysis-with-categorical-or-categorical-and-continuous-variables/#:~:text = When%20both%20variables%20have%2010,than%2010%20values%20a%20Pearson's
+# When both variables have 10 or fewer observed values, a polychoric correlation is calculated, when only one of the variables takes on 10 or fewer values ( i.e., one variable is continuous and the other categorical) a polyserial correlation is calculated, and if both variables take on more than 10 values a Pearson’s correlation is calculated. Once we have a polychoric correlation matrix, we can use the factormat command to perform an exploratory factor analysis using the matrix as input, rather than raw variables.
 
-
-##Not spending much time on this since previous chunks indicate that we can't combine tasks and surveys
-#2, 5, 6, 9
-EFA_all6 <- fa(all_rho, nfactors=6, rotate="oblimin", fm="minrank",scores="tenBerge") 
+# Not spending much time on this since previous chunks indicate that we can't combine tasks and surveys
+# 2, 5, 6, 9
+EFA_all6 <- fa(all_rho, nfactors = 6, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_all6)
 
-#Reveille 2022 "How to use the psych package for factor analysis and data reduction" recommends comparing the fa solution with iclust solutions
-#with no other arguments, default iclust 
+# Reveille 2022 "How to use the psych package for factor analysis and data reduction" recommends comparing the fa solution with iclust solutions
+# with no other arguments, default iclust 
 clust_all_rho <- iclust(all_rho)
 clust_all_rho$pattern
-#the solution without specifying number of factors gives 6, but that includes tasks
+# the solution without specifying number of factors gives 6, but that includes tasks
 
 clust_Q_rho$sorted
-#this is not making much sense now even when specifying 6 factors. on its own, it identifies 3 factors in the Q set
+# this is not making much sense now even when specifying 6 factors. on its own, it identifies 3 factors in the Q set
 
 #####################################
 
-#QUESTIONNAIRE SET ONLY
-
-EFA_Q6<- fa(Q_rho, nfactors=6, rotate="oblimin", fm="minrank",scores="tenBerge") 
+# QUESTIONNAIRE SET ONLY
+EFA_Q6 <- fa(Q_rho, nfactors = 6, rotate = "oblimin",
+             fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q6)
 fa.diagram(EFA_Q6)
-#at this initial point, the 6 factor model is the best 
-#now to try to optimize it
-
-
+# at this initial point, the 6 factor model is the best 
+# now to try to optimize it
 
 ########################################
-#####editing the original sets of all_rho with different numbers of factors##########
-#using complexity, low loadings, and cross-loadings to try getting rid of different items
-#this doesn't give a clear recommendaton for which items to get rid of, and the factors don't seem very stable
+##### editing the original sets of all_rho with different numbers of factors ##########
+# using complexity, low loadings, and cross-loadings to try getting rid of different items
+# this doesn't give a clear recommendaton for which items to get rid of, and the factors don't seem very stable
 
-##########3 factors without cross-loaded items sci-tru, HEScore and IH1################
-
+########## 3 factors without cross-loaded items sci-tru, HEScore and IH1 ################
 Q_3_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:DCuriositySum,IH2Sum:AOTSum,HRscore:Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:DCuriositySum, IH2Sum:AOTSum, 
+         HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
 View(Q_3_lowloads)
 
-Q_cor_3 <- mixedCor(data = Q_3_lowloads, d=c(14), c=c(1:13,15:19), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
+Q_cor_3 <- mixedCor(data  =  Q_3_lowloads, d = c(14), c = c(1:13,15:19),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 
 Q_rho_3 <- Q_cor_3$rho
 
-EFA_Q3_lowloads <- fa(Q_rho_3, nfactors=3, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q3_lowloads <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
+                      fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q3_lowloads)
 fa.diagram(EFA_Q3_lowloads)
-print(EFA_Q3_lowloads$loadings,cut=.3)
+print(EFA_Q3_lowloads$loadings, cut = .3)
 ######### 3 without crossloads AOT, IH3, CloSum
 Q_3_xloads <- data_all_sub_cleaned %>%
-  select(AMean:IH2Sum,IH4Sum,CogSum,HEscore:MatrixCorrectCount)
+  select(AMean:IH2Sum, IH4Sum, CogSum, HEscore:MatrixCorrectCount)
 View(Q_3_xloads)
 
-Q_cor_3 <- mixedCor(data = Q_3_xloads, d=c(12:13), c=c(1:11,14:19), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
+Q_cor_3 <- mixedCor(data  =  Q_3_xloads, d = c(12:13), c = c(1:11,14:19),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 
 Q_rho_3 <- Q_cor_3$rho
 
-EFA_Q3_xloads <- fa(Q_rho_3, nfactors=3, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q3_xloads <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin", 
+                    fm = "minrank",scores = "tenBerge") 
 fa.sort(EFA_Q3_xloads)
 fa.diagram(EFA_Q3_xloads)
-print(EFA_Q3_xloads$loadings,cut=.3)
+print(EFA_Q3_xloads$loadings, cut = .3)
 
 ######### 3 without high complexity items sci.tru, AOT, IH3, RP
 Q_3_comp <- data_all_sub_cleaned %>%
-  select(AMean:IH2Sum,IH4Sum:CogSum,HEscore:HRscore, Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:IH2Sum, IH4Sum:CogSum, HEscore:HRscore, Sci.cur_Sum,
+         Sci.impo_Sum:MatrixCorrectCount)
 View(Q_3_comp)
 
-Q_cor_3 <- mixedCor(data = Q_3_comp, d=c(13:14), c=c(1:12,15:18), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_3 <- mixedCor(data  =  Q_3_comp, d = c(13:14), c = c(1:12,15:18), 
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_3 <- Q_cor_3$rho
 
-EFA_Q3_comp <- fa(Q_rho_3, nfactors=3, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q3_comp <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q3_comp)
 fa.diagram(EFA_Q3_comp)
-print(EFA_Q3_comp$loadings,cut=.3)
+print(EFA_Q3_comp$loadings, cut = .3)
 
 ######### 3 without high complexity, low loading or crossloading items IH1,IH2, IH3, CloSum, sci.tru, AOT, HEscore, RP
 Q_3_comp <- data_all_sub_cleaned %>%
-  select(AMean:DCuriositySum,IH4Sum,CogSum,HRscore,Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:DCuriositySum, IH4Sum, CogSum, HRscore, 
+         Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
 View(Q_3_comp)
 
-Q_cor_3 <- mixedCor(data = Q_3_comp, d=c(10), c=c(1:9,11:14), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_3 <- mixedCor(data = Q_3_comp, d = c(10), c = c(1:9, 11:14),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
+                    use = "pairwise.complete.obs", method = "spearman",
+                    weight = NULL)
 Q_rho_3 <- Q_cor_3$rho
 
-EFA_Q3_comp <- fa(Q_rho_3, nfactors=3, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q3_comp <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q3_comp)
 fa.diagram(EFA_Q3_comp)
-print(EFA_Q3_comp$loadings,cut=.3)
-
+print(EFA_Q3_comp$loadings, cut = .3)
 
 ############# 4 factor model without the low loadings HEscore and sci.tru
 
 Q_4_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum,HRscore:Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
 View(Q_4_lowloads)
 
-Q_cor_4 <- mixedCor(data = Q_4_lowloads, d=c(15), c=c(1:14,16:20), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_4 <- mixedCor(data  =  Q_4_lowloads, d = c(15), c = c(1:14, 16:20),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_4 <- Q_cor_4$rho
 
-EFA_Q4_lowloads <- fa(Q_rho_4, nfactors=4, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q4_lowloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
+                      fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q4_lowloads)
 fa.diagram(EFA_Q4_lowloads)
-print(EFA_Q4_lowloads$loadings,cut=.3)
+print(EFA_Q4_lowloads$loadings, cut = .3)
 
-############# 4 factor model without the high complexity ESMean, sci.impo, HEscore, sci.tru,
-
+############# 4 factor model without the high complexity ESMean, sci.impo, HEscore, sci.tru
 Q_4_comp <- data_all_sub_cleaned %>%
-  select(AMean:EMean, OMean:AOTSum,HRscore:Sci.cur_Sum,Sci.id_Sum:MatrixCorrectCount)
+  select(AMean:EMean, OMean:AOTSum, HRscore:Sci.cur_Sum,
+         Sci.id_Sum:MatrixCorrectCount)
 View(Q_4_comp)
 
-Q_cor_4 <- mixedCor(data = Q_4_comp, d=c(14), c=c(1:13,15:18), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_4 <- mixedCor(data  =  Q_4_comp, d = c(14), c = c(1:13, 15:18), 
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_4 <- Q_cor_4$rho
 
-EFA_Q4_comp <- fa(Q_rho_4, nfactors=4, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q4_comp <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q4_comp)
 fa.diagram(EFA_Q4_comp)
-print(EFA_Q4_comp$loadings,cut=.3)
+print(EFA_Q4_comp$loadings, cut = .3)
 
-############# 4 factor model without crossloadings AMean, EMean, OMean, Icur, IH4, RP, sciimpo
-
+############# 4 factor model without crossloadings AMean, EMean, OMean, Icur, IH4, RP, sciimp
 Q_4_xloads <- data_all_sub_cleaned %>%
-  select(CMean,ESMean,DCuriositySum:IH3Sum,CloSum:HRscore,Sci.cur_Sum,Sci.tru_Sum,Sci.id_Sum:MatrixCorrectCount)
+  select(CMean, ESMean, DCuriositySum:IH3Sum, CloSum:HRscore, Sci.cur_Sum,
+         Sci.tru_Sum, Sci.id_Sum:MatrixCorrectCount)
 View(Q_4_xloads)
 
-Q_cor_4 <- mixedCor(data = Q_4_xloads, d=c(10:11), c=c(1:9,12:15), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_4 <- mixedCor(data  =  Q_4_xloads, d = c(10:11), c = c(1:9, 12:15),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_4 <- Q_cor_4$rho
 
-EFA_Q4_xloads <- fa(Q_rho_4, nfactors=4, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q4_xloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
+                    fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q4_xloads)
 fa.diagram(EFA_Q4_xloads)
-print(EFA_Q4_xloads$loadings,cut=.3)
+print(EFA_Q4_xloads$loadings, cut = .3)
 
 ############# 4 factor model without crossloadings, low loadings, high complexity: (all personality),ICur, IH4, HEscore, RP, sci.impo, sci.tru, 
-
 Q_4_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum,HRscore:Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
 View(Q_4_lowloads)
 
-Q_cor_4 <- mixedCor(data = Q_4_lowloads, d=c(15), c=c(1:14,16:20), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_4 <- mixedCor(data  =  Q_4_lowloads, d = c(15), c = c(1:14, 16:20),
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_4 <- Q_cor_4$rho
 
-EFA_Q4_lowloads <- fa(Q_rho_4, nfactors=4, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q4_lowloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
+                      fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q4_lowloads)
 fa.diagram(EFA_Q4_lowloads)
-print(EFA_Q4_lowloads$loadings,cut=.3)
+print(EFA_Q4_lowloads$loadings, cut = .3)
 
 
 ############################################################
 ##############################################
-#in this section I use "a series of intuitive judgments" --this is messy and might not be complete but the idea was that I tried removing low and crossloaded items one by one
-#HEScore is reliably the worst item in the Q set. It has the lowest h2, the lowest loadings and is often weakly cross-loaded 
-#sci-tru also tends to load weakly
-
+# in this section I use "a series of intuitive judgments" --this is messy and might not be complete but the idea was that I tried removing low and crossloaded items one by one
+# HEScore is reliably the worst item in the Q set. It has the lowest h2, the lowest loadings and is often weakly cross-loaded 
+# sci-tru also tends to load weakly
 Q_without_HE <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum,HRscore:MatrixCorrectCount)
+  select(AMean:AOTSum, HRscore:MatrixCorrectCount)
 
-Q_cor_minusHE <- mixedCor(data = Q_without_HE, d=c(15), c=c(1:14,16:21), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_minusHE <- mixedCor(data  =  Q_without_HE, d = c(15), 
+                          c = c(1:14, 16:21), smooth = TRUE, 
+                          correct = 0, ncat = 3, global = FALSE, 
+                          use = "pairwise.complete.obs", method = "spearman",
+                          weight = NULL)
 Q_rho_2 <- Q_cor_minusHE$rho
 
-EFA_Q6_2 <- fa(Q_rho_2, nfactors=6, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q6_2 <- fa(Q_rho_2, nfactors = 6, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q6_2)
 fa.diagram(EFA_Q6_2)
 
-
-#next choosing to remove EMean--could also remove sci.impo but it's only crossloading on two factors and EMean crossloads low on 4 factors 
-#works better to choose the set of variables by selecting from data_all_sub_cleaned
+# next choosing to remove EMean--could also remove sci.impo but it's only crossloading on two factors and EMean crossloads low on 4 factors 
+# works better to choose the set of variables by selecting from data_all_sub_cleaned
 Q_4 <- data_all_sub_cleaned %>%
-  select(AMean:CMean,ESMean:AOTSum,HRscore:Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:CMean, ESMean:AOTSum, HRscore:Sci.cur_Sum,
+         Sci.impo_Sum:MatrixCorrectCount)
 View(Q_4)
 
-Q_cor_4 <- mixedCor(data = Q_4, d=c(14), c=c(1:13,15:19), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_4 <- mixedCor(data = Q_4, d = c(14), c = c(1:13, 15:19), 
+                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_4 <- Q_cor_4$rho
 
-EFA_Q6_4 <- fa(Q_rho_4, nfactors=6, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q6_4 <- fa(Q_rho_4, nfactors = 6, rotate = "oblimin", 
+               fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q6_4)
 fa.diagram(EFA_Q6_4)
-#Cumulative Var         0.11  0.20  0.29  0.37  0.44  0.51
-#The root mean square of the residuals (RMSR) is  0.04 
-#The df corrected root mean square of the residuals is  0.07 
-#Fit based upon off diagonal values = 0.95
-#at this point, Openness is still crossloading on MRFA3, which has AMean and IH3Sum. I think some of these issues are because some personality factors tend to be correlated with each other, so the personality structure is getting in the way. It is interesting that OMean isn't really lumping with AOT etc. 
-#IH3 is crossloading on MRFA5 and MRFA3, 3 is with agreeableness and 5 is with ES, IH1 and need for closure
+# Cumulative Var         0.11  0.20  0.29  0.37  0.44  0.51
+# The root mean square of the residuals (RMSR) is  0.04 
+# The df corrected root mean square of the residuals is  0.07 
+# Fit based upon off diagonal values = 0.95
+# at this point, Openness is still crossloading on MRFA3, which has AMean and IH3Sum. I think some of these issues are because some personality factors tend to be correlated with each other, so the personality structure is getting in the way. It is interesting that OMean isn't really lumping with AOT etc. 
+# IH3 is crossloading on MRFA5 and MRFA3, 3 is with agreeableness and 5 is with ES, IH1 and need for closure
 
 ##########
-#Trying getting rid of Openness
+# Trying getting rid of Openness
 Q_5 <- data_all_sub_cleaned %>%
-  select(AMean:CMean,ESMean,ICuriositySum:AOTSum,HRscore:Sci.cur_Sum,Sci.impo_Sum:MatrixCorrectCount)
+  select(AMean:CMean, ESMean, ICuriositySum:AOTSum, HRscore:Sci.cur_Sum,
+         Sci.impo_Sum:MatrixCorrectCount)
 View(Q_5)
 
-Q_cor_5 <- mixedCor(data = Q_5, d=c(13), c=c(1:12,14:18), smooth=TRUE, correct=0, ncat=3, global=FALSE, use="pairwise.complete.obs", method="spearman", weight=NULL)
-
+Q_cor_5 <- mixedCor(data = Q_5, d = c(13), c = c(1:12, 14:18), smooth = TRUE,
+                    correct = 0, ncat = 3, global = FALSE, 
+                    use = "pairwise.complete.obs", method = "spearman", 
+                    weight = NULL)
 Q_rho_5 <- Q_cor_5$rho
 
-EFA_Q6_5 <- fa(Q_rho_5, nfactors=6, rotate="oblimin", fm="minrank",scores="tenBerge") 
+EFA_Q6_5 <- fa(Q_rho_5, nfactors = 6, rotate = "oblimin", 
+               fm = "minrank", scores = "tenBerge") 
 fa.sort(EFA_Q6_5)
 fa.diagram(EFA_Q6_5)
-#Cumulative Var         0.10  0.20  0.29  0.37  0.44  0.51
-#The root mean square of the residuals (RMSR) is  0.04 
-#The df corrected root mean square of the residuals is  0.07 
-#Fit based upon off diagonal values = 0.96
-#this seems to be the best model yet, and it looks really nice with 3 items on each factor. But now RPsum is crossloading on the science attitudes factor, and conscientiousness is crossloading on the actively openminded thinking factor. Everything else has a better crossloading situation. 
+# Cumulative Var         0.10  0.20  0.29  0.37  0.44  0.51
+# The root mean square of the residuals (RMSR) is  0.04 
+# The df corrected root mean square of the residuals is  0.07 
+# Fit based upon off diagonal values = 0.96
+# this seems to be the best model yet, and it looks really nice with 3 items on each factor. But now RPsum is crossloading on the science attitudes factor, and conscientiousness is crossloading on the actively openminded thinking factor. Everything else has a better crossloading situation. 
 
+clust_solution <- iclust(Q_rho_5,nclusters = 6, beta = 3)
+# tends to find 3-4 clusters on its own, but fit is better with 6 clusters--not exactly the same as the factors
 
-clust_solution <- iclust(Q_rho_5,nclusters = 6,beta=3)
-#tends to find 3-4 clusters on its own, but fit is better with 6 clusters--not exactly the same as the factors
-
-
-#https://m-clark.github.io/posts/2020-04-10-psych-explained/
+# https://m-clark.github.io/posts/2020-04-10-psych-explained/
 ################################################################
 
-#CONCLUSIONS
-#after initially removing HEscore, EMean, and sci.tru, the structure settled down and it was just a matter of seeing which other personality variables should be taken away. 6 factors generally seems to produce the best structure with the criteria that I have on hand--reducing the number of factors extracted typically makes crossloadings worse, which suggests to me that fewer factors means trying to lump together things that don't really belong. 
-#the unsupervised iclust pulling out 3 overall clusters fits in with the idea that there is some hierarchical thing going on here, and also fits in with the phenomenon that when the number of factors is reduced, typically the first 2 factors lump together. 
+# CONCLUSIONS
+# after initially removing HEscore, EMean, and sci.tru, the structure settled down and it was just a matter of seeing which other personality variables should be taken away. 6 factors generally seems to produce the best structure with the criteria that I have on hand--reducing the number of factors extracted typically makes crossloadings worse, which suggests to me that fewer factors means trying to lump together things that don't really belong. 
+# the unsupervised iclust pulling out 3 overall clusters fits in with the idea that there is some hierarchical thing going on here, and also fits in with the phenomenon that when the number of factors is reduced, typically the first 2 factors lump together. 
 
 #################################################################
 
-#TASK SET
-#this is the best solution possible for task variables. Other solutions don't converge or give heywood cases. This tends to extract factors according to the measure, so not very useful. I think we might as well just use the variables of interest, or is there a reason to try to combine them? 
-EFA_T1 <- fa(T_rho, nfactors=1, rotate="oblimin", fm="minrank",scores="tenBerge") 
+# TASK SET
+# this is the best solution possible for task variables. Other solutions don't converge or give heywood cases. This tends to extract factors according to the measure, so not very useful. I think we might as well just use the variables of interest, or is there a reason to try to combine them? 
+EFA_T1 <- fa(T_rho, nfactors = 1, rotate = "oblimin", fm = "minrank",
+             scores = "tenBerge") 
 fa.sort(EFA_T1)
-
 
 ```
 
-##Extracting factor scores
+## Extracting factor scores
 
 This section not ready yet
 
-```{r Extracting factor scores, include=FALSE}
+```{r Extracting factor scores, include = FALSE}
 
-#Extracting factor scores per case (ppt), for EFA_6f solution 
-#I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
-#I'm also not sure of all the arguments, particularly rho
-#taking rho out slightly changes if you plot bergescores$scores
-#it's also possible to impute missing data as there is a lot, use "median" or "mean"
-#the four combinations of these arguments give basically the same resulting plot but should check them 
-#the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
-bergescores <- factor.scores(Q_new,EFA_6f,method=c("tenBerge"),rho = Q_rho, impute = "median")
-#to view as a dataframe
+# Extracting factor scores per case (ppt), for EFA_6f solution 
+# I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
+# I'm also not sure of all the arguments, particularly rho
+# taking rho out slightly changes if you plot bergescores$scores
+# it's also possible to impute missing data as there is a lot, use "median" or "mean"
+# the four combinations of these arguments give basically the same resulting plot but should check them 
+# the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
+bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"), 
+                             rho = Q_rho, impute = "median")
+# to view as a dataframe
 View(bergescores$scores)
 
 ```
