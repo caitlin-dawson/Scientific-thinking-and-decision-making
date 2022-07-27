@@ -11,29 +11,31 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 ```{r}
 #Visualizing the data
 
-Need to organize the investigation! Some correlations are not straightforward, e.g. CMean is correlated with both ES and NFC, but ES and NFC are negatively correlated with each other! 
-Investigate!
-
-It cannot only be about factoring and clustering. Those methods will get rid of variables that are singly related to another variable singly. We also want to pursue these single variables in relation to the extant literature and see if we replicate their results!
+# Need to organize the investigation! Some correlations are not straightforward, e.g. CMean is correlated with both ES and NFC, but ES and NFC are negatively correlated with each other! 
+# Investigate!
+# 
+# It cannot only be about factoring and clustering. Those methods will get rid of variables that are singly related to another variable singly. We also want to pursue these single variables in relation to the extant literature and see if we replicate their results!
 ```
 
-#visualising correlations
+# visualising correlations
+
 ```{r}
+
 #visualizing the correlations
 
 library(ggplot2)
 library(hrbrthemes)
 
-p1 <- ggplot(data_all_sub_cleaned, aes(x=CloSum, y=IH3Sum)) +  
-  geom_point( color="#69b3a2")
+p1 <- ggplot(data_all_sub_cleaned, aes(x = CloSum, y = IH3Sum)) +  
+  geom_point(color = "#69b3a2")
 
-p3 <- ggplot(data_all_sub_cleaned, aes(x=Sci.id_Sum, y=CloSum)) +  
+p3 <- ggplot(data_all_sub_cleaned, aes(x = Sci.id_Sum, y = CloSum)) +  
   geom_point() +
-  geom_smooth(method=lm,color="red",fill="#69b3a2",se=TRUE)
+  geom_smooth(method = lm, color = "red", fill = "#69b3a2", se = TRUE)
   
 p3
 
-rcorr(all_cor,type=c("spearman"))
+rcorr(all_cor, type = c("spearman"))
 
 library("Hmisc") 
 res2 <- rcorr(as.matrix(all_cor))
@@ -41,7 +43,7 @@ res2 <- rcorr(as.matrix(all_cor))
 
 ```
 
-#random packages for visualizations
+# random packages for visualizations
 
 ```{r}
 #circular packing
@@ -60,13 +62,13 @@ library(Migest)
 library(fmsb)
 
 #this is scaled raw ppt data without GNG vars or binary vars, used for clustering by ppt
-data<-Bclust
+data <- Bclust
 #have to add 2 rows at the top of the df to ID the min and max of each variable
 #add the min
-data <- rbind(c(0,-3.0924,-2.46150,-2.2422,-2.64471,-3.4793,-2.4621,-2.54740,-2.7792,-2.4046,-2.73994,-2.5634,-2.31735,-2.5716,-2.6758,-2.6963,-2.37277,-2.13110,-2.1096,-3.2408,-2.8489,-1.96163,-3.09380,-1.6906),data)
+data <- rbind(c(0, -3.0924, -2.46150, -2.2422, -2.64471, -3.4793, -2.4621, -2.54740, -2.7792, -2.4046, -2.73994, -2.5634, -2.31735, -2.5716, -2.6758, -2.6963, -2.37277, -2.13110, -2.1096, -3.2408, -2.8489, -1.96163, -3.09380, -1.6906), data)
 
 #add the max
-data <- rbind(c(0,1.9342,1.84697,1.8060,1.95134,1.5600,1.3460,2.50386,1.6212,1.6031,1.83320,2.6862,2.41944,1.9469,1.6553,1.5736,1.82200,2.07669,1.2503,1.3693,1.4509,2.52539,3.41422,2.8022),data)
+data <- rbind(c(0, 1.9342, 1.84697, 1.8060, 1.95134, 1.5600, 1.3460, 2.50386, 1.6212, 1.6031, 1.83320, 2.6862, 2.41944, 1.9469, 1.6553, 1.5736, 1.82200, 2.07669, 1.2503, 1.3693, 1.4509, 2.52539, 3.41422, 2.8022), data)
 
 #from clustering, take the cluster designation for each ppt as a column
 hc.cut <- hcut(Bclust, k = 4, hc_method = "complete")
@@ -76,40 +78,51 @@ fviz_dend(hc.cut, show_labels = FALSE, rect = TRUE)
 # Visualize cluster
 fviz_cluster(hc.cut, ellipse.type = "convex")
 
-colnames(datatest)[1]<-"Cluster"
+colnames(datatest)[1] <- "Cluster"
 
 #adding the previously identified cluster as a grouping variable for visualization
-datatest<-cbind(hc.cut$cluster,data)
+datatest <- cbind(hc.cut$cluster, data)
 
 #set graphic colors
 library(RColorBrewer)
-coul<-brewer.pal(4,"BuPu")
-colors_border <- coul
+coul <- brewer.pal(4, "BuPu")
+colors_border  <-  coul
 library(scales)
-colors_in<-alpha(coul,0.3)
+colors_in <- alpha(coul, 0.3)
 
 
            #,axistype=0,maxmin=F,pcol=colors_border,pfcol=colors_in,plwd=4,plty=1,cglcol="grey",cglty=1,axislabcol="black",cglwd=0.8,vlcex=0.8)
 
 #this works but it's every ppt on top of each other
-radarchart(data.frame(data),axistype=0,maxmin=F,pcol=colors_border,plwd=4,plty=1,cglcol="grey",cglty=1,axislabcol="black",cglwd=0.8,vlcex=0.8)
+radarchart(data.frame(data), axistype = 0, maxmin = F, 
+           pcol = colors_border, plwd = 4, plty = 1,
+           cglcol = "grey", cglty = 1, axislabcol = "black", 
+           cglwd = 0.8, vlcex = 0.8)
 
 cluster1 <- data.frame(data) %>%
-  filter(Cluster=="1")
+  filter(Cluster == "1")
 cluster2 <- data.frame(data) %>%
-  filter(Cluster=="2")
+  filter(Cluster == "2")
 cluster3 <- data.frame(data) %>%
-  filter(Cluster=="3")
+  filter(Cluster == "3")
 cluster4 <- data.frame(data) %>%
-  filter(Cluster=="4")
+  filter(Cluster == "4")
 
-par(mfrow=c(2,2))
-c1<-radarchart(data.frame(cluster1),axistype=0,maxmin=FALSE,pty=32,cglcol="grey",pcol="black",cglty=1,axislabcol="black")
-c2<-radarchart(data.frame(cluster2),axistype=0,maxmin=FALSE,pty=32,cglcol="grey",pcol="black",cglty=1,axislabcol="black")
-c3<-radarchart(data.frame(cluster3),axistype=0,maxmin=FALSE,pty=32,cglcol="grey",pcol="black",cglty=1,axislabcol="black")
-c4<-radarchart(data.frame(cluster4),axistype=0,maxmin=FALSE,pty=32,cglcol="grey",pcol="black",cglty=1,axislabcol="black")
+par(mfrow = c(2, 2))
+c1 <- radarchart(data.frame(cluster1), axistype = 0, maxmin = FALSE, 
+                 pty = 32, cglcol = "grey", pcol = "black", 
+                 cglty = 1, axislabcol = "black")
+c2 <- radarchart(data.frame(cluster2), axistype = 0, maxmin = FALSE, 
+                 pty = 32, cglcol = "grey", pcol = "black", 
+                 cglty = 1, axislabcol = "black")
+c3 <- radarchart(data.frame(cluster3), axistype = 0, maxmin = FALSE, 
+                 pty = 32, cglcol = "grey", pcol = "black", 
+                 cglty = 1, axislabcol = "black")
+c4 <- radarchart(data.frame(cluster4), axistype = 0, maxmin = FALSE, 
+                 pty = 32, cglcol = "grey", pcol = "black", 
+                 cglty = 1, axislabcol = "black")
 
-grid.arrange(c1,c2,c3,c4,nrow=2)
+grid.arrange(c1, c2, c3, c4, nrow = 2)
 
 #parallel coordinates plot
 #this only makes sense if you already know either how many clusters there are and add cluster identity through a categorical variable, or are interested in grouping via a categorical variable
@@ -126,13 +139,15 @@ data$Cluster <- as.factor(data$Cluster)
 ggparcoord(data.frame(data), 
     columns = 2:24, 
     showPoints = TRUE, 
-    title = "Parallel Coordinate Plot", groupColumn = 1, order = "allClass",
+    title = "Parallel Coordinate Plot", 
+    groupColumn = 1, 
+    order = "allClass",
     alphaLines = 0.8 
     ) +  
   scale_color_viridis() + 
-  theme_ipsum()+ 
+  theme_ipsum() + 
   theme( 
-    plot.title = element_text(size=10) 
+    plot.title = element_text(size = 10) 
   )
 
 #ggparcoord(data, 
@@ -142,14 +157,14 @@ ggparcoord(data.frame(data),
 
 #circular barplots
 # Make the plot 
-p <- ggplot(data.frame(data), aes(x=as.factor(Cluster), y=value)) +       
+p <- ggplot(data.frame(data), aes(x = as.factor(Cluster), y = value)) +       
   # Note that id is a factor. If x is numeric, there is some space between the first bar 
    
   # This add the bars with a blue color 
-  geom_bar(stat="Cluster", fill=alpha("blue", 0.3)) + 
+  geom_bar(stat = "Cluster", fill = alpha("blue", 0.3)) + 
    
   # Limits of the plot = very important. The negative value controls the size of the inner circle, the positive one is useful to add size over each bar 
-  ylim(-100,120) + 
+  ylim(-100, 120) + 
    
   # Custom the theme: no axis title and no cartesian grid 
   theme_minimal() + 
@@ -182,7 +197,7 @@ library(compareGroups)
 library(AdaptGauss)
 
 #hierarchical edge bundling 
-????
+# ????
 
 
 
