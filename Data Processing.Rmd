@@ -12,7 +12,7 @@ Eisenberg et al. (2018) used the following exclusion criteria for **tasks**:
 * accuracy <= 60%
 * no single response was given > 95% of the time
 If any of these criteria were fulfilled, the participant's data for that task were replaced with missing values. If any participant had missing data for 4 or more tasks, their data were omitted completely. **They also mention they had slightly different exclusion criteria for some of the tasks but I cannot find more details on this.** 
-The same paper reports no exclusion criteria for self-report variables (questionnaires). They only say that they checked the descriptives (mean, skew, distribution etc.) of each item and the structure of each questionnaire with CFA. **They do not report any exclusion criteria, or excluding any items.** Again, not sure if I just didn't know where to find this info.
+The same paper reports no exclusion criteria for self-report variables (questionnaires). They only say that they checked the descriptives (mean, skew, distribution etc.) of each item and the structure of each questionnaire with CFA. **They do not report any exclusion criteria, or excluding any data on items.** Again, not sure if I just didn't know where to find this info.
 Finally, once the variables are retrieved, they exclude a variable if it is skewed > 1 after transforming it, or if two variables from the same task/questionnaire correlate > 0.85.
 Relevance for us: I think it would be good if we could find the specific exclusion criteria for each task to get an idea of when they made exceptions. **I think it would also be good if we could figure out if they used any exclusion criteria for the questionnaires / if they excluded any questionnaire data based on item-level characteristics.**
 
@@ -82,25 +82,44 @@ This chunk combines the different versions of each questionnaire (leaving us wit
 ```{r Merge the Versions, include = FALSE}
 
 # Concatenate the versions of each questionnaire
-data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, data_big5Q_v24, data_big5Q_v25) 
-data_citiT <- rbind(data_citiT_v22, data_citiT_v23, data_citiT_v24, data_citiT_v25) 
-data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, data_demoQ_v24, data_demoQ_v25)
-data_epiQ <- rbind(data_epiQ_v22, data_epiQ_v23, data_epiQ_v24, data_epiQ_v25)
-data_nogoT <- rbind(data_nogoT_v22, data_nogoT_v23, data_nogoT_v24, data_nogoT_v25)
-data_heurQ <- rbind(data_heurQ_v22, data_heurQ_v23, data_heurQ_v24, data_heurQ_v25)
-data_inthumQ <- rbind(data_inthumQ_v22, data_inthumQ_v23, data_inthumQ_v24, data_inthumQ_v25)
-data_matreasT <- rbind(data_matreasT_v22, data_matreasT_v23, data_matreasT_v24, data_matreasT_v25)
-data_NavonT <- rbind(data_NavonT_v22, data_NavonT_v23, data_NavonT_v24, data_NavonT_v25)
-data_NeckerT <- rbind(data_NeckerT_v22, data_NeckerT_v23, data_NeckerT_v24, data_NeckerT_v25)
-data_needcloQ <- rbind(data_needcloQ_v22, data_needcloQ_v23, data_needcloQ_v24, data_needcloQ_v25)
-data_needcogQ <- rbind(data_needcogQ_v22, data_needcogQ_v23, data_needcogQ_v24, data_needcogQ_v25)
-data_openQ <- rbind(data_openQ_v22, data_openQ_v23, data_openQ_v24, data_openQ_v25)
-data_rpQ <- rbind(data_rpQ_v22, data_rpQ_v23, data_rpQ_v24, data_rpQ_v25)
-data_sciattQ <- rbind(data_sciattQ_v22, data_sciattQ_v23, data_sciattQ_v24, data_sciattQ_v25)
-data_scicurQ <- rbind(data_scicurQ_v22, data_scicurQ_v23, data_scicurQ_v24, data_scicurQ_v25)
-data_infoQ <- rbind(data_infoQ_v22, data_infoQ_v23, data_infoQ_v24, data_infoQ_v25)
-data_uutT <- rbind(data_uutT_v22, data_uutT_v23, data_uutT_v24, data_uutT_v25)
-data_validQ <- rbind(data_validQ_v22, data_validQ_v23, data_validQ_v24, data_validQ_v25)
+data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, 
+                    data_big5Q_v24, data_big5Q_v25) 
+data_citiT <- rbind(data_citiT_v22, data_citiT_v23, 
+                    data_citiT_v24, data_citiT_v25) 
+data_demoQ <- rbind(data_demoQ_v22, data_demoQ_v23, 
+                    data_demoQ_v24, data_demoQ_v25)
+data_epiQ <- rbind(data_epiQ_v22, data_epiQ_v23, 
+                   data_epiQ_v24, data_epiQ_v25)
+data_nogoT <- rbind(data_nogoT_v22, data_nogoT_v23, 
+                    data_nogoT_v24, data_nogoT_v25)
+data_heurQ <- rbind(data_heurQ_v22, data_heurQ_v23, 
+                    data_heurQ_v24, data_heurQ_v25)
+data_inthumQ <- rbind(data_inthumQ_v22, data_inthumQ_v23, 
+                      data_inthumQ_v24, data_inthumQ_v25)
+data_matreasT <- rbind(data_matreasT_v22, data_matreasT_v23, 
+                       data_matreasT_v24, data_matreasT_v25)
+data_NavonT <- rbind(data_NavonT_v22, data_NavonT_v23, 
+                     data_NavonT_v24, data_NavonT_v25)
+data_NeckerT <- rbind(data_NeckerT_v22, data_NeckerT_v23, 
+                      data_NeckerT_v24, data_NeckerT_v25)
+data_needcloQ <- rbind(data_needcloQ_v22, data_needcloQ_v23, 
+                       data_needcloQ_v24, data_needcloQ_v25)
+data_needcogQ <- rbind(data_needcogQ_v22, data_needcogQ_v23, 
+                       data_needcogQ_v24, data_needcogQ_v25)
+data_openQ <- rbind(data_openQ_v22, data_openQ_v23, 
+                    data_openQ_v24, data_openQ_v25)
+data_rpQ <- rbind(data_rpQ_v22, data_rpQ_v23, 
+                  data_rpQ_v24, data_rpQ_v25)
+data_sciattQ <- rbind(data_sciattQ_v22, data_sciattQ_v23, 
+                      data_sciattQ_v24, data_sciattQ_v25)
+data_scicurQ <- rbind(data_scicurQ_v22, data_scicurQ_v23, 
+                      data_scicurQ_v24, data_scicurQ_v25)
+data_infoQ <- rbind(data_infoQ_v22, data_infoQ_v23, 
+                    data_infoQ_v24, data_infoQ_v25)
+data_uutT <- rbind(data_uutT_v22, data_uutT_v23, 
+                   data_uutT_v24, data_uutT_v25)
+data_validQ <- rbind(data_validQ_v22, data_validQ_v23, 
+                     data_validQ_v24, data_validQ_v25)
 
 # Remove the empty last line of each file
 for (i in 1:length(names_all)) {
@@ -209,7 +228,7 @@ rm(data_big5Q, data_epiQ, data_heurQ, data_infoQ, data_inthumQ, data_needcloQ, d
 
 **ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all questionnaire data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
 * stated their data are not valid
-* stated their Finnish is not Äidinkieli or Keskusteleva
+* stated their Finnish is not Äidinkieli, Keskusteleva, or Muu, Mikä.
 
 **TIPI - RANDOMNESS/PROBABILITY:** Furthermore, a participant's questionnaire data for a particular questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
 * their response time for the questionnaire was shorter than the number of items x 1000 milliseconds
@@ -294,8 +313,7 @@ describe(data_Q_total[, b5])
 data_Q_total$AMean <- rowMeans(cbind(data_Q_total$agreeablenessNormal, 
                                      data_Q_total$agreeablenessReverse), 
                                na.rm = TRUE)
-data_Q_total$CMean <- rowMeans(cbind(data_Q_total$conscientiousnessNormal,
-                                     data_Q_total$conscientiousnessReverse),
+data_Q_total$CMean <- rowMeans(cbind(data_Q_total$conscientiousnessNormal,                                     data_Q_total$conscientiousnessReverse),
                                na.rm = TRUE)
 data_Q_total$EMean <- rowMeans(cbind(data_Q_total$extroversionNormal,
                                      data_Q_total$extroversionReverse), 
@@ -327,18 +345,7 @@ describe(data_Q_total[, b5_mean])
 ```{r Epistemic Curiosity, include = FALSE}
 
 # Epistemic Curiosity
-epicur <- c()
-for (j in 1:2) {
-  if (j == 1) {
-    for (i in 1:5) {
-      epicur <- c(epicur, which(colnames(data_Q_total) == paste0("Icuriosity", i)))
-}
-  } else if (j == 2) {
-    for (i in 1:5) {
-      epicur <- c(epicur, which(colnames(data_Q_total) == paste0("Dcuriosity", i)))
-    }
-  }
-}
+epicur <- c(paste0("Icuriosity", 1:5), paste0("Dcuriosity", 1:5))
 
 # Exclusion criteria
   # <= 10000ms response time 
@@ -369,8 +376,7 @@ data_Q_total$ICuriositySum[which(data_Q_total$ICuriositySum == 0)] <- NA
 data_Q_total$DCuriositySum[which(data_Q_total$DCuriositySum == 0)] <- NA
 
 # Describe: sum score level
-epicur_sum <- c(which(colnames(data_Q_total) == "ICuriositySum"),
-                 which(colnames(data_Q_total) == "DCuriositySum"))
+epicur_sum <- c("ICuriositySum", "DCuriositySum")
 par(mfrow = c(1, 2))
 for (i in 1:length(epicur_sum)) {
   hist(data_Q_total[, epicur_sum[i]],
@@ -388,8 +394,9 @@ describe(data_Q_total[, c(epicur_sum)])
 ```{r Intellectual Humility, include = FALSE}
 
 # Intellectual Humility
-IH <- c("IH1rev1", "IH2rev1","IH3rev1", "IH4rev1", "IH5rev1", "IH6norm2", "IH7norm2", "IH8norm2", "IH9norm2", "IH10norm2", "IH11norm3", "IH12norm3", "IH13norm3", "IH14norm3", "IH15norm3", "IH16norm3", "IH17rev4", "IH18rev4",  "IH19rev4", "IH20rev4", "IH21rev4", "IH22rev4")
-IH_rev <- c( "IH1rev1", "IH2rev1", "IH3rev1", "IH4rev1", "IH5rev1", "IH17rev4", "IH18rev4", "IH19rev4", "IH20rev4", "IH21rev4", "IH22rev4")
+IH <- c(paste0("IH", 1:5, "rev1"), paste0("IH", 6:10, "norm2"), 
+        paste0("IH", 11:16, "norm3"), paste0("IH", 17:22, "rev4"))
+IH_rev <- c(paste0("IH", 1:5, "rev1"), paste0("IH", 17:22, "rev4"))
 
 # Exclusion criteria
   # >=90% of responses on the same option
@@ -465,10 +472,7 @@ describe(data_Q_total[, IH_sum])
 ```{r Need for Closure, include = FALSE}
 
 # Need for Closure
-need_clo <- c()
-for (i in 1:15) {
-  need_clo <- c(need_clo, which(colnames(data_Q_total) == paste0("closure", i)))
-}
+need_clo <- paste0("closure", 1:15)
 
 # Exclusion criteria
   # <=15000ms response time
@@ -516,8 +520,9 @@ hist(data_Q_total$CloSum,
 ```{r Need for Cognition, include = FALSE}
 
 # Need for Cognition
-need_cog <- c("cognition1", "cognition2", "cognition3.rev", "cognition4.rev", "cognition5.rev", "cognition6", "cognition7.rev", "cognition8.rev", "cognition9.rev", "cognition10", "cognition11", "cognition12.rev", "cognition13", "cognition14", "cognition15", "cognition16.rev", "cognition17.rev","cognition18")
-need_cog_rev <- c("cognition3.rev", "cognition4.rev", "cognition5.rev",  "cognition7.rev", "cognition8.rev", "cognition9.rev", "cognition12.rev", "cognition16.rev", "cognition17.rev")
+need_cog <- c(paste0("cognition", c(1:2, 6, 10:11, 13:15, 18)), 
+              paste0("cognition", c(3:5, 7:9, 12, 16:17), ".rev"))
+need_cog_rev <- paste0("cognition", c(3:5, 7:9, 12, 16:17), ".rev")
 
 # Exclusion criteria
   # >=90% of responses fall on the same response option
@@ -580,8 +585,8 @@ hist(data_Q_total$CogSum,
 ```{r Actively Openminded Thinking, include = FALSE}
 
 # Actively Openminded Thinking
-aot <- c("openReverse1", "openReverse2", "openReverse3", "openReverse4", "openNormal1", "openNormal2", "openNormal3")
-aot_rev <- c("openReverse1", "openReverse2", "openReverse3", "openReverse4")
+aot <- c(paste0("openReverse", 1:4), paste0("openNormal", 1:3))
+aot_rev <- paste0("openReverse", 1:4)
 
 # Exclusion criteria
   # >=90% of responses on the same response option
@@ -645,7 +650,7 @@ This section has 12 questions with Likert responses that represent a (possible) 
 ```{r Science Attitudes, include = FALSE}
 
 # Science Attitudes
-sci_att <- c("sa.1a", "sa.1b", "sa.1c", "sa.1d", "sa.1e", "sa.1f", "sa.1g", "sa.1h", "sa.2a", "sa.2b", "sa.2c", "sa.2d")
+sci_att <- c(paste0("sa.1", letters[1:8]), paste0("sa.2", letters[1:4]))
 sci_att_rev <- c("sa.1b", "sa.1d", "sa.2a", "sa.2b", "sa.2d")
 
 # Exclusion criteria
@@ -671,7 +676,7 @@ for (i in 1:length(sci_att_rev)) {
 }
 
 # Describe: item-level
-par(mfrow = c(3, 4))
+par(mfrow = c(2, 2))
 for (i in 1:length(sci_att)) {
   hist(data_Q_total[, sci_att[i]], 
        main = colnames(data_Q_total[sci_att[i]]), 
@@ -714,7 +719,7 @@ This is a 4-item scale, scored as a single sum score from the quantised response
 ```{r Science Curiosity, include = FALSE}
 
 # Science Curiosity 
-sci_cur <- c("sc.1.quantised", "sc.2.quantised","sc.3.quantised", "sc.3.quantised")
+sci_cur <- paste0("sc.", 1:4, ".quantised")
 
 # Exclusion criteria
   # >=4000ms response time
@@ -855,14 +860,14 @@ New columns are created for each item, specifying whether the participant got th
   # <=7000ms reaction time
 data_Q_total <- data_Q_total %>%
   mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB <= 4000 ~ 1, 
-               END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
+                             END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
 
 # Q1: Sairaala B is the correct answer
 # Create a new column
 data_Q_total$rp.1 <- as.factor(data_Q_total$rp.1)
 data_Q_total <- data_Q_total %>%
   mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1, 
-               rp.1 != "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 0)) 
+                              rp.1 != "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 0)) 
 
 # Q2: Pyydys1 AND Pyydys 2 is the correct combination
 data_Q_total$rp.2.1 <- as.factor(data_Q_total$rp.2.1)
@@ -883,13 +888,13 @@ data_Q_total <- data_Q_total %>%
 # Create a new column
 data_Q_total <- data_Q_total %>%
   mutate(rp.3.int = case_when(rp.3.quantised == "4" ~ 1, 
-               rp.3.quantised != "4" ~ 0))
+                              rp.3.quantised != "4" ~ 0))
 
 # Q4: Ruudukot A; B ja C is the correct answer
 # Create a new column
 data_Q_total <- data_Q_total %>%
   mutate(rp.4.int = case_when(rp.4.quantised == "5" ~ 1, 
-               rp.4.quantised != "5" ~ 0))
+                              rp.4.quantised != "5" ~ 0))
 
 # Calculate the sum score for the randomness/probability questions
 data_Q_total <- data_Q_total %>%
@@ -931,7 +936,7 @@ data_matreasT <- data_matreasT %>%
   group_by(Participant.Private.ID) %>%
   mutate(medianRT = median(Reaction.Time, na.rm = TRUE)) %>%
   mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
-                (medianRT <= 500) ~ 1))
+                                 (medianRT <= 500) ~ 1))
 # Create a separate df for subsetting
 data_matrix_omit <- data_matreasT %>%
   group_by(Participant.Private.ID) %>%
@@ -1064,9 +1069,12 @@ for (i in 1:length(vars)) {
 describe(data_Q_sub[, vars])[c("mean", "skew", "kurtosis")]
 
 # Correlation matrix
-round(cor(data_Q_sub[, vars], method = "pearson", use = "pairwise.complete.obs"), 2)
-abs(round(cor(data_Q_sub[, vars], method = "pearson", use = "pairwise.complete.obs"), 2)) > .85
-corrplot(cor(data_Q_sub[, vars], method = "pearson", use = "pairwise.complete.obs"))
+round(cor(data_Q_sub[, vars], method = "pearson", 
+          use = "pairwise.complete.obs"), 2)
+abs(round(cor(data_Q_sub[, vars], method = "pearson", 
+              use = "pairwise.complete.obs"), 2)) > .85
+corrplot(cor(data_Q_sub[, vars], method = "pearson", 
+             use = "pairwise.complete.obs"))
 
 # Subset data: exclude demographic variables
 data_Q_sub <- data_Q_sub %>%
