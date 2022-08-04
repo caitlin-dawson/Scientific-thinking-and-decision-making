@@ -9,11 +9,12 @@ output: pdf_document
 Eisenberg et al. (2018) used the following exclusion criteria for **tasks**:
 * median response time <= 200ms
 * > 25% of responses missing
-* accuracy <= 60%
-* no single response was given > 95% of the time
+* accuracy <= 60% -> omit ?
+* no single response was given > 95% of the time (not necessary? we will catch these in other ways?)
 If any of these criteria were fulfilled, the participant's data for that task were replaced with missing values. If any participant had missing data for 4 or more tasks, their data were omitted completely. **They also mention they had slightly different exclusion criteria for some of the tasks but I cannot find more details on this.** In addition, they did manipulation checks for some of the tasks; these were meant to catch participants that were "gaming" the tasks and missing values for these were treated differently.
 The same paper reports no exclusion criteria for self-report variables (questionnaires). They only say that they checked the descriptives (mean, skew, distribution etc.) of each item and the structure of each questionnaire with CFA. **They do not report any exclusion criteria, or excluding any data on items.** Again, not sure if I just didn't know where to find this info.
 Finally, once the variables are retrieved, they exclude a variable if it is skewed > 1 after transforming it, or if two variables from the same task/questionnaire correlate > 0.85.
+For analyses that required no missing data, they also imputed their matrix; Is this something we wanna consider? -> nope
 Relevance for us: I think it would be good if we could find the specific exclusion criteria for each task to get an idea of when they made exceptions. **I think it would also be good if we could figure out if they used any exclusion criteria for the questionnaires / if they excluded any questionnaire data based on item-level characteristics.**
 
 # Notes 
@@ -230,12 +231,6 @@ rm(data_big5Q, data_epiQ, data_heurQ, data_infoQ, data_inthumQ, data_needcloQ, d
 * stated their data are not valid
 * stated their Finnish is not Äidinkieli, Keskusteleva, or Muu, Mikä.
 
-**TIPI - RANDOMNESS/PROBABILITY:** Furthermore, a participant's questionnaire data for a particular questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
-* their response time for the questionnaire was shorter than the number of items x 1000 milliseconds
-
-**TIPI - RANDOMNESS/PROBABILITY:** For questionnaires that included reverse-coded items, a participant's questionnaire data for that questionnaire is replaced with missing values (NAs) if they met the following exclusion criterion *for that questionnaire*:
-* 90% or more of their responses for that questionnaire fell on the same response option
-
 ## Questionnaire Data Processing
 
 After excluding data in accordance with the exclusion criteria above, the following steps are taken for each questionnaire:
@@ -275,20 +270,6 @@ Reliability are not calculated for TIPI, see Gosling's website for explanation. 
 b5 <- c("agreeablenessNormal", "emotionalStabilityNormal", "extroversionNormal", "conscientiousnessNormal", "opennessNormal", "agreeablenessReverse", "emotionalStabilityReverse", "extroversionReverse", "conscientiousnessReverse", "opennessReverse")
 b5_rev <- c("agreeablenessReverse", "emotionalStabilityReverse", "extroversionReverse", "conscientiousnessReverse", "opennessReverse")
 
-# Exclusion criteria
-  # >= 90% of responses fall on the same response option
-  # <= 10000ms response time 
-data_Q_total <- data_Q_total %>% 
-  mutate(B5_max = max(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)), na.rm = TRUE) /
-           sum(table(c(agreeablenessNormal, agreeablenessReverse, conscientiousnessNormal, conscientiousnessReverse, extroversionNormal, extroversionReverse, emotionalStabilityNormal, emotionalStabilityReverse, opennessNormal, opennessReverse)), na.rm = TRUE))
-
-data_Q_total <- data_Q_total %>% 
-  mutate(B5_omit = case_when(B5_max >= .90 | END.QUESTIONNAIRE.BIG5 <= 1000*length(b5) ~ 1,
-                             B5_max < .90 & END.QUESTIONNAIRE.BIG5 > 1000*length(b5) ~ 0))
- 
-# Omit B5 data based on the B5_omit column
-data_Q_total[which(data_Q_total$B5_omit == 1), b5] <- NA
-
 # Reverse-code
 for (i in 1:length(b5_rev)) {
   data_Q_total[, b5_rev[i]] <- reverse.code(keys = c(-1), 
@@ -325,6 +306,13 @@ data_Q_total$OMean <- rowMeans(cbind(data_Q_total$opennessNormal,
                                      data_Q_total$opennessReverse), 
                                na.rm = TRUE)
 
+# Replace mean score 0s with NAs (these participants stopped mid-questionnaire or before questionnaire and only have missing values)
+data_Q_total$AMean[which(data_Q_total$AMean == 0)] <- NA
+data_Q_total$OMean[which(data_Q_total$OMean == 0)] <- NA
+data_Q_total$EMean[which(data_Q_total$EMean == 0)] <- NA
+data_Q_total$CMean[which(data_Q_total$CMean == 0)] <- NA
+data_Q_total$ESMean[which(data_Q_total$ESMean == 0)] <- NA
+
 # Describe: mean score level
 b5_mean <- c("AMean", "OMean", "EMean", "CMean", "ESMean")
 par(mfrow = c(2, 3))
@@ -347,10 +335,6 @@ describe(data_Q_total[, b5_mean])
 # Epistemic Curiosity
 epicur <- c(paste0("Icuriosity", 1:5), paste0("Dcuriosity", 1:5))
 
-# Exclusion criteria
-  # <= 10000ms response time 
-data_Q_total[which(data_Q_total$END.QUESTIONNAIRE.EPISTEMIC <= 1000*length(epicur)), epicur] <- NA
-
 # Describe: item-level
 par(mfrow = c(2, 5))
 for (i in 1:length(epicur)) {
@@ -371,7 +355,7 @@ psych::alpha(data_Q_total[, epicur[6:10]])
 data_Q_total$ICuriositySum <- rowSums(cbind(data_Q_total$Icuriosity1, data_Q_total$Icuriosity2, data_Q_total$Icuriosity3, data_Q_total$Icuriosity4, data_Q_total$Icuriosity5), na.rm = TRUE)
 data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_total$Dcuriosity2, data_Q_total$Dcuriosity3, data_Q_total$Dcuriosity4, data_Q_total$Dcuriosity5), na.rm = TRUE)
 
-# Replace sum score 0s with NAs
+# Replace sum score 0s with NAs (these participants stopped mid-questionnaire or before questionnaire and only have missing values)
 data_Q_total$ICuriositySum[which(data_Q_total$ICuriositySum == 0)] <- NA
 data_Q_total$DCuriositySum[which(data_Q_total$DCuriositySum == 0)] <- NA
 
@@ -398,26 +382,12 @@ IH <- c(paste0("IH", 1:5, "rev1"), paste0("IH", 6:10, "norm2"),
         paste0("IH", 11:16, "norm3"), paste0("IH", 17:22, "rev4"))
 IH_rev <- c(paste0("IH", 1:5, "rev1"), paste0("IH", 17:22, "rev4"))
 
-# Exclusion criteria
-  # >=90% of responses on the same option
-  # <=22000ms response time 
-data_Q_total <- data_Q_total %>% 
-  mutate(IH_max = max(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)), na.rm = TRUE) /
-           sum(table(c(IH1rev1, IH2rev1, IH3rev1, IH4rev1, IH5rev1, IH6norm2, IH7norm2, IH8norm2, IH9norm2, IH10norm2, IH11norm3, IH12norm3, IH13norm3, IH14norm3, IH15norm3, IH16norm3, IH17rev4, IH18rev4, IH19rev4, IH20rev4, IH21rev4, IH22rev4)), na.rm = TRUE))
-
-data_Q_total <- data_Q_total %>% 
-  mutate(IH_omit = case_when(IH_max >= .90 | END.QUESTIONNAIRE.INT.HUM <= 1000*length(IH) ~ 1,
-                             IH_max < .90 & END.QUESTIONNAIRE.INT.HUM > 1000*length(IH) ~ 0))
- 
-# Omit IH data based on the IH_omit column
-data_Q_total[which(data_Q_total$IH_omit == 1), IH] <- NA
-
 # Reverse-code
 for (i in 1:length(IH_rev)) {
   data_Q_total[, IH_rev[i]] <- reverse.code(keys = c(-1), 
                                             items = data_Q_total[, IH_rev[i]],
                                             mini = c(1), 
-                                            maxi = c(4))
+                                            maxi = c(5))
 }
 
 # Describe: item-level
@@ -474,11 +444,6 @@ describe(data_Q_total[, IH_sum])
 # Need for Closure
 need_clo <- paste0("closure", 1:15)
 
-# Exclusion criteria
-  # <=15000ms response time
-data_Q_total[which(data_Q_total$END.QUESTIONNAIRE.NEED.CLO <= 1000*length(need_clo)), need_clo] <- NA
-# NOTE: case_when(Participant.Private.ID == "ppt ID that needs to be rejected for this task")
-
 # Describe: item-level
 par(mfrow = c(3, 5))
 for (i in 1:length(need_clo)) {
@@ -523,20 +488,6 @@ hist(data_Q_total$CloSum,
 need_cog <- c(paste0("cognition", c(1:2, 6, 10:11, 13:15, 18)), 
               paste0("cognition", c(3:5, 7:9, 12, 16:17), ".rev"))
 need_cog_rev <- paste0("cognition", c(3:5, 7:9, 12, 16:17), ".rev")
-
-# Exclusion criteria
-  # >=90% of responses fall on the same response option
-  # <=18000ms response time
-data_Q_total <- data_Q_total %>% 
-  mutate(Cog_max = max(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)), na.rm = TRUE) /
-           sum(table(c(cognition1, cognition2, cognition3.rev, cognition4.rev, cognition5.rev, cognition6, cognition7.rev, cognition8.rev, cognition9.rev, cognition10, cognition11, cognition12.rev, cognition13, cognition14, cognition15, cognition16.rev, cognition17.rev, cognition18)), na.rm = TRUE))
-
-data_Q_total <- data_Q_total %>% 
-  mutate(Cog_omit = case_when(Cog_max >= .90 | END.QUESTIONNAIRE.NEED.COG <= 1000*length(need_cog) ~ 1,
-                             Cog_max < .90 & END.QUESTIONNAIRE.NEED.COG > 1000*length(need_cog) ~ 0))
- 
-# Omit Cog data based on the Cog_omit column
-data_Q_total[which(data_Q_total$Cog_omit == 1), need_cog] <- NA
 
 # Reverse-code
 for (i in 1:length(need_cog_rev)) {
@@ -587,20 +538,6 @@ hist(data_Q_total$CogSum,
 # Actively Openminded Thinking
 aot <- c(paste0("openReverse", 1:4), paste0("openNormal", 1:3))
 aot_rev <- paste0("openReverse", 1:4)
-
-# Exclusion criteria
-  # >=90% of responses on the same response option
-  # <=7000ms response time
-data_Q_total <- data_Q_total %>% 
-  mutate(AOT_max = max(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)), na.rm = TRUE) /
-           sum(table(c(openReverse1, openReverse2, openReverse3, openReverse4, openNormal1, openNormal2, openNormal3)), na.rm = TRUE))
-
-data_Q_total <- data_Q_total %>% 
-  mutate(AOT_omit = case_when(AOT_max >= .90 | END.QUESTIONNAIRE.OPEN.THINK <= 1000*length(aot) ~ 1, 
-                             AOT_max < .90 & END.QUESTIONNAIRE.OPEN.THINK > 1000*length(aot) ~ 0))
- 
-# Omit AOT data based on the AOT_omit column
-data_Q_total[which(data_Q_total$AOT_omit == 1), aot] <- NA
 
 # Reverse-code
 for (i in 1:length(aot_rev)) {
@@ -653,20 +590,6 @@ This section has 12 questions with Likert responses that represent a (possible) 
 sci_att <- c(paste0("sa.1", letters[1:8]), paste0("sa.2", letters[1:4]))
 sci_att_rev <- c("sa.1b", "sa.1d", "sa.2a", "sa.2b", "sa.2d")
 
-# Exclusion criteria
-  # >=90% of responses fall on the same response option
-  # <=15000ms response time
-data_Q_total <- data_Q_total %>% 
-  mutate(sciatt_max = max(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)), na.rm = TRUE) /
-           sum(table(c(sa.1a, sa.1b, sa.1c, sa.1d, sa.1e, sa.1f, sa.1g, sa.1h, sa.2a, sa.2b, sa.2c, sa.2d)), na.rm = TRUE))
-
-data_Q_total <- data_Q_total %>% 
-  mutate(sciatt_omit = case_when(sciatt_max >= .90 | END.QUESTIONNAIRE.SCIENCE.ATT <= 1000*length(sci_att) ~ 1, 
-                             sciatt_max < .90 & END.QUESTIONNAIRE.SCIENCE.ATT> 1000*length(sci_att) ~ 0))
- 
-# Omit science attitude data based on sciatt_omit column
-data_Q_total[which(data_Q_total$sciatt_omit == 1), sci_att] <- NA
-
 # Reverse-code
 for (i in 1:length(sci_att_rev)) {
   data_Q_total[, sci_att_rev[i]] <- reverse.code(keys = c(-1), 
@@ -690,9 +613,9 @@ describe(data_Q_total[, sci_att])
 psych::alpha(data_Q_total[, sci_att])
 
 # Calculate sum score
-data_Q_total$sci_id <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b.rev, data_Q_total$sa.1d.rev, data_Q_total$sa.1g), na.rm = TRUE)
+data_Q_total$sci_id <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b, data_Q_total$sa.1d, data_Q_total$sa.1g), na.rm = TRUE)
 data_Q_total$sci_impo <- rowSums(cbind(data_Q_total$sa.1c, data_Q_total$sa.1e, data_Q_total$sa.1h, data_Q_total$sa.1f), na.rm = TRUE)
-data_Q_total$sci_tru <- rowSums(cbind(data_Q_total$sa.2a.rev, data_Q_total$sa.2b.rev, data_Q_total$sa.2c, data_Q_total$sa.2d.rev), na.rm = TRUE)
+data_Q_total$sci_tru <- rowSums(cbind(data_Q_total$sa.2a, data_Q_total$sa.2b, data_Q_total$sa.2c, data_Q_total$sa.2d), na.rm = TRUE)
 
 # Replace total score zeroes with NA
 data_Q_total$sci_id[which(data_Q_total$sci_id == 0)] <- NA
@@ -720,15 +643,6 @@ This is a 4-item scale, scored as a single sum score from the quantised response
 
 # Science Curiosity 
 sci_cur <- paste0("sc.", 1:4, ".quantised")
-
-# Exclusion criteria
-  # >=4000ms response time
-data_Q_total <- data_Q_total %>%
- mutate(Sci.cur_omit = case_when(END.QUESTIONNAIRE.SCIENCE.CUR <= 4000 ~ 1, 
-                 END.QUESTIONNAIRE.SCIENCE.CUR > 4000 ~ 0))
-
-# Omit SC data based on the Sci.cur_omit column
-data_Q_total[which(data_Q_total$Sci.cur_omit == 1), sci_cur] <- NA
 
 # Describe: item-level
 par(mfrow = c(2, 2))
@@ -762,12 +676,6 @@ hist(data_Q_total$sci_cur,
 
 ```{r Heuristic Reasoning, include = FALSE}
 
-# Exclusion criteria
-  # <=6000ms response time
-data_Q_total <- data_Q_total %>%
- mutate(HR_omit = case_when(END.QUESTIONNAIRE.HEURISTIC <= 6000 ~ 1, 
-                            END.QUESTIONNAIRE.HEURISTIC > 6000 ~ 0))
-
 # Q1
 data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
 levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" = "Kuudes lapsi on poika")
@@ -790,8 +698,8 @@ levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a"
 # abc / acb / cab = N; bac / bca /cba = H-R
 data_Q_total <- data_Q_total %>%
   mutate(hr.3.updated = case_when(
-  ((hr.3.1 == "b" & (hr.3.2 == "a"|hr.3.3 == "a")) | hr.3.2 == "b" & hr.3.3 == "a") ~ "H-R", 
-  ((hr.3.1 == "a" & (hr.3.2 == "b"|hr.3.3 == "b")) | (hr.3.2 == "a" & hr.3.3 == "b")) ~ "N"
+  ((hr.3.1 == "b" & (hr.3.2 == "a" | hr.3.3 == "a")) | hr.3.2 == "b" & hr.3.3 == "a") ~ "H-R", 
+  ((hr.3.1 == "a" & (hr.3.2 == "b" | hr.3.3 == "b")) | (hr.3.2 == "a" & hr.3.3 == "b")) ~ "N"
  ))
 data_Q_total$hr.3.updated <- factor(data_Q_total$hr.3.updated)
 
@@ -819,13 +727,18 @@ data_Q_total <- data_Q_total %>%
     total_Neither = apply(., 1, function(x) length(which(x == "Neither")))
  )
 
-# Omit heuristic reasoning data based on the HR_omit column
-heur <- c("total_N", "total_HR", "total_HE", "total_Neither")
-data_Q_total[which(data_Q_total$HR_omit == 1), heur] <- NA
-
 # Omit participants with 0s in all the sum columns
+heur <- c("total_N", "total_HR", "total_HE", "total_Neither")
 data_Q_total[which(data_Q_total$total_N == 0 & data_Q_total$total_HR == 0 & data_Q_total$total_HE == 0 & data_Q_total$total_Neither == 0), heur] <- NA
 
+# Check that sum scores add up to 6
+sum_heur <- data_Q_total %>% 
+  select(total_N, total_HR, total_HE, total_Neither) %>% 
+  rowwise() %>% 
+  mutate(sum_heur = total_N + total_HR + total_HE + total_Neither) %>% 
+  select(sum_heur)
+table(sum_heur$sum_heur)
+  
 # Describe: sum score level
 describe(data_Q_total[, heur])
 par(mfrow = c(2, 2))
@@ -839,9 +752,11 @@ for (i in 1:length(heur)) {
 # Create binary heuristic scores (0=0, 1=everything else)
 data_Q_total <- data_Q_total %>% 
   mutate(HEscore = case_when(total_HE == 0 ~ 0,
-                             total_HE != 0 ~ 1),
+                             total_HE == 1 ~ 1,
+                             total_HE == 2 ~ 1),
          HRscore = case_when(total_HR == 0 ~ 0,
-                             total_HR != 0 ~ 1))
+                             total_HR == 1 ~ 1,
+                             total_HR == 2 ~ 1))
 
 # Add a measure of total heuristic response, where 1 = at least one mistake in one heuristic category, 2 = at least 1 heuristic mistake in both heuristic categories, 0 = all normative responses
 data_Q_total <- data_Q_total %>%
@@ -856,18 +771,12 @@ New columns are created for each item, specifying whether the participant got th
 
 ```{r Randomness and Probability, include = FALSE}
 
-# Exclusion criteria
-  # <=7000ms reaction time
-data_Q_total <- data_Q_total %>%
-  mutate(RP_omit = case_when(END.QUESTIONNAIRE.RANDOM.PROB <= 4000 ~ 1, 
-                             END.QUESTIONNAIRE.RANDOM.PROB > 4000 ~ 0))
-
 # Q1: Sairaala B is the correct answer
 # Create a new column
 data_Q_total$rp.1 <- as.factor(data_Q_total$rp.1)
 data_Q_total <- data_Q_total %>%
-  mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1, 
-                              rp.1 != "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 0)) 
+  mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1,
+                              rp.1 %in% c("Sairaalassa A (jossa syntyy 50 lasta pÃ¤ivÃ¤ssÃ¤).", "TÃ¤mÃ¤ on yhtÃ¤ todennÃ¤kÃ¶istÃ¤ kummassakin sairaalassa.") ~ 0)) 
 
 # Q2: Pyydys1 AND Pyydys 2 is the correct combination
 data_Q_total$rp.2.1 <- as.factor(data_Q_total$rp.2.1)
@@ -879,10 +788,12 @@ data_Q_total$rp.2.6 <- as.factor(data_Q_total$rp.2.6)
 data_Q_total$rp.2.7 <- as.factor(data_Q_total$rp.2.7)
 data_Q_total$rp.2.8 <- as.factor(data_Q_total$rp.2.8)
 # Create a new column
-data_Q_total <- data_Q_total %>%
-  mutate(rp.2.int = case_when((rp.2.1 == "Pyydys 1" & rp.2.2 == "Pyydys 2" & rp.2.3 == "" & rp.2.4 == "" & rp.2.5 == "" & rp.2.6 == "" & rp.2.7 == "" & rp.2.8 == "") ~ 1)) %>% 
-  mutate(rp.2.int = case_when(rp.2.int == "1" ~ 1,
-                              is.na(rp.2.int) ~ 0))
+# NAs are initially coded as 2 and wrong answers (0s) as NAs; then these are recoded
+data_Q_total <- data_Q_total %>% 
+  mutate(rp.2.int = case_when((rp.2.1 == "Pyydys 1" & rp.2.2 == "Pyydys 2" & rp.2.3 == "" & rp.2.4 == "" & rp.2.5 == "" & rp.2.6 == "" & rp.2.7 == "" & rp.2.8 == "") ~ 1,
+                              is.na(rp.2.8) ~ 2))
+data_Q_total[which(is.na(data_Q_total$rp.2.int)), "rp.2.int"] <- 0
+data_Q_total[which(data_Q_total$rp.2.int == 2), ] <- NA
 
 # Q3: Kanava 1; 2 tai 3 is the correct answer
 # Create a new column
@@ -899,10 +810,6 @@ data_Q_total <- data_Q_total %>%
 # Calculate the sum score for the randomness/probability questions
 data_Q_total <- data_Q_total %>%
   mutate(RPSum = rp.1.int + rp.2.int + rp.3.int + rp.4.int)
-
-# Omit Randomness-Probability data based on the RP_omit column
-data_Q_total$RPSum[which(data_Q_total$RP_omit == 1)] <- NA
-data_Q_total$RPSum[which(is.na(data_Q_total$RP_omit))] <- NA 
 
 # Describe
 describe(data_Q_total$RPSum)
@@ -1117,12 +1024,14 @@ data_nogoT <- data_nogoT %>%
   filter(display == "Trials")
 
 # Exclusion Criteria: Trial-Level
+# MILLA: leave both thresholds in :))
 # NOTE: Caitlin had used different ones but I think this might be better?
   # Reaction time upper boundary: In the Go No-Go task, the screens advance automatically after 1000ms (therefore, a no-go response should be recorded as 1000ms). According to Gorilla, there is also a 16.67ms refresh rate and ~8ms latency between a computer and a mouse. This means that there might be no-go responses up to ~1025ms. This is used as a threshold.
   # Reaction time lower boundary: the brain needs time to react (Jaana's 2017 paper) -> 150ms
 data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time >= 1025 | data_nogoT$Reaction.Time <= 150)] <- NA
 
 # Exclusion Criteria: Participant-Level
+  # MILLA: omit median RT (if we keep trial-level RT criterion), keep 60% accuracy here at least
   # <=200ms median RT
   # <=60% accuracy
 data_nogoT <- data_nogoT %>%
@@ -1205,7 +1114,7 @@ data_nogoT_final <- merge(data_nogoT_final, data_ConsentValidity,
 
 # Exclude participants according to validity + language criteria; exclude the participants who stopped mid-task; exclude participants whose sum score for all hit/miss/cr/fa are 0s
 data_nogoT_final <- data_nogoT_final %>% 
-  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>% 
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>% 
   filter(!Participant.Private.ID %in% c("5201242", "4886650", "5117494", "5282634", "5500754", "5552405", "5635997")) %>% 
   filter(!(GNGHitSum == 0 & GNGMissSum == 0 & GNGFASum == 0 & GNGCRSum == 0))
 
@@ -1269,11 +1178,13 @@ Accuracy_Navon <- data_NavonT %>%
   summarise(Accuracy_cond = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE)))
 
 # Exclusion Criteria: Trial-Level
+# MILLA: max RT -> delete; min RT 150ms ADD
 # NOTE: Caitlin had used different ones (interquartile range or trials that are outside 2.5 SDs of the mean per participant); we should discuss this; WHY 50ms median RT and not 200ms like in gonogo?
   # Based on the histogram, I picked an arbitrary cut-off point of 2000ms to maintain a less skewed distribution but also keep most of the data.
 data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time >= 2000)] <- NA
 
 # Exclusion Criteria: Participant-Level
+# MILLA: omit median RT, keep 60% accuracy
   # <= 50ms median RT
   # <= 60% accuracy
   # ratio of most frequent answer to all answers >= .95
@@ -1371,7 +1282,7 @@ NOTE: also discuss navon
 
 ### Necker
 
-Exclusion criteria: none for now
+Exclusion criteria: none for now (keep this)
 NOTE: could consider high outliers (right tail of the distribution) or participants who reported no switching
 
 Data processing: for each participant, we calculate the average rate of space bar hits (switches the participant experienced) per second. 

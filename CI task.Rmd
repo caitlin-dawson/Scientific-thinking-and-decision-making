@@ -77,9 +77,13 @@ From Caitlin: RT data has issues for outlier removal due to the distribution, no
 * can reading times be analyzed like reaction times, or is there another way? 
 
 From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
-* also need to think about whether we want to set maximum time limits (and if so, what these would reflect)
+* also need to think about whether we want to set maximum time limits (and if so, what these would reflect) -> NO
 * can we have some missing data on a participant-level for this task (from an analysis point of view)?
-* should we have exclusion criteria for someone just choosing the same response over and over again? Not sure if this is relevant here as all likert scales are presented on different pages (there is not the same effect of just clicking though buttons on the same page)
+
+MILLA: 
+SOURCE-LEVEL: words per minute (calculate for each source) -> calculate minimum reading times? but don't exclude anyone / any data
+OVERALL: none
+questionnaires: no exclusion criteria for RT
 
 ```{r Extract Reading Times}
 
@@ -96,6 +100,7 @@ data_citiT <- data_citiT %>%
 # Extract reaction times for each source
 # NOTE: NOT SURE ABOUT THIS
 # Baseline SAM and 4 baseline topic questions (about the petition) coded as order = 1; Rest of the trials coded based on Source_topic so that order numbers always refer to the same source
+# MILLA: check this; we also want to know the order in which they were presented for each participant -> we want the source topic and the trial number/order
 data_citiT <- data_citiT %>% 
   mutate(Order = case_when((Source_topic == "") ~ 1,
                            (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2,
