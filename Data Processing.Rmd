@@ -5,18 +5,6 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 ---
 
-# Milla's notes / Things to discuss re exclusion criteria
-Eisenberg et al. (2018) used the following exclusion criteria for **tasks**:
-* median response time <= 200ms
-* > 25% of responses missing
-* accuracy <= 60% -> omit ?
-* no single response was given > 95% of the time (not necessary? we will catch these in other ways?)
-If any of these criteria were fulfilled, the participant's data for that task were replaced with missing values. If any participant had missing data for 4 or more tasks, their data were omitted completely. **They also mention they had slightly different exclusion criteria for some of the tasks but I cannot find more details on this.** In addition, they did manipulation checks for some of the tasks; these were meant to catch participants that were "gaming" the tasks and missing values for these were treated differently.
-The same paper reports no exclusion criteria for self-report variables (questionnaires). They only say that they checked the descriptives (mean, skew, distribution etc.) of each item and the structure of each questionnaire with CFA. **They do not report any exclusion criteria, or excluding any data on items.** Again, not sure if I just didn't know where to find this info.
-Finally, once the variables are retrieved, they exclude a variable if it is skewed > 1 after transforming it, or if two variables from the same task/questionnaire correlate > 0.85.
-For analyses that required no missing data, they also imputed their matrix; Is this something we wanna consider? -> nope
-Relevance for us: I think it would be good if we could find the specific exclusion criteria for each task to get an idea of when they made exceptions. **I think it would also be good if we could figure out if they used any exclusion criteria for the questionnaires / if they excluded any questionnaire data based on item-level characteristics.**
-
 # Notes 
 * takes data downloaded from Gorilla **blinded, semicolon separated, csv format, short form, versions 22-25**
 * cleans and processes data for the study 'Scientific thinking and decision-making in everyday life'
@@ -227,7 +215,7 @@ rm(data_big5Q, data_epiQ, data_heurQ, data_infoQ, data_inthumQ, data_needcloQ, d
 
 ## Exclusion Criteria
 
-**ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all questionnaire data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
+**ALL QUESTIONNAIRES:** This chunk goes through all questionnaire data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
 * stated their data are not valid
 * stated their Finnish is not Äidinkieli, Keskusteleva, or Muu, Mikä.
 
@@ -236,9 +224,9 @@ rm(data_big5Q, data_epiQ, data_heurQ, data_infoQ, data_inthumQ, data_needcloQ, d
 After excluding data in accordance with the exclusion criteria above, the following steps are taken for each questionnaire:
 * reverse-code items (if necessary)
 * visualize and describe each item
-* check the structure of the questionnaire data with Cronbach's alpha
+* check the structure of the questionnaire data with Cronbach's alpha (separately for each measured construct)
 * calculate mean or sum scores according to the questionnaire instructions
-* replace sum score 0s with NAs (if necessary)
+* replace sum score 0s with NAs (no questionnaires included 0 as a lower bound in the response options, so sum/mean scores of 0 are not valid)
 * visualize and describe mean or sum scores
 
 
@@ -837,29 +825,10 @@ data_matreasT <- data_matreasT %>%
 data_matreasT <- data_matreasT %>%
   filter(Participant.Private.ID != "5555882" & Participant.Private.ID != "5608075" & Participant.Private.ID != "4887607")
 
-# Exclusion Criteria
-  # median reaction time <= 500ms
-data_matreasT <- data_matreasT %>%
-  group_by(Participant.Private.ID) %>%
-  mutate(medianRT = median(Reaction.Time, na.rm = TRUE)) %>%
-  mutate(Matrix_omit = case_when((medianRT > 500) ~ 0, 
-                                 (medianRT <= 500) ~ 1))
-# Create a separate df for subsetting
-data_matrix_omit <- data_matreasT %>%
-  group_by(Participant.Private.ID) %>%
-  summarise(Matrix_omit = mean(Matrix_omit)) %>%
-  select(Participant.Private.ID, Matrix_omit) 
 # Extract the relevant information
-data_matreasT <- data_matreasT %>%
+data_matreasT_final <- data_matreasT %>%
   group_by(Participant.Private.ID) %>%
   summarise(MatrixCorrectCount = sum(Correct, na.rm = TRUE)) %>%
-  select(Participant.Private.ID, MatrixCorrectCount)
-# Omit data based on matrix_omit
-data_matreasT_final <- merge(data_matreasT, data_matrix_omit, 
-                             by = "Participant.Private.ID", 
-                             all = TRUE)
-data_matreasT_final[which(data_matreasT_final$Matrix_omit == 1), "MatrixCorrectCount"] <- NA
-data_matreasT_final <- data_matreasT_final %>%
   select(Participant.Private.ID, MatrixCorrectCount)
 
 # Exclude participants with invalid responses
@@ -918,6 +887,9 @@ data_Q_sub$MatrixCorrectCount <- as.numeric(data_Q_sub$MatrixCorrectCount)
 data_Q_sub$Age <- as.numeric(data_Q_sub$Age)
 
 ```
+
+
+# CONTINUE HERE
 
 ## Analyze Missing Data in Questionnaires
 
