@@ -888,31 +888,30 @@ data_Q_sub$Age <- as.numeric(data_Q_sub$Age)
 
 ```
 
-
-# CONTINUE HERE
-
 ## Analyze Missing Data in Questionnaires
 
 Participants with large amounts of missing data or suspicious patterns of missing data are removed here. It should be noted that missing data refers to data that was missing from the start *and* data that was replaced with missing values if the participant met one of the exclusion criteria for (a) questionnaire(s).
 
 ```{r Analyze Missing Data in Questionnaires, include = FALSE}
 
-# Add a column for count of missing data per ppt
-data_Q_sub <- data_Q_sub %>%
-  mutate(missingdata = rowSums(is.na(data_Q_sub)))
+# Questionnaire variables
+q_var <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "HEscore", "HRscore", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
+
+# Add a column for count of missing data for questionnaire variables per participant
+data_Q_sub$q_missingdata <- rowSums(is.na(data_Q_sub[, q_var]))
 
 # Plot number of missing values
-ggplot(data_Q_sub, aes(x = as.factor(Participant.Private.ID), y = missingdata)) + 
+ggplot(data_Q_sub, aes(x = as.factor(Participant.Private.ID), y = q_missingdata)) + 
    geom_boxplot(fill = "slateblue", alpha = 0.2) + 
    xlab("Missing variables count")
 
 # Plot to look for an elbow value
-MissingData <- sort(data_Q_sub$missingdata, decreasing = FALSE)
-plot(MissingData)
+plot(sort(data_Q_sub$q_missingdata))
 
 # Correlation between age and amount of missing values
 gg_miss_fct(x = data_Q_sub, fct = Age)
-cor.test(data_Q_sub$Age, data_Q_sub$missingdata, method = "spearman", exact = FALSE)
+cor.test(data_Q_sub$Age, data_Q_sub$q_missingdata, 
+         method = "spearman", exact = FALSE)
 
 # Visualize missing data by demographics
 gg_miss_fct(x = data_Q_sub, fct = Language)
@@ -920,44 +919,45 @@ gg_miss_fct(x = data_Q_sub, fct = Country)
 gg_miss_fct(x = data_Q_sub, fct = gender)
 gg_miss_fct(x = data_Q_sub, fct = Education)
 
-# Remove ppts with 16 or fewer variables missing out of 22 (30%)
+# Remove ppts with 7 or fewer variables missing out of 22 (~32%)
 data_Q_sub <- data_Q_sub %>%
-  filter(missingdata <= 16)
+  filter(q_missingdata <= 7)
 
 ```
 
 ## Check Questionnaire Distributions and Correlations
 
 This chunk checks distributions of questionnaire variables and correlations between them:
-* If distributions are highly skewed, transformations are applied to decrease skewness
-* If two variables are highly correlated, one of them is dropped (Eisenberg et al.)
+* If distributions are highly skewed, transformations are applied to decrease skewness (skew > 1)
+* If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r > .85)
 
 ```{r Normality and Correlations of Questionnaires, include = FALSE}
 
+# Questionnaire variables without binary ones
+q_var_con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
+
 # Normality of variables: visualize with histograms
-vars <- c("AMean", "CMean", "EMean", "OMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
 par(mfrow = c(2, 3))
-for (i in 1:length(vars)) {
-  hist(data_Q_sub[, vars[i]],
-       main = colnames(data_Q_sub[vars[i]]),
+for (i in 1:length(q_var_con)) {
+  hist(data_Q_sub[, q_var_con[i]],
+       main = colnames(data_Q_sub[q_var_con[i]]),
        col = sample(colors(), 1),
        xlab = "")
 }
 
 # Describe: mean, skew, kurtosis
-describe(data_Q_sub[, vars])[c("mean", "skew", "kurtosis")]
+describe(data_Q_sub[, q_var_con])[c("mean", "skew", "kurtosis")]
 
 # Correlation matrix
-round(cor(data_Q_sub[, vars], method = "pearson", 
+round(cor(data_Q_sub[, q_var_con], method = "pearson", 
           use = "pairwise.complete.obs"), 2)
-abs(round(cor(data_Q_sub[, vars], method = "pearson", 
+abs(round(cor(data_Q_sub[, q_var_con], method = "pearson", 
               use = "pairwise.complete.obs"), 2)) > .85
-corrplot(cor(data_Q_sub[, vars], method = "pearson", 
+corrplot(cor(data_Q_sub[, q_var_con], method = "pearson", 
              use = "pairwise.complete.obs"))
 
 # Subset data: exclude demographic variables
-data_Q_sub <- data_Q_sub %>%
- select(Participant.Private.ID, AMean:MatrixCorrectCount)
+data_Q_sub <- data_Q_sub[, c("Participant.Private.ID", q_var_con)]
 
 ``` 
 
@@ -965,7 +965,7 @@ data_Q_sub <- data_Q_sub %>%
 
 ## Exclusion Criteria
 
-**ALL QUESTIONNAIRES AND TASKS:** This chunk goes through all task data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
+**ALL TASKS:** This chunk goes through all task data, removing **all data for a participant** if they met one or more of the following exclusion criteria:
 * stated their data are not valid
 * stated their Finnish is not Äidinkieli or Keskusteleva
 
@@ -981,10 +981,10 @@ See each chunk.
 ### Go No Go
 
 Trial-level exclusion criteria:
-* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 1025ms (screen time 1000ms + 16.67ms refresh rate + ~8ms latency between computer and mouse -> reaction times higher than this are likely not valid) *or* if it is equal to or lower than 150ms (a human needs time to react)
+* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 1025ms (screen time 1000ms + 16.67ms refresh rate + ~8ms latency between computer and mouse -> reaction times higher than this are likely not valid) *or* if it is equal to or lower than 150ms (Jaana's paper).
 
 Participant-level exclusion criteria:
-* A participant's data for the Go No-Go task is replaced with missing values (NAs) if their median reaction time was equal to or lower than 200ms *or* if their accuracy (% of correct trials out of all trials) was equal to or lower than 60%.
+* A participant's data for the Go No-Go task is replaced with missing values (NAs) if their accuracy (% of correct trials out of all trials) was equal to or lower than 60%.
 
 Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta, c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
 
@@ -996,22 +996,16 @@ data_nogoT <- data_nogoT %>%
   filter(display == "Trials")
 
 # Exclusion Criteria: Trial-Level
-# MILLA: leave both thresholds in :))
-# NOTE: Caitlin had used different ones but I think this might be better?
-  # Reaction time upper boundary: In the Go No-Go task, the screens advance automatically after 1000ms (therefore, a no-go response should be recorded as 1000ms). According to Gorilla, there is also a 16.67ms refresh rate and ~8ms latency between a computer and a mouse. This means that there might be no-go responses up to ~1025ms. This is used as a threshold.
-  # Reaction time lower boundary: the brain needs time to react (Jaana's 2017 paper) -> 150ms
+  # RT <= 150ms or >= 1025ms
 data_nogoT$Reaction.Time[which(data_nogoT$Reaction.Time >= 1025 | data_nogoT$Reaction.Time <= 150)] <- NA
 
 # Exclusion Criteria: Participant-Level
-  # MILLA: omit median RT (if we keep trial-level RT criterion), keep 60% accuracy here at least
-  # <=200ms median RT
   # <=60% accuracy
 data_nogoT <- data_nogoT %>%
   group_by(Participant.Private.ID) %>% 
-  mutate(medianRT = median(Reaction.Time, na.rm = TRUE), 
-         Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE))) %>% 
-  mutate(go.nogo_omit = case_when((medianRT > 200 & Accuracy > .60) ~ 0, 
-                                  (medianRT <= 200 | Accuracy <= .60) ~ 1)) 
+  mutate(Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE))) %>% 
+  mutate(go.nogo_omit = case_when(Accuracy > .60 ~ 0, 
+                                  Accuracy <= .60 ~ 1)) 
  
 # Omit rows based on exclusion criteria
 data_nogoT$Response[which(data_nogoT$go.nogo_omit == 1)] <- NA
@@ -1038,7 +1032,6 @@ data_go_RT <- data_nogoT %>%
   group_by(Participant.Private.ID) %>% 
   summarise(MeanGoRT = mean(Reaction.Time, na.rm = TRUE),
             SDGoRT = sd(Reaction.Time, na.rm = TRUE))
-# NOTE: Caitlin had removed participants based on these but I think the distributions look ok?
 
 # Compute D-Prime and Bias for each participant
 # https://www.rdocumentation.org/packages/psycho/versions/0.6.1/topics/dprime
@@ -1112,17 +1105,13 @@ for (i in 1:length(nogo)) {
 
 ```
 
-NOTE: double check go no-go, lots of things to discuss
-
 ### Navon
 
 Trial-level exclusion criteria:
-* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 2000ms
-NOTE: should we also have a lower boundary as in go no-go?
+* The reaction time for each row is replaced with missing values (NAs) if it is equal to or lower than 150ms
 
 Participant-level exclusion criteria:
-* A participant's data for the Navon task is replaced with missing values (NAs) if their median reaction time was equal to or lower than 50ms *or* if their accuracy (% of correct trials out of all trials) was equal to or lower than 60% *or* if the ratio of the most frequent response to all responses is equal to or higher than .95.
-NOTE: why 50ms and not 200ms?
+* A participant's data for the Navon task is replaced with missing values (NAs) if their accuracy (% of correct trials out of all trials) was equal to or lower than 60% *or* if the ratio of the most frequent response to all responses is equal to or higher than .95.
 
 Data processing: for each participant, we calculate the global-local precedence index (bias toward a global processing level), and global-to-local interference index (positive values indicate the extent to which the bias toward global stimuli interferes with processing local information).
 * Global-local precedence index: Standardized mean difference (cohen’s d) in RT between global and local judgments on consistent trials only 
@@ -1150,23 +1139,16 @@ Accuracy_Navon <- data_NavonT %>%
   summarise(Accuracy_cond = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE)))
 
 # Exclusion Criteria: Trial-Level
-# MILLA: max RT -> delete; min RT 150ms ADD
-# NOTE: Caitlin had used different ones (interquartile range or trials that are outside 2.5 SDs of the mean per participant); we should discuss this; WHY 50ms median RT and not 200ms like in gonogo?
-  # Based on the histogram, I picked an arbitrary cut-off point of 2000ms to maintain a less skewed distribution but also keep most of the data.
-data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time >= 2000)] <- NA
+  # RT <= 150ms
+data_NavonT$Reaction.Time[which(data_NavonT$Reaction.Time <= 150)] <- NA
 
 # Exclusion Criteria: Participant-Level
-# MILLA: omit median RT, keep 60% accuracy
-  # <= 50ms median RT
   # <= 60% accuracy
-  # ratio of most frequent answer to all answers >= .95
 data_NavonT <- data_NavonT %>%
   group_by(Participant.Private.ID) %>%
-  mutate(MedianRT = median(Reaction.Time, na.rm = TRUE), 
-         Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE)), 
-         Ratio = max(table(Response), na.rm = TRUE) / length(Response)) %>%
-  mutate(Navon_omit = case_when(MedianRT > 50 & MedianRT < 1000 & Accuracy > .60 & Ratio < .95 ~ 0, 
-                MedianRT <= 50 | MedianRT >= 1000 | Accuracy <= .60 | Ratio >= .95 ~ 1))
+  mutate(Accuracy = sum(Correct, na.rm = TRUE) / (sum(Correct, na.rm = TRUE) + sum(Incorrect, na.rm = TRUE))) %>%
+  mutate(Navon_omit = case_when(Accuracy > .60 ~ 0, 
+                                Accuracy <= .60 ~ 1))
 
 # Omit data based on Navon_omit
 data_NavonT$Reaction.Time[which(data_NavonT$Navon_omit == 1)] <- NA
@@ -1233,8 +1215,7 @@ data_NavonT_final <- data_NavonT_final %>%
   filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176") %>%
   select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
 
-# NOTE: for some reason there are two NaN rows, removing them here but we should look into why this is?
-  # one of them was omitted (all RTs replaced with NA), one did not have recorded reaction times in the original data?
+# Two participants' reaction times were replaced with NAs due to their accuracy being below 60%; this produced NaNs in the calculations, so the NaNs are here replaced with NAs
 data_NavonT_final <- data_NavonT_final %>% 
   filter(Participant.Private.ID != "5608075" & Participant.Private.ID != "5411218")
 
@@ -1250,12 +1231,10 @@ for (i in 1:length(Navon)) {
 }
 
 ```
-NOTE: also discuss navon
 
 ### Necker
 
-Exclusion criteria: none for now (keep this)
-NOTE: could consider high outliers (right tail of the distribution) or participants who reported no switching
+Exclusion criteria: none for now
 
 Data processing: for each participant, we calculate the average rate of space bar hits (switches the participant experienced) per second. 
 
@@ -1297,8 +1276,7 @@ hist(data_NeckerT_final$NeckerTotalRate,
 
 ### Unusual Uses Task
 
-Exclusion criteria: None for now.
-NOTE: should we have something?
+Exclusion criteria: None.
 
 Data processing: for each participant, we calculate the average of the fluency sum scores (ratings by two raters) and the flexibility sum scores (ratings by two raters). The fluency/flexibility sum scores capture the number of answers across all trials that were classified as fluent/flexible.
 * Fluency is a measure of how many unique unusual uses a ppt can think of for each item. 
@@ -1378,13 +1356,13 @@ Participants with large amounts of missing data or suspicious patterns of missin
 
 ```{r Analyze Missing Data in Tasks}
 
-# Add a column for count of missing data per ppt
-data_T_sub <- data_T_sub %>%
-  mutate(missingtasks = rowSums(is.na(data_T_sub)))
-table(data_T_sub$missingtasks)
-plot(sort(data_T_sub$missingtasks))
+# Task variables
+t_var <- c("GNGdprime", "GNGbeta", "MeanGoRT", "SDGoRT", "GlobalToLocalPrecedence", "GlobalToLocalInterference", "NeckerTotalRate", "FlexSum", "FluencySum")
 
-# NOTE: which cut off? 4 was used before but not sure as there is no elbow here
+# Add a column for count of missing data per ppt
+data_T_sub$t_missingdata <- rowSums(is.na(data_T_sub[, t_var]))
+table(data_T_sub$t_missingdata)
+plot(sort(data_T_sub$t_missingdata))
 
 # Merge demographic information to investigate missingness
 # NOTE: what to do about the age correlation?
@@ -1393,56 +1371,74 @@ data_T_all <- data_Q_total %>%
 data_T_sub <- merge(data_T_all, data_T_sub, 
                     by = "Participant.Private.ID", all = TRUE)
 gg_miss_fct(x = data_T_sub, fct = Age)
-cor.test(data_T_sub$Age, data_T_sub$missing, 
+cor.test(data_T_sub$Age, data_T_sub$t_missingdata, 
          method = "spearman", exact = FALSE)
 
-# Remove participants with 5 or more missing task variables
+# Remove participants with 4 or more missing task variables
 data_T_sub <- data_T_sub %>%
   group_by(Participant.Private.ID) %>%
-  filter(missingtasks < 4)
+  filter(t_missingdata < 4)
 
 # Omit irrelevant columns
 data_T_sub <- data_T_sub %>%
-  select(-missingtasks)
+  select(-t_missingdata)
 
 ```
 
 ## Check Task Distributions and Correlations
 
 This chunk checks distributions of task variables and correlations between them:
-* If distributions are highly skewed, transformations are applied to decrease skewness
-* If two variables are highly correlated, one of them is dropped (Eisenberg et al.)
+* If distributions are highly skewed (>=1), transformations are applied to decrease skewness
+* If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r>=.85)
 
 ```{r Normality and Correlations of Tasks, include = FALSE}
 
 # Normality of variables: visualize with histograms
 data_T_sub <- as.data.frame(data_T_sub)
-vars_T <- c("GNGdprime", "GNGbeta", "MeanGoRT", "SDGoRT", "GlobalToLocalPrecedence", "GlobalToLocalInterference", "NeckerTotalRate", "FlexSum", "FluencySum")
 par(mfrow = c(2, 2))
-for (i in 1:length(vars_T)) {
-  hist(data_T_sub[, vars_T[i]],
-       main = colnames(data_T_sub[vars_T[i]]),
+for (i in 1:length(t_var)) {
+  hist(data_T_sub[, t_var[i]],
+       main = colnames(data_T_sub[t_var[i]]),
        col = sample(colors(), 1),
        xlab = "")
 }
 
 # Describe: mean, skew, kurtosis
-describe(data_T_sub[, vars_T])[c("mean", "skew", "kurtosis")]
+describe(data_T_sub[, t_var])[c("mean", "skew", "kurtosis")]
+
+# Transforming all variables with absolute skew > 1
+data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
+data_T_sub$SDGoRTlog <- log10(data_T_sub$SDGoRT)
+data_T_sub$GlobalToLocalInterferencelog <- log10(data_T_sub$GlobalToLocalInterference)
+data_T_sub$NeckerTotalRatelog <- log10(data_T_sub$NeckerTotalRate + 1) # added 1 because log10 cannot handle 0s
+data_T_sub$GlobalToLocalPrecedencelog <- log10(max(data_T_sub$GlobalToLocalPrecedence + 1, na.rm = TRUE) - data_T_sub$GlobalToLocalPrecedence)
+
+# Task variables: transformed
+t_var_log <- c("GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum", "FluencySum")
+
+# Describe
+describe(data_T_sub[, t_var_log])[c("mean", "skew", "kurtosis")]
+
+# Visualize
+par(mfrow = c(2, 2))
+for (i in 1:length(t_var_log)) {
+  hist(data_T_sub[, t_var_log[i]],
+       main = colnames(data_T_sub[t_var_log[i]]),
+       col = sample(colors(), 1),
+       xlab = "")
+}
 
 # Correlation matrix
-round(cor(data_T_sub[, vars_T], method = "pearson", 
+round(cor(data_T_sub[, t_var_log], method = "pearson", 
           use = "pairwise.complete.obs"), 2)
-abs(round(cor(data_T_sub[, vars_T], method = "pearson", 
+abs(round(cor(data_T_sub[, t_var_log], method = "pearson", 
               use = "pairwise.complete.obs"), 2)) > .85
-corrplot(cor(data_T_sub[, vars_T], method = "pearson", 
+corrplot(cor(data_T_sub[, t_var_log], method = "pearson", 
              use = "pairwise.complete.obs"))
 
-# NOTE: we should discuss this, only transforming GNGbeta for now
-data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
-
-# NOTE: we should also discuss which variables to remove; here removing GlobalToLocalInterference and FluencySum  
-data_T_sub <- data_T_sub %>%
-  select(Participant.Private.ID, GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalPrecedence, NeckerTotalRate, FlexSum)
+# Exclude FluencySum as it correlates highly with FlexSum; only include log-transformed variables where necessary
+data_T_sub <- data_T_sub %>% 
+  select(Participant.Private.ID, GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalInterferencelog, GlobalToLocalPrecedencelog, NeckerTotalRatelog, FlexSum)
 
 ```
 
@@ -1454,30 +1450,13 @@ data_all_sub_cleaned <- merge(data_Q_sub, data_T_sub,
                               by = "Participant.Private.ID", 
                               all = TRUE)
 
-# NOTE: should we check missingness again?
-missing_data <- data_all_sub_cleaned %>%
-  mutate(missing = rowSums(is.na(data_all_sub_cleaned))) %>% 
-  select(Participant.Private.ID, missing)
-
 # Ungroup the dataframe
 ungroup(data_all_sub_cleaned)
+
+# Select relevant columns
 data_all_sub_cleaned <- data_all_sub_cleaned %>%
-  select(AMean:FlexSum)
+  select(-Participant.Private.ID)
 
-```
-
-# Further Subsetting?
-
-```{r Possible Subsetting?}
-
-# Binary variables
-binary <- c("HEscore", "HRscore")
-
-# Go No-Go variables
-gng <- c("GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRT")
-
-# NOTE: do we want to get rid of them for analysis? binary might be an issue still but gng are ok in terms of correlations
- 
 ```
 
 # Citizen's Initiative
@@ -1486,15 +1465,3 @@ ri0gfe1h	5767733	skipped reading at least one article
 vu1mvwkd	5691188	didn't focus on the first CI text
 8zz2teyh	5629594	is dyslexic
 tjh0tjq3	4887029	CI task invalid
-
-
-```{r}
-
-# will add the code when it works on its own 
-
-
-```
-
-
-
-
