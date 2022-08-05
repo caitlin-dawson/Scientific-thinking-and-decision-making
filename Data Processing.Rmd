@@ -17,7 +17,7 @@ Version history:
 
 # Load packages
 
-```{r Load Packages, include = FALSE}
+```{r Load Packages}
 
 library(corrplot)
 library(dplyr)
@@ -34,7 +34,7 @@ library(tidyr)
 
 This chunk loads the data and omits experiment-general columns from all files (except for participant private ID).
 
-```{r Load Data, include = FALSE}
+```{r Load Data}
 
 # Versions 22-25
 versions <- paste0("v", 22:25)
@@ -68,7 +68,7 @@ This series of chunks computes the necessary data cleaning to merge the question
 
 This chunk combines the different versions of each questionnaire (leaving us with one df per questionnaire).
 
-```{r Merge the Versions, include = FALSE}
+```{r Merge the Versions}
 
 # Concatenate the versions of each questionnaire
 data_big5Q <- rbind(data_big5Q_v22, data_big5Q_v23, 
@@ -130,7 +130,7 @@ for (j in 1:length(versions)) {
 
 This chunk merges all questionnaire dataframes, leaving us with one dataframe for all questionnaire data.
 
-```{r Merge Questionnaire Dataframes, include = FALSE}
+```{r Merge Questionnaire Dataframes}
 
 # Rename two columns before combining all the questionnaires into one df (the column has the same name in each questionnaire file). 
     # END.QUESTIONNAIRE column gives you the response time for that questionnaire. 
@@ -232,7 +232,7 @@ After excluding data in accordance with the exclusion criteria above, the follow
 
 ### Validity and Language
 
-```{r Validity and Language, include = FALSE}
+```{r Validity and Language}
  
 # Save data for nonvalid ppts ("älä huomioi aineistoani") in a separate file prior to removal
 data_nonvalid <- data_Q_total %>%
@@ -252,7 +252,7 @@ data_Q_total <- data_Q_total %>%
 
 Reliability are not calculated for TIPI, see Gosling's website for explanation. http://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/ 
 
-```{r TIPI, include = FALSE}
+```{r TIPI}
 
 # Big Five
 b5 <- c("agreeablenessNormal", "emotionalStabilityNormal", "extroversionNormal", "conscientiousnessNormal", "opennessNormal", "agreeablenessReverse", "emotionalStabilityReverse", "extroversionReverse", "conscientiousnessReverse", "opennessReverse")
@@ -318,7 +318,7 @@ describe(data_Q_total[, b5_mean])
 
 ### Epistemic Curiosity
 
-```{r Epistemic Curiosity, include = FALSE}
+```{r Epistemic Curiosity}
 
 # Epistemic Curiosity
 epicur <- c(paste0("Icuriosity", 1:5), paste0("Dcuriosity", 1:5))
@@ -363,7 +363,7 @@ describe(data_Q_total[, c(epicur_sum)])
 
 ### Intellectual Humility
 
-```{r Intellectual Humility, include = FALSE}
+```{r Intellectual Humility}
 
 # Intellectual Humility
 IH <- c(paste0("IH", 1:5, "rev1"), paste0("IH", 6:10, "norm2"), 
@@ -427,7 +427,7 @@ describe(data_Q_total[, IH_sum])
 
 ### Need for closure
 
-```{r Need for Closure, include = FALSE}
+```{r Need for Closure}
 
 # Need for Closure
 need_clo <- paste0("closure", 1:15)
@@ -470,7 +470,7 @@ hist(data_Q_total$CloSum,
 
 ### Need for cognition
 
-```{r Need for Cognition, include = FALSE}
+```{r Need for Cognition}
 
 # Need for Cognition
 need_cog <- c(paste0("cognition", c(1:2, 6, 10:11, 13:15, 18)), 
@@ -521,7 +521,7 @@ hist(data_Q_total$CogSum,
 
 ### Actively openminded thinking
 
-```{r Actively Openminded Thinking, include = FALSE}
+```{r Actively Openminded Thinking}
 
 # Actively Openminded Thinking
 aot <- c(paste0("openReverse", 1:4), paste0("openNormal", 1:3))
@@ -572,7 +572,7 @@ hist(data_Q_total$AOTSum,
 
 This section has 12 questions with Likert responses that represent a (possible) 3 factor model based on the sources of the questions, from an early version of the Science Capital Scale from the FINSCI population survey study. The first 8 questions originally come from Archer, 2015, and the last 4 are modified from the Trust in Science and Scientists Scale (Nadelson et al., 2014). 
 
-```{r Science Attitudes, include = FALSE}
+```{r Science Attitudes}
 
 # Science Attitudes
 sci_att <- c(paste0("sa.1", letters[1:8]), paste0("sa.2", letters[1:4]))
@@ -627,7 +627,7 @@ for (i in 1:length(sci_att_sum)) {
 
 This is a 4-item scale, scored as a single sum score from the quantised responses. No reverse scoring. Modified from Landrum et al., 2016 and Motta et al., 2019
 
-```{r Science Curiosity, include = FALSE}
+```{r Science Curiosity}
 
 # Science Curiosity 
 sci_cur <- paste0("sc.", 1:4, ".quantised")
@@ -662,7 +662,7 @@ hist(data_Q_total$sci_cur,
 
 ### Heuristic Reasoning
 
-```{r Heuristic Reasoning, include = FALSE}
+```{r Heuristic Reasoning}
 
 # Q1
 data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
@@ -757,7 +757,7 @@ data_Q_total <- data_Q_total %>%
 
 New columns are created for each item, specifying whether the participant got the question correct or not (0=incorrect, 1=correct). A sum score is calculated for all the items.
 
-```{r Randomness and Probability, include = FALSE}
+```{r Randomness and Probability}
 
 # Q1: Sairaala B is the correct answer
 # Create a new column
@@ -814,7 +814,7 @@ For the matrix reasoning task (treated as a questionnaire by Gorilla so included
 * medium reaction time equal to or smaller than 500ms
 * stated they had technical problems or did not understand the task
 
-```{r Matrix Reasoning, include = FALSE}
+```{r Matrix Reasoning}
 
 # Omit columns that are not relevant (experiment-general columns) + rows that are not relevant (e.g., practice trials)
 data_matreasT <- data_matreasT %>%
@@ -866,7 +866,7 @@ hist(data_matreasT_final$MatrixCorrectCount,
 
 ## Merge Questionnaire Variables
 
-```{r Merge questionnaire variables, include = FALSE}
+```{r Merge questionnaire variables}
 
 # Merge the important columns
 data_Q_sub <- data_Q_total %>%
@@ -892,7 +892,7 @@ data_Q_sub$Age <- as.numeric(data_Q_sub$Age)
 
 Participants with large amounts of missing data or suspicious patterns of missing data are removed here. It should be noted that missing data refers to data that was missing from the start *and* data that was replaced with missing values if the participant met one of the exclusion criteria for (a) questionnaire(s).
 
-```{r Analyze Missing Data in Questionnaires, include = FALSE}
+```{r Analyze Missing Data in Questionnaires}
 
 # Questionnaire variables
 q_var <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "HEscore", "HRscore", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
@@ -931,7 +931,7 @@ This chunk checks distributions of questionnaire variables and correlations betw
 * If distributions are highly skewed, transformations are applied to decrease skewness (skew > 1)
 * If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r > .85)
 
-```{r Normality and Correlations of Questionnaires, include = FALSE}
+```{r Normality and Correlations of Questionnaires}
 
 # Questionnaire variables without binary ones
 q_var_con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
@@ -988,7 +988,7 @@ Participant-level exclusion criteria:
 
 Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta, c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
 
-```{r Go No-Go, include = FALSE}
+```{r Go No-Go}
 
 # Omit experiment-general columns & practice (etc.) rows
 data_nogoT <- data_nogoT %>%
@@ -1118,7 +1118,7 @@ Data processing: for each participant, we calculate the global-local precedence 
 * Global-to-local interference index: Standardized mean difference (cohen’s d) in RT between inconsistent and consistent trials in local condition only 
 These are described and visualized.
 
-```{r Navon Task, include = FALSE}
+```{r Navon Task}
 
 # Omit experiment-general columns & practice (etc.) rows
 data_NavonT <- data_NavonT %>%
@@ -1238,7 +1238,7 @@ Exclusion criteria: none for now
 
 Data processing: for each participant, we calculate the average rate of space bar hits (switches the participant experienced) per second. 
 
-```{r Necker Cube, include = FALSE}
+```{r Necker Cube}
 
 # Omit irrelevant rows and columns
 data_NeckerT <- data_NeckerT %>%
@@ -1282,7 +1282,7 @@ Data processing: for each participant, we calculate the average of the fluency s
 * Fluency is a measure of how many unique unusual uses a ppt can think of for each item. 
 * Flexibility score refers to the uniqueness of the functional categories of items, i.e. a participant gets two point for using a shoe as a doorstop and a flowerpot but only one point for a houseplant pot and a bonsai tree pot (same functional use). 
 
-```{r Unusual Uses Task, include = FALSE}
+```{r Unusual Uses Task}
 
 # Load data
 data_UUT <- read.csv("UUT_scoring_COMBINED_REVISED_Rcsv.csv", sep = ";")
@@ -1329,7 +1329,7 @@ for (i in 1:length(uut)) {
 
 Doesn't yet include the CI task! 
 
-```{r Combine the Task Dataframes, include = FALSE}
+```{r Combine the Task Dataframes}
 
 # Merge dataframes
 data_T_total1 <- merge(data_nogoT_final, data_NavonT_final, 
@@ -1391,7 +1391,7 @@ This chunk checks distributions of task variables and correlations between them:
 * If distributions are highly skewed (>=1), transformations are applied to decrease skewness
 * If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r>=.85)
 
-```{r Normality and Correlations of Tasks, include = FALSE}
+```{r Normality and Correlations of Tasks}
 
 # Normality of variables: visualize with histograms
 data_T_sub <- as.data.frame(data_T_sub)
@@ -1438,13 +1438,13 @@ corrplot(cor(data_T_sub[, t_var_log], method = "pearson",
 
 # Exclude FluencySum as it correlates highly with FlexSum; only include log-transformed variables where necessary
 data_T_sub <- data_T_sub %>% 
-  select(Participant.Private.ID, GNGdprime, GNGbetalog, MeanGoRT, SDGoRT, GlobalToLocalInterferencelog, GlobalToLocalPrecedencelog, NeckerTotalRatelog, FlexSum)
+  select(Participant.Private.ID, GNGdprime, GNGbetalog, MeanGoRT, SDGoRTlog, GlobalToLocalInterferencelog, GlobalToLocalPrecedencelog, NeckerTotalRatelog, FlexSum)
 
 ```
 
 # Format the Task and Questionnaire Dataframes 
 
-```{r Combine Task and Questionnaire Dataframes, include = FALSE}
+```{r Combine Task and Questionnaire Dataframes}
 
 data_all_sub_cleaned <- merge(data_Q_sub, data_T_sub, 
                               by = "Participant.Private.ID", 
