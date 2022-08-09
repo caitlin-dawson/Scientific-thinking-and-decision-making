@@ -22,26 +22,138 @@ Version history:
 - version 23 has fewer rows per ppt because of only 5 sources. All sources are links. 
 - versions 24 and 25 have all sources but one source as a PDF. Find the source implementation in the column 'display'
 
-# Check the Validity and Demographics
+# Extract Overall RTs
 
-This chunk removes nonvalid participants according to the validity check and language exclusion criteria.
+```{r Extract Overall RTs}
 
-```{r Load Data, include=FALSE}
+# Extract reaction time for the entire task to a different df
+data_citiT_overallRTs <- data_citiT %>% 
+  filter(Trial.Number == "END TASK") %>% 
+  select(Participant.Private.ID, Reaction.Time)
+names(data_citiT_overallRTs)[2] <- "overall_rt"
 
-# Exclude nonvalid participants
-data_citiT <- merge(data_citiT, data_ConsentValidity, 
-                    by = "Participant.Private.ID")
-
-# Validity/languege filter + select relevant columns
-data_citiT <- data_citiT %>%
-  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>% 
-  select(Participant.Private.ID, Spreadsheet.Row:Reaction.Time, Response, display, Text, Source_topic)
-
-# Remove the Instructions/Finish rows
-data_citiT <- data_citiT %>%
+# Remove BEGIN TASK and END TASK rows from df; Remove the instructions/finish rows
+data_citiT <- data_citiT %>% 
+  filter(!Trial.Number %in% c("END TASK", "BEGIN TASK")) %>%
   filter(display != "Instructions" & display!= "Finish")
 
 ```
+
+# Add Order Column
+
+```{r Add Order Column}
+
+# Baseline SAM and 4 baseline topic questions (about the petition) coded as order = 1; Rest of the trials coded based on Source_topic so that order numbers always refer to the same source
+data_citiT <- data_citiT %>% 
+  mutate(src_id = case_when((Source_topic == "") ~ 1,
+                            (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2,
+                            (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 3,
+                            (Source_topic == "Punnittua puhetta turpeesta") ~ 4,
+                            (Source_topic == "Suo syntyy uudestaan") ~ 5,
+                            (Source_topic == "Turve on uusiutuva luonnonvara") ~ 6,
+                            (Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 7))
+
+# Create order column
+order_df <- data_citiT[, c("Participant.Private.ID", "src_id")]
+order_list <- list()
+for (j in 1:length(unique(order_df$Participant.Private.ID))) {
+  data <- order_df[which(order_df$Participant.Private.ID == unique(order_df$Participant.Private.ID)[j]), "src_id"] 
+  ord <- c() 
+  for (i in 1:length(data)) {
+    if (all(data[i] != ord)) {
+      ord <- c(ord, data[i])
+    }
+  }
+  order_list[[j]] <- ord
+}
+order_vector <- c()
+id <- unique(data_citiT$Participant.Private.ID)
+for (i in 1:length(id)) {
+  order_vector[i] <- paste(order_list[[i]], collapse = " ")
+}
+order_citiT <- data.frame(Participant.Private.ID = id,
+                          order = order_vector)
+
+```
+
+# Extract Source Reading Times
+
+```{r Extract Reading Times}
+
+# Create subset
+data_citiT_srcRTs <- data_citiT %>% 
+  filter(Zone.Name == "advancementZone") %>% 
+  select(Participant.Private.ID, Screen.Name, display, src_id, Reaction.Time, Zone.Name)
+names(data_citiT_srcRTs)[5] <- "src_rt"
+
+# The PDF setting gives two reaction times; Screen 1 is for the intro page and Screen 12 is the actual PDF, so we only keep Screen 12
+data_citiT_srcRTs <- data_citiT_srcRTs[-(which(data_citiT_srcRTs$display == "PDF" & data_citiT_srcRTs$Screen.Name == "Screen 1" & data_citiT_srcRTs$Zone.Name == "advancementZone")), ]
+
+# Remove two extra rows for sources 5 and 6 for one participant; replace the RTs with NAs (cannot be sure which one is the "real" one)
+data_citiT_srcRTs <- data_citiT_srcRTs[-c((which(data_citiT_srcRTs$Participant.Private.ID == "5380955" & data_citiT_srcRTs$src_id == 5 & data_citiT_srcRTs$Zone.Name == "advancementZone")[1]), which(data_citiT_srcRTs$Participant.Private.ID == "5380955" & data_citiT_srcRTs$src_id == 6 & data_citiT_srcRTs$Zone.Name == "advancementZone")[1]), ]
+data_citiT_srcRTs[which(data_citiT_srcRTs$Participant.Private.ID == "5380955" & data_citiT_srcRTs$src_id == 5 & data_citiT_srcRTs$Zone.Name == "advancementZone"), "src_rt"] <- NA
+data_citiT_srcRTs[which(data_citiT_srcRTs$Participant.Private.ID == "5380955" & data_citiT_srcRTs$src_id == 6 & data_citiT_srcRTs$Zone.Name == "advancementZone"), "src_rt"] <- NA
+data_citiT_srcRTs <- data_citiT_srcRTs[-( which(data_citiT_srcRTs$Participant.Private.ID == "5446920" & data_citiT_srcRTs$src_id == 6 & data_citiT_srcRTs$Zone.Name == "advancementZone"))[1], ]
+data_citiT_srcRTs[which(data_citiT_srcRTs$Participant.Private.ID == "5446920" & data_citiT_srcRTs$src_id == 6 & data_citiT_srcRTs$Zone.Name == "advancementZone"), "src_rt"] <- NA
+
+# Combine overall RTs and source RTs
+data_citiT_RTs <- merge(data_citiT_overallRTs, data_citiT_srcRTs,
+                        by = "Participant.Private.ID",
+                        all = TRUE)
+
+# Keep relevant columns
+data_citiT_RTs <- data_citiT_RTs %>% 
+  select(Participant.Private.ID, src_id, src_rt, overall_rt)
+
+# One participant is missing RTs for source 6; add NAs
+data_citiT_RTs[nrow(data_citiT_RTs) + 1, ] <- c(5460154, 6, NA, 1378705)
+
+# Overall RTs
+describe(data_citiT_overallRTs$overall_rt/60000) # in minutes
+hist(data_citiT_overallRTs$overall_rt/60000) # in minutes
+plot(sort(data_citiT_overallRTs$overall_rt/60000)) # in minutes
+
+# Reading RTs (for all sources)
+describe(data_citiT_RTs$src_rt/60000) # in minutes
+hist(data_citiT_RTs$src_rt/60000,
+     main = "Online source RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+plot(sort(data_citiT_RTs$src_rt/60000)) # in minutes
+
+```
+
+# Extract Likert Response Times
+
+```{r Extract Likert Response Times}
+
+# Extract reaction times for the Likert questions
+data_citiT_likertRTs <- data_citiT %>% 
+  filter(Zone.Type != "continue_button") %>% 
+  select(Participant.Private.ID, src_id, Reaction.Time, Zone.Type)
+# The other continue_button rows (ones where Zone.Name != advancementZone) are the same reaction times as the response_text_area rows before them; they are not needed here
+
+# Describe
+describe(data_citiT_likertRTs$Reaction.Time/1000) # in seconds
+hist(data_citiT_likertRTs$Reaction.Time/1000, # in seconds
+      main = "Likert RTs",
+     col = sample(colors(), 1),
+     xlab = "", 
+     breaks = 100)
+plot(sort(data_citiT_likertRTs$Reaction.Time/1000)) # in seconds
+
+```
+
+From Caitlin: RT data has issues for outlier removal due to the distribution, not sure yet the best method for this kind of task. We don't set an automatic upper limit and we cannot assume that the reading times represent a single cognitive process. However, I don't think we can keep all times in, since they range from one second to over an hour, with the mean around 3 minutes. The goal should be to capture as much valid data as possible, with the acknowledgement that times e.g. 1 second are valid but mean something different than longer times, e.g. someone has skimmed or skipped that source. 
+* should we look into the thresholds for skimming and reading comprehension to make a point about which times we can expect to mean actually reading and which are skipping? 
+* it is clear where obviously meaningless long outliers are in this data, but the question is how to justify their removal 
+* can reading times be analyzed like reaction times, or is there another way? 
+
+From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
+* also need to think about whether we want to set maximum time limits (and if so, what these would reflect) -> NO
+* can we have some missing data on a participant-level for this task (from an analysis point of view)?
+
 
 # Code Source Types
 
@@ -64,119 +176,6 @@ data_citiT <- data_citiT %>%
                                     (Source_topic == "Punnittua puhetta turpeesta") ~ 1,
                                     (Source_topic == "Turve on uusiutuva luonnonvara") ~ 2,
                                     (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 3))
-
-```
-
-# Extract Reaction Times
-
-## Reading Times
-
-From Caitlin: RT data has issues for outlier removal due to the distribution, not sure yet the best method for this kind of task. We don't set an automatic upper limit and we cannot assume that the reading times represent a single cognitive process. However, I don't think we can keep all times in, since they range from one second to over an hour, with the mean around 3 minutes. The goal should be to capture as much valid data as possible, with the acknowledgement that times e.g. 1 second are valid but mean something different than longer times, e.g. someone has skimmed or skipped that source. 
-* should we look into the thresholds for skimming and reading comprehension to make a point about which times we can expect to mean actually reading and which are skipping? 
-* it is clear where obviously meaningless long outliers are in this data, but the question is how to justify their removal 
-* can reading times be analyzed like reaction times, or is there another way? 
-
-From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
-* also need to think about whether we want to set maximum time limits (and if so, what these would reflect) -> NO
-* can we have some missing data on a participant-level for this task (from an analysis point of view)?
-
-MILLA: 
-SOURCE-LEVEL: words per minute (calculate for each source) -> calculate minimum reading times? but don't exclude anyone / any data
-OVERALL: none
-questionnaires: no exclusion criteria for RT
-
-```{r Extract Reading Times}
-
-# Extract reaction time for the entire task to a different df
-data_citiT_overallRTs <- data_citiT %>% 
-  filter(Trial.Number == "END TASK") %>% 
-  select(Participant.Private.ID, Reaction.Time)
-names(data_citiT_overallRTs)[2] <- "overall_rt"
-
-# Remove BEGIN TASK and END TASK rows from df
-data_citiT <- data_citiT %>% 
-  filter(!Trial.Number %in% c("END TASK", "BEGIN TASK"))
-
-# Extract reaction times for each source
-# NOTE: NOT SURE ABOUT THIS
-# Baseline SAM and 4 baseline topic questions (about the petition) coded as order = 1; Rest of the trials coded based on Source_topic so that order numbers always refer to the same source
-# MILLA: check this; we also want to know the order in which they were presented for each participant -> we want the source topic and the trial number/order
-data_citiT <- data_citiT %>% 
-  mutate(Order = case_when((Source_topic == "") ~ 1,
-                           (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2,
-                           (Source_topic == "Palaako peltoviljely pÃ¤Ã¤osin kangasmaille?") ~ 3,
-                           (Source_topic == "Punnittua puhetta turpeesta") ~ 4,
-                           (Source_topic == "Suo syntyy uudestaan") ~ 5,
-                           (Source_topic == "Turve on uusiutuva luonnonvara") ~ 6,
-                           (Source_topic == "Turvetuotanto on ajettava alas â€“ oikeudenmukaisesti") ~ 7))
-data_citiT_srcRTs <- data_citiT %>% 
-  filter(Zone.Name == "advancementZone") %>% 
-  select(Participant.Private.ID, Order, display, Reaction.Time)
-names(data_citiT_srcRTs)[4] <- "src_rt"
-
-# Combine overall RTs and source RTs
-data_citiT_RTs <- merge(data_citiT_overallRTs, data_citiT_srcRTs,
-                        by = "Participant.Private.ID",
-                        all = TRUE)
-
-# Overall RTs
-describe(data_citiT_overallRTs$overall_rt/60000) # in minutes
-hist(data_citiT_overallRTs$overall_rt/60000) # in minutes
-plot(sort(data_citiT_overallRTs$overall_rt/60000)) # in minutes
-# NOTE: do we want to exclude based on overall task completion time? There is a clear "gap" between 122min and 292min; or maybe we want to exclude participants who took less then x minutes to finish the task?
-
-# Reading RTs (for all sources)
-describe(data_citiT_RTs$src_rt/60000) # in minutes
-hist(data_citiT_RTs$src_rt/60000,
-     main = "Online source RTs",
-     col = sample(colors(), 1),
-     xlab = "", 
-     breaks = 100)
-plot(sort(data_citiT_RTs$src_rt/60000)) # in minutes
-# NOTE: again, what should we exclude based upon? what should the minimum be? what about the maximum? I feel IQR is not good with skewed data, we should rather base it on something else
-
-# Reading RTs: Grouped summaries by display (online source vs PDF)
-tapply(X = data_citiT_RTs$src_rt/60000, # in minutes
-       INDEX = data_citiT_RTs$display, 
-       FUN = summary)
-par(mfrow = c(1, 2))
-hist(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "Reading")]/60000,
-     main = "Online source RTs",
-     col = sample(colors(), 1),
-     xlab = "", 
-     breaks = 100)
-hist(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "PDF")]/60000,
-     main = "PDF RTs",
-     col = sample(colors(), 1),
-     xlab = "", 
-     breaks = 100)
-plot(sort(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "Reading")]/60000),
-     ylab = "Online source")
-plot(sort(data_citiT_RTs$src_rt[which(data_citiT_RTs$display == "PDF")]/60000),
-     ylab = "PDF")
-
-```
-
-## Likert Response Times
-
-```{r Extract Likert Response Times}
-
-# Extract reaction times for the Likert questions
-data_citiT_likertRTs <- data_citiT %>% 
-  filter(Zone.Type != "continue_button") %>% 
-  select(Participant.Private.ID, Order, Reaction.Time, Zone.Type)
-# NOTE: what do we want to know about these?
-# The other continue_button rows (ones where Zone.Name != advancementZone) are the same reaction times as the response_text_area rows before them; they are not needed here
-
-# Describe
-describe(data_citiT_likertRTs$Reaction.Time/1000) # in seconds
-hist(data_citiT_likertRTs$Reaction.Time/1000, # in seconds
-      main = "Likert RTs",
-     col = sample(colors(), 1),
-     xlab = "", 
-     breaks = 100)
-plot(sort(data_citiT_likertRTs$Reaction.Time/1000)) # in seconds
-# NOTE: exclusion criteria???
 
 ```
 
@@ -239,6 +238,7 @@ data_citiT <- data_citiT %>%
                                  (Response == "Jokseenkin tuttu") ~ 3,
                                  (Response == "Hyvin tuttu") ~ 4,
                                  (Response == "ErittÃ¤in tuttu") ~ 5))
+
 # Support (petition)
 data_citiT <- data_citiT %>%
   mutate(Support = case_when(((Response == "Varmasti en" & display == "Reading" & Screen.Name == "Screen 11") | (Response == "Varmasti en" & display == "Initial_assessment" & Screen.Name == "Screen 1") | (Response == "Varmasti en" & display == "PDF" & Screen.Name == "Screen 8")) ~ 1,
@@ -281,7 +281,7 @@ data_citiT <- data_citiT %>%
 
 # Extract relevant information per participant per source
 data_citiT_ratings <- data_citiT %>% 
-  group_by(Participant.Private.ID, Order) %>% 
+  group_by(Participant.Private.ID, src_id) %>% 
   summarise(SAMintensity_final = mean(SAMintensity, na.rm = TRUE),
             SAMvalence_final = mean(SAMvalence, na.rm = TRUE),
             Curiosity_pet = mean(Curiosity, na.rm = TRUE),
@@ -293,16 +293,65 @@ data_citiT_ratings <- data_citiT %>%
             Expertise_src = mean(Expertise, na.rm = TRUE),
             Reliability_src = mean(Reliability, na.rm = TRUE))
 
+# Add column for word count per source (I counted the headings + "normal" text but no captions or author intros etc.)
+data_citiT_ratings <- data_citiT_ratings %>% 
+  mutate(src_words = case_when((src_id == 1) ~ 0,
+                               (src_id == 2) ~ 408,
+                               (src_id == 3) ~ 327,
+                               (src_id == 4) ~ 892,
+                               (src_id == 5) ~ 1146,
+                               (src_id == 6) ~ 422,
+                               (src_id == 7) ~ 376))
+data_citiT_ratings[which(data_citiT_ratings$src_words == 0), "src_words"] <- NA
+# NOTE: reading speed?
+
+# Add order column
+data_citiT_final <- merge(data_citiT_ratings, order_citiT,
+                          by = "Participant.Private.ID")
+
 # Replace NaNs with NAs
-data_citiT_ratings[is.nan(data_citiT_ratings)] <- NA
+data_citiT_final[is.nan(data_citiT_final)] <- NA
 
 # Check row sum NAs
-colSums(is.na(data_citiT_ratings))
-# Source columns should have 174 NAs except for reliability, which can have more as the participant could skip the Likert scale and only respond to the open question; the petition columns or SAM items should not have any missing values
-
-# Extract qualitative data: reason for rating, with source rating variables
-data_citiT_reasons <- data_citiT %>%
-  select(Participant.Private.ID, Source_topic, source_authority, source_quality, Reliability, Expertise, Convincingness, Shareability, Support, Zone.Type, Response) %>%
-  filter(Zone.Type == "response_text_area")
+colSums(is.na(data_citiT_final))
 
 ```
+
+
+```{r Combine RTs and Ratings}
+
+# Combine
+data_citiT_final <- merge(data_citiT_final, data_citiT_RTs, 
+                          by = c("Participant.Private.ID", "src_id"), 
+                          all = TRUE)
+
+# Rearrange columns
+data_citiT_final <- data_citiT_final %>% 
+  select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+
+```
+
+# Exclude Participants
+
+```{r Exclude Non-Valid Participants, include = FALSE}
+
+# Exclude nonvalid participants
+data_citiT_final <- merge(data_citiT_final, data_ConsentValidity, 
+                          by = "Participant.Private.ID",
+                          all.x = TRUE)
+
+# Validity/language filter; Exclude invalid participant
+data_citiT_final <- data_citiT_final %>%
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?") & Participant.Private.ID != "4887029") %>% 
+  select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+
+```
+
+Potentially problematic ppts for CI: 
+ri0gfe1h	5767733	skipped reading at least one article
+vu1mvwkd	5691188	didn't focus on the first CI text
+8zz2teyh	5629594	is dyslexic
+
+NOTE: I didn't remove anyone so far, I think it's better to apply a threshold for when we think someone paid no attention to the source (and omit all source-related data for that participant) than handpick the participants that were honest about not concentrating.
+
+NOTE: wide format?

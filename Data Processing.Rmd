@@ -955,9 +955,11 @@ abs(round(cor(data_Q_sub[, q_var_con], method = "pearson",
               use = "pairwise.complete.obs"), 2)) > .85
 corrplot(cor(data_Q_sub[, q_var_con], method = "pearson", 
              use = "pairwise.complete.obs"))
+corrplot(cor(data_Q_sub[, q_var], method = "spearman", 
+             use = "pairwise.complete.obs"))
 
 # Subset data: exclude demographic variables
-data_Q_sub <- data_Q_sub[, c("Participant.Private.ID", q_var_con)]
+data_Q_sub <- data_Q_sub[, c("Participant.Private.ID", q_var)]
 
 ``` 
 
