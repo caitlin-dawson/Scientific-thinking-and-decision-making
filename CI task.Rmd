@@ -325,6 +325,9 @@ data_citiT_final <- merge(data_citiT_final, data_citiT_RTs,
                           by = c("Participant.Private.ID", "src_id"), 
                           all = TRUE)
 
+# Fix overall RT so that there are no NAs
+data_citiT_final$overall_rt <- rep(unique(data_citiT_final$overall_rt)[which(!is.na(unique(data_citiT_final$overall_rt)))], each = 7)
+
 # Rearrange columns
 data_citiT_final <- data_citiT_final %>% 
   select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
