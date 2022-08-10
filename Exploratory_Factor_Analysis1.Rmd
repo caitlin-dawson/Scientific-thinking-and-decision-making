@@ -5,16 +5,43 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
+```{r Load Packages}
+
+# library(ISLR) 
+# library(glmnet) 
+# library(dplyr) 
+# library(tidyr)
+# library(tidyverse)
+library(caret)
+# library(glmnet)
+# library(tidyverse)
+# library(tidyselect)
+# library(psych)
+# library(lavaan)
+# library(dplyr)
+# library(ggplot2)
+# library(psychTools)
+# library(GPArotation)
+# library(devtools)
+# library(apaTables)
+# library(semPlot)
+# library(sjPlot)
+# library(glasso)
+
+```
+
+
 # Cross-method prediction
+
+MILLA: wrap your head around this
 
 10-fold cross validated ridge regression to predict survey and task variables *within* and *between* measure types following Eisenberg et al. Intended to help decide whether to factor tasks and surveys together or separately, and also to see if some variables should be left out. 
 
 Taking each DV one by one and trying to predict it using its own measurement category (leaving it out) and by the other measurement category. Each DV is the target; the predictors are the other variables in the category. 
 
-4 distributions of predictions: tasks-by-tasks, tasks-by-surveys, surveys-by-tasks, and surveys-by-surveys
+4 distributions of predictions: tasks-by-tasks, tasks-by-surveys, surveys-by-tasks, and surveys-by-surveys -> extract the R^2 values and create four distributions
 
-"Prediction success was assessed by 10-fold cross-validated ridge regression using the 
-RidgeCV function from scikit-learn with default parameters ​(​10​)​. Almost all DVs were able to be predicted to some degree by their respective measurement category (mean task-by-tasks R2​​ mean survey-by-surveys R2​​  = .45). In contrast, cross-measurement prediction failed: surveys were unable to predict task DVs and vice versa (mean task-by-surveys R2​​ = -.13, mean survey-by-tasks R2​​ = -.29). Note that R2​​ values below 0 are possible when employing  cross-validation and indicate no discoverable linear relationship. The entire distribution of R2​  values for each of these predictions is shown is Figure S2b."
+"Prediction success was assessed by 10-fold cross-validated ridge regression using the RidgeCV function from scikit-learn with default parameters (10). Almost all DVs were able to be predicted to some degree by their respective measurement category (mean task-by-tasks R2 mean survey-by-surveys R2  = .45). In contrast, cross-measurement prediction failed: surveys were unable to predict task DVs and vice versa (mean task-by-surveys R2 = -.13, mean survey-by-tasks R2 = -.29). Note that R2 values below 0 are possible when employing  cross-validation and indicate no discoverable linear relationship. The entire distribution of R2  values for each of these predictions is shown is Figure S2b."
 
 Ridge regression differs from lasso regression in that it can reduce coefficients down to near zero but always includes all predictors. Lasso regression can be used to reduce dimensionality as coefficients can be zero. Elastic net regression combines the two. 
 
@@ -26,193 +53,134 @@ The aim of this section is to create a model for predicting each DV in the 4 dis
 
 The question here is, can X variable be predicted equally well by surveys vs. tasks? After we get these R2 for each model (there will be 4 models per variable), we can take the mean R2 for each of the 4 distributions and make a plot as in Eisenberg to examine whether the distributions are similar. This helps us decide whether task and survey variables should be clustered or factored together. 
 
-*******NB: UUT has not yet been added into this section***********
-
-```{r}
-
-# creating some task and survey-only sets (probably we can just designate which variables are used as the predictors but I'm not sure of the syntax)
-
-surveys <- data_all_without_binary %>%
-  select(AMean:MatrixCorrectCount)
-
-# remove missing data
-surveys <- na.omit(surveys)
-
-tasks <- data_all_without_binary %>%
-  select(GNGdprime:FlexSum)
-
-# remove missing data
-tasks <- na.omit(tasks)
-
-# 10 fold cross validated ridge regression to estimate prediction error
-
-library(ISLR) 
-library(glmnet) 
-library(dplyr) 
-library(tidyr)
-library(tidyverse)
-library(caret)
-library(glmnet)
-
-# This section uses caret package
-
-# first use a set that doesn't include binary variables
-# data_all_without_binary
-# data_without_GNG_or_binary
-
-# remove missing data
-# data_without_GNG_or_binary <- na.omit(data_without_GNG_or_binary)
-
-# Train the model 
-# the first argument is the column (variable) we want to predict, using the other variables
-# this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
-# other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
-
-# Define training control 
-# set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it. 
-# cross-validation will have 10 folds
-# actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there 
- 
-set.seed(123) 
-model <- train( 
-  IH3Sum ~ ., 
-  data = IH3Sum_target, 
-  method = 'ridge', 
-  preProcess = c("center", "scale"), 
-  trControl = ctrl
-) 
-
-# Summarize the results 
-model
-
-# tune different values of lambda
-# I'm not sure yet how to feed it back to the original model 
-
-# these lines for making dfs that include the 1 cross-method outcome and the predictors
-NeckerTotalRate_target <- data_all_without_binary %>%
-  select(AMean:MatrixCorrectCount, NeckerTotalRate)
-NeckerTotalRate_target <- na.omit(NeckerTotalRate_target)
-View(NeckerTotalRate_target)
-
-ctrl <- trainControl(method = "cv", number = 10)
-tuneGrid <- expand.grid( 
-  .lambda = seq(0, 2, by = 0.01)) # trying to find a lambda value that minimizes RMSE
-  # R MSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) # .lambda = seq(0, .1, by = 0.01)
-set.seed(123) # have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
-model2 <- train( 
-  NeckerTotalRate ~ ., 
-  data = NeckerTotalRate_target, 
-  method = 'ridge', 
-  preProcess = c("center", "scale"), 
-  trControl = ctrl, 
-  tuneGrid = tuneGrid
-) 
-
-model2
-plot(model2) # this plot shows the lambda value that minimizes RMSE
-
-# this is an interesting plot showing the importance of the different variables to the model
-# but remember that this probably doesn't mean much unless it's a well fitting model 
-plot(varImp(model2))
-
-# as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this. 
-# I'm also not sure what set.seed is doing here
-#the model results and best lambda tend to be slightly different each time, but within a couple of hundredths, generally, in R2
-
-# make a violin plot to show the distributions of R2 for the 4 types of predictions 
-
-library(ggplot2)
-library(dplyr)
-predictions <- read.csv('4xpredictions.csv', sep = ";")
-predictions$Method <- as.factor(predictions$Method)
-
-p <- predictions %>%
-ggplot(aes(x = Method, y = Rsquared, fill = Method)) +
-  geom_violin() +
-  coord_flip() +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("R-squared")
-p
-
-library(ggridges)
-library(viridis)
-
-# ridge plot of all the distributions of the variables
-# need to install ggridges
-
-library(tidyr)
-datalong <- gather(data_all_without_binary, task, measurement,
-                   AMean:NeckerTotalRate, factor_key = TRUE)
-datalong
-
-ggplot(datalong, aes(x = task, y = measurement)) +
-  geom_density2d_filled()
-  labs(title = "All variable distributions") +
-  scale_fill_viridis_c()
+```{r Cross-Method Prediction}
+# 
+# # Create task- and survey-only sets 
+# survey_data <- data_efa[, q_var]
+# task_data <- data_efa[, t_var_log]
+# 
+# # Train the model 
+# # the first argument is the column (variable) we want to predict, using the other variables
+# # this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
+# # other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
+# 
+# # Define training control 
+# # set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it. 
+# # cross-validation will have 10 folds
+# # actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there 
+#  
+# set.seed(123) 
+# model <- train( 
+#   IH3Sum ~ ., 
+#   data = survey_data, 
+#   method = 'ridge', 
+#   preProcess = c("center", "scale"), 
+#   trControl = ctrl
+# ) 
+# 
+# # Summarize the results 
+# model
+# 
+# # tune different values of lambda
+# # I'm not sure yet how to feed it back to the original model 
+# 
+# # these lines for making dfs that include the 1 cross-method outcome and the predictors
+# NeckerTotalRate_target <- data_all_without_binary %>%
+#   select(AMean:MatrixCorrectCount, NeckerTotalRate)
+# NeckerTotalRate_target <- na.omit(NeckerTotalRate_target)
+# View(NeckerTotalRate_target)
+# 
+# ctrl <- trainControl(method = "cv", number = 10)
+# tuneGrid <- expand.grid( 
+#   .lambda = seq(0, 2, by = 0.01)) # trying to find a lambda value that minimizes RMSE
+#   # R MSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) # .lambda = seq(0, .1, by = 0.01)
+# set.seed(123) # have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
+# model2 <- train( 
+#   NeckerTotalRate ~ ., 
+#   data = NeckerTotalRate_target, 
+#   method = 'ridge', 
+#   preProcess = c("center", "scale"), 
+#   trControl = ctrl, 
+#   tuneGrid = tuneGrid
+# ) 
+# 
+# model2
+# plot(model2) # this plot shows the lambda value that minimizes RMSE
+# 
+# # this is an interesting plot showing the importance of the different variables to the model
+# # but remember that this probably doesn't mean much unless it's a well fitting model 
+# plot(varImp(model2))
+# 
+# # as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this. 
+# # I'm also not sure what set.seed is doing here
+# #the model results and best lambda tend to be slightly different each time, but within a couple of hundredths, generally, in R2
+# 
+# # make a violin plot to show the distributions of R2 for the 4 types of predictions 
+# 
+# library(ggplot2)
+# library(dplyr)
+# predictions <- read.csv('4xpredictions.csv', sep = ";")
+# predictions$Method <- as.factor(predictions$Method)
+# 
+# p <- predictions %>%
+# ggplot(aes(x = Method, y = Rsquared, fill = Method)) +
+#   geom_violin() +
+#   coord_flip() +
+#   theme(legend.position = "none") +
+#   xlab("") +
+#   ylab("R-squared")
+# p
+# 
+# library(ggridges)
+# library(viridis)
+# 
+# # ridge plot of all the distributions of the variables
+# # need to install ggridges
+# 
+# library(tidyr)
+# datalong <- gather(data_all_without_binary, task, measurement,
+#                    AMean:NeckerTotalRate, factor_key = TRUE)
+# datalong
+# 
+# ggplot(datalong, aes(x = task, y = measurement)) +
+#   geom_density2d_filled()
+#   labs(title = "All variable distributions") +
+#   scale_fill_viridis_c()
 
 ```
 
-
-# Exploratory factor analysis
+# Exploratory Factor Analysis
 
 This section includes three series of EFAs: all variables, surveys only, and tasks only. In the preregistration, we promised to start with these. 
 
 Correlations are mixed because of the binary variables from the heuristics task
 
-## Creating correlation matrices
+## Create Correlation Matrices
 
-```{r Creating correlation matrices, include = FALSE}
+```{r Create Correlation Matrices, include = FALSE}
 
 # A general note: we probably need to justify putting a bunch of task and self-report items in the same factor analysis / at least mention it !
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3268653/
 
-# make sure these packages are loaded
-library(tidyverse)
-library(tidyselect)
-library(psych)
-library(lavaan)
-library(dplyr)
-library(ggplot2)
-library(psychTools)
-library(GPArotation)
-library(devtools)
-library(apaTables)
-library(semPlot)
-library(sjPlot)Vi
-library(glasso)
+# Descriptives
+describe(data_efa)
 
+# Create character strings with different classes of variables
+con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum")
+q_con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
+cat <- c("HEscore", "HRscore")
 
-# Descriptive statistics for the EFA sample
-describe(data_all_sub_cleaned) # all variables
-table(data_all_sub_cleaned$HEscore) # binary variable, 1 = at least one HE (equiprobability heuristic) mistake, 0 = no HE mistakes
-table(data_all_sub_cleaned$HRscore) # binary variable, 1 = at least one HR (representativeness heuristic) mistake, 0 = no HR mistakes
-
-##############################
-
-# SECTION 1 EXPLORING FACTORABILITY
-
-# Let's create a correlation matrix, polychoric/mixed correlations (two items dichotomous)
-# d = the set of dichotomous items, c = the set of continuous variables, ncat = detect continuous variables with response options above this number. not sure what ncat is doing, need c, otherwise it doesn't detect any continuous variables
-# If the number of alternatives in the polychoric data differ and there are some dicthotomous data, it is advisable to set correct = 0.
-
-# check the indices
-all_cor <- mixedCor(data = all_new, d = c(15:16), c = c(1:14, 17:30),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
-                    use = "pairwise.complete.obs", method = "spearman",
-                    weight = NULL)
-
-# nothing else would need to be treated as polychotomous
-
-Q_cor <- mixedCor(data = Q_new, d = c(15, 16), c = c(1:14, 17:22), 
-                  smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
-                  use = "pairwise.complete.obs", method = "spearman", 
-                  weight = NULL)
-
-T_cor <- mixedCor(data = data_T_sub, c = c(1:7), smooth = TRUE, 
-                  correct = 0, ncat = 3, global = FALSE,
-                  use = "pairwise.complete.obs", method = "spearman",
-                  weight = NULL)
+# Create a correlation matrix (polychoric/mixed correlations)
+all_cor <- mixedCor(data = data_efa, d = cat, c = con, 
+                    use = "pairwise.complete.obs",
+                    method = "spearman")
+Q_cor <- mixedCor(data = survey_data, d = cat, c = q_con,
+                  use = "pairwise.complete.obs",
+                  method = "spearman")
+T_cor <- mixedCor(data = task_data, 
+                  use = "pairwise.complete.obs",
+                  method = "pearson")
+# NOTE: Caitlin had specified other arguments as well but I am not sure how necessary there are?
 
 # Store correlation matrix
 all_rho <- all_cor$rho
@@ -223,12 +191,11 @@ T_rho <- T_cor$rho
 mean(abs(all_rho[lower.tri(all_rho)]))
 mean(abs(Q_rho[lower.tri(Q_rho)]))
 mean(abs(T_rho[lower.tri(T_rho)]))
-# mean(abs(all_2_rho[lower.tri(all_2_rho)]))
 
 # Histogram of correlations
-hist(abs(all_rho))
-hist(abs(Q_rho))
-hist(abs(T_rho))
+hist(abs(all_rho), breaks = 20, col = sample(colors(), 1))
+hist(abs(Q_rho), breaks = 20, col = sample(colors(), 1))
+hist(abs(T_rho), breaks = 20, col = sample(colors(), 1))
 
 ```
 
@@ -236,25 +203,17 @@ hist(abs(T_rho))
 
 ```{r Factorability, include = FALSE}
 
-# Bartlett's test of sphericity tests the hypothesis that your correlation matrix is an identity matrix, which would indicate that your variables are unrelated and therefore unsuitable for structure detection. 
-# Small values (less than 0.05) of the significance level indicate that a factor analysis may be useful with your data.
-###### produces Bartletts test of sphericity (you want this to be significant)
+# Bartlett test (p<.05 indicates data are suitable for structure detection)
+cortest.bartlett(all_rho, n = nrow(data_efa))
+cortest.bartlett(Q_rho, n = nrow(data_efa))
+cortest.bartlett(T_rho, n = nrow(data_efa))
 
-# Bartlett test
-cortest.bartlett(all_rho, n = 163)
-# p = 6.149377e-149
-# chisq = 1701.473
-# df = 435
+# CONTINUE HERE?
 
-cortest.bartlett(Q_rho, n = 163) # should be 162, something happened to the last row
-# chisq = 915.2938
-# p = 3.68588e-82
-# df = 231
-
-# Kaiser-Meyer-Olkin measure, you want to be above .7
-KMO(r = all_rho) # Overall MSA =  0.57, 0.29 - 0.75
-KMO(r = Q_rho) # Overall MSA =  0.66, 0.68 for all removed HEscore, .7 for also removing sci tru and EMean
-KMO(r = T_rho) # Overall MSA =  0.63
+# Kaiser-Meyer-Olkin measure (>.7 is good)
+KMO(r = all_rho)
+KMO(r = Q_rho)
+KMO(r = T_rho)
 
 ```
 
