@@ -1409,8 +1409,8 @@ describe(data_T_sub[, t_var])[c("mean", "skew", "kurtosis")]
 # Transforming all variables with absolute skew > 1
 data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
 data_T_sub$SDGoRTlog <- log10(data_T_sub$SDGoRT)
-data_T_sub$GlobalToLocalInterferencelog <- log10(data_T_sub$GlobalToLocalInterference + 2) # added 2 because log10 cannot handle 0s/negative numbers
-data_T_sub$NeckerTotalRatelog <- log10(data_T_sub$NeckerTotalRate + 1) # added 1 because log10 cannot handle 0s
+data_T_sub$GlobalToLocalInterferencelog <- log10(data_T_sub$GlobalToLocalInterference + 3) # added 3 because log10 cannot handle 0s/negative numbers 
+data_T_sub$NeckerTotalRatelog <- log10(data_T_sub$NeckerTotalRate + 0.5) # added 1 because log10 cannot handle 0s
 data_T_sub$GlobalToLocalPrecedencelog <- log10(max(data_T_sub$GlobalToLocalPrecedence + 1, na.rm = TRUE) - data_T_sub$GlobalToLocalPrecedence)
 
 # Task variables: transformed
@@ -1472,6 +1472,13 @@ data_efa <- data_all_sub_cleaned
 
 # Remove all rows with missing values
 data_efa <- na.omit(data_efa)
+
+# Describe
+par(mfrow = c(2, 5))
+for (i in 1:ncol(data_efa)) {
+  hist(data_efa[, i], col = sample(colors(), 1))
+}
+describe(data_efa)[c("mean", "skew", "kurtosis")]
 
 ```
 

@@ -5,6 +5,8 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
+The data are normal (skew<=1). The correlation matrix uses polychoric correlations (treats data as ordinal).
+
 ```{r Load Packages}
 
 # library(ISLR) 
@@ -28,12 +30,14 @@ library(caret)
 # library(sjPlot)
 # library(glasso)
 
+# Create task- and survey-only sets
+survey_data <- data_efa[, q_var]
+task_data <- data_efa[, t_var_log]
+
 ```
 
 
 # Cross-method prediction
-
-MILLA: wrap your head around this
 
 10-fold cross validated ridge regression to predict survey and task variables *within* and *between* measure types following Eisenberg et al. Intended to help decide whether to factor tasks and surveys together or separately, and also to see if some variables should be left out. 
 
@@ -53,36 +57,38 @@ The aim of this section is to create a model for predicting each DV in the 4 dis
 
 The question here is, can X variable be predicted equally well by surveys vs. tasks? After we get these R2 for each model (there will be 4 models per variable), we can take the mean R2 for each of the 4 distributions and make a plot as in Eisenberg to examine whether the distributions are similar. This helps us decide whether task and survey variables should be clustered or factored together. 
 
+MILLA: try to understand the cross-method prediction
+
 ```{r Cross-Method Prediction}
+
 # 
-# # Create task- and survey-only sets 
-# survey_data <- data_efa[, q_var]
-# task_data <- data_efa[, t_var_log]
-# 
-# # Train the model 
+# # Train the model
 # # the first argument is the column (variable) we want to predict, using the other variables
 # # this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
 # # other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
 # 
-# # Define training control 
-# # set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it. 
+# # Define training control
+# # set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it.
 # # cross-validation will have 10 folds
-# # actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there 
-#  
-# set.seed(123) 
-# model <- train( 
-#   IH3Sum ~ ., 
-#   data = survey_data, 
-#   method = 'ridge', 
-#   preProcess = c("center", "scale"), 
-#   trControl = ctrl
-# ) 
+# # actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there
 # 
-# # Summarize the results 
+# ctrl <- trainControl(method = "cv", number = 10)
+# 
+# set.seed(123)
+# 
+# model <- train(
+#   IH3Sum ~ .,
+#   data = survey_data,
+#   method = 'ridge',
+#   preProcess = c("center", "scale"),
+#   trControl = ctrl
+# )
+# 
+# # Summarize the results
 # model
 # 
 # # tune different values of lambda
-# # I'm not sure yet how to feed it back to the original model 
+# # I'm not sure yet how to feed it back to the original model
 # 
 # # these lines for making dfs that include the 1 cross-method outcome and the predictors
 # NeckerTotalRate_target <- data_all_without_binary %>%
@@ -90,32 +96,31 @@ The question here is, can X variable be predicted equally well by surveys vs. ta
 # NeckerTotalRate_target <- na.omit(NeckerTotalRate_target)
 # View(NeckerTotalRate_target)
 # 
-# ctrl <- trainControl(method = "cv", number = 10)
-# tuneGrid <- expand.grid( 
+# tuneGrid <- expand.grid(
 #   .lambda = seq(0, 2, by = 0.01)) # trying to find a lambda value that minimizes RMSE
 #   # R MSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) # .lambda = seq(0, .1, by = 0.01)
 # set.seed(123) # have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
-# model2 <- train( 
-#   NeckerTotalRate ~ ., 
-#   data = NeckerTotalRate_target, 
-#   method = 'ridge', 
-#   preProcess = c("center", "scale"), 
-#   trControl = ctrl, 
+# model2 <- train(
+#   NeckerTotalRate ~ .,
+#   data = NeckerTotalRate_target,
+#   method = 'ridge',
+#   preProcess = c("center", "scale"),
+#   trControl = ctrl,
 #   tuneGrid = tuneGrid
-# ) 
+# )
 # 
 # model2
 # plot(model2) # this plot shows the lambda value that minimizes RMSE
 # 
 # # this is an interesting plot showing the importance of the different variables to the model
-# # but remember that this probably doesn't mean much unless it's a well fitting model 
+# # but remember that this probably doesn't mean much unless it's a well fitting model
 # plot(varImp(model2))
 # 
-# # as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this. 
+# # as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this.
 # # I'm also not sure what set.seed is doing here
 # #the model results and best lambda tend to be slightly different each time, but within a couple of hundredths, generally, in R2
 # 
-# # make a violin plot to show the distributions of R2 for the 4 types of predictions 
+# # make a violin plot to show the distributions of R2 for the 4 types of predictions
 # 
 # library(ggplot2)
 # library(dplyr)
@@ -208,400 +213,192 @@ cortest.bartlett(all_rho, n = nrow(data_efa))
 cortest.bartlett(Q_rho, n = nrow(data_efa))
 cortest.bartlett(T_rho, n = nrow(data_efa))
 
-# CONTINUE HERE?
-
 # Kaiser-Meyer-Olkin measure (>.7 is good)
 KMO(r = all_rho)
 KMO(r = Q_rho)
 KMO(r = T_rho)
+# NOTE: KMO is not very good for a lot of items?
 
 ```
 
 ## Identify number of factors to extract
 
-Method is "minrank" minimum rank or MRFA. Recommended for polychoric/tetrachoric correlation matrices with Heywood cases https://www.tandfonline.com/doi/pdf/10.1080/10705511.2020.1735393 
+For now I used EBIC as the main criterion following Eisenberg et al.
 
 ```{r Number of factors, include = FALSE}
 
-# ALL
-# Scree plot
-# 3-10 factors
+# Scree plots
+# All variables
 plot(eigen(all_rho)$values, type = "b", pch = 20, col = "red",
      main = "Scree Plot", ylab = "Eigenvalues",
      xlab = "No. Factors")
-
-# QUESTIONNAIRES
-# Scree plot
-# 2-8 factors
+# Questionnaire variables
 plot(eigen(Q_rho)$values, type = "b", pch = 20, col = "red",
      main = "Scree Plot", ylab = "Eigenvalues",
      xlab = "No. Factors")
+# Task variables
+plot(eigen(T_rho)$values, type = "b", pch = 20, col = "red",
+     main = "Scree Plot", ylab = "Eigenvalues",
+     xlab = "No. Factors")
 
-# warning: The estimated weights for the factor scores are probably incorrect.  Try a different factor score estimation method.
-# An ultra-Heywood case was detected.  Examine the results carefully
-# this happens when using wls but not other methods
-
-################NFactors###############
-# ALL
-nfactors(all_rho, n = 6, n.obs  = 163, 
+# NFactors
+# All variables
+nfactors(all_rho, n = 6, n.obs  = nrow(data_efa), 
          rotate = "oblimin", diagonal = FALSE, 
          fm = "minrank") 
-# VSS complexity 1 achieves a maximimum of Although the vss.max shows  5  factors, it is probably more reasonable to think about  2  factors
-# VSS complexity 2 achieves a maximimum of 0.62  with  5  factors
-# The Velicer MAP achieves a minimum of 0.02  with  2  factors 
-# Empirical BIC achieves a minimum of  -823.91  with  5  factors
-# Sample Size adjusted BIC achieves a minimum of  97.98  with  6  factors
-
 # Questionnaires
-nfactors(Q_rho, n = 6, n.obs  = 163, 
+nfactors(Q_rho, n = 6, n.obs  = nrow(survey_data), 
          rotate = "oblimin", diagonal = FALSE,
          fm = "minrank") 
-# VSS complexity 1 achieves a maximimum of 0.48  with  3  factors
-# VSS complexity 2 achieves a maximimum of 0.61  with  3  factors
-# The Velicer MAP achieves a minimum of 0.02  with  1  factors 
-# Empirical BIC achieves a minimum of  -405.84  with  4  factors
-# Sample Size adjusted BIC achieves a minimum of  31.17  with  5  factors
+# Tasks
+nfactors(T_rho, n = 6, n.obs  = nrow(task_data), 
+         rotate = "oblimin", diagonal = FALSE,
+         fm = "minrank") 
 
 # Parallel Analysis
-# All
-fa.parallel(all_rho, n.obs = 163, fm = "minrank", 
-            fa = "both", nfactors = 12) #8 factors
-cor.plot(all_rho)
-
+# All variables
+fa.parallel(all_rho, n.obs = nrow(data_efa), fm = "minrank", 
+            fa = "both", nfactors = 12)
+# cor.plot(all_rho)
 # Questionnaires
-fa.parallel(Q_rho, n.obs = 162, fm = "wls", 
-            fa = "both", nfactors = 6) # 8 factors
-cor.plot(Q_rho)
-
-# Eisenberg used EBIC
-# specifying gls gives heywood case, pa refuses to do it, wls says factor scores are probably incorrect but doesn't specify heywood case, ml and uls don't give any warnings
-# I can't fully replicate this effect trying again. WLS still gives heywood cases but 'pa' now runs (now so does pa...). Even though minrank suggests 8 factors, there are only 3-4 with eigenvalues above 1 in the plot
-
-# Q ONLY
-# Scree plot
-# plot(eigen(Q_rho)$values, type = "b", pch = 20, col = "red",
-     # main = "Scree Plot", ylab = "Eigenvalues",
-     # xlab = "No. Factors")
-# maybe 8 factors above 1?
-
-# NFactors
-# An ultra-Heywood case was detected.  Examine the results carefully
-# solved by using fm = minrank instead
-# nfactors(Q_rho,n = 6, n.obs  = 162,rotate = "oblimin",diagonal = FALSE,fm = "wls") 
-# VSS: 1 or 5 factors
-# MAP: 1 factor
-# EBIC: 4 factors 
-# SS adjusted BIC: 6 factors
-
-# nfactors(Q_rho,n = 6, n.obs  = 162,rotate = "oblimin",diagonal = FALSE,fm = "minrank") 
-# VSS: 3 factors
-# MAP: 1 factor
-# EBIC: 4 factors 
-# SS adjusted BIC: 5 factors
-
-# Parallel Analysis
-# fa.parallel(Q_rho, n.obs = 162) 
-# 5 factors (or maybe 6?)
+fa.parallel(Q_rho, n.obs = nrow(survey_data), fm = "wls", 
+            fa = "both", nfactors = 6)
 # cor.plot(Q_rho)
-
-# T ONLY
-# Scree plot
-# plot(eigen(T_rho)$values, type = "b", pch = 20, col = "red",
-     # main = "Scree Plot", ylab = "Eigenvalues",
-     # xlab = "No. Factors")
-
-# NFactors
-# nfactors(T_rho,n = 12, n.obs  = 146,rotate = "oblimin",diagonal = FALSE,fm = "wls") 
-# VSS: 1 or 3 factors
-# MAP: 2 factors
-# BIC: 2 or 3 factors 
-
-# Parallel Analysis
-# An ultra-Heywood case was detected.  Examine the results carefully
-# fa.parallel(T_rho, n.obs = 146) 
-# 3 factors
+# Tasks
+fa.parallel(T_rho, n.obs = nrow(task_data), fm = "wls", 
+            fa = "both", nfactors = 6)
 # cor.plot(T_rho)
 
 ```
 
-## Choosing a factor solution
+## Run the Factor Analysis
 
-```{r Choosing a solution, include = FALSE}
+Method is "minrank" minimum rank or MRFA. Recommended for polychoric/tetrachoric correlation matrices with Heywood cases https://www.tandfonline.com/doi/pdf/10.1080/10705511.2020.1735393 
 
-# Oblimin rotation allows the factors to correlate, which is definitely what we would expect with so many conceptually overlapping surveys/tasks
+The criteria used to determine whether to keep items and factors:
+* if an item does not have one and only one salient loading (>=.33) *and* it has high complexity (>=2.0), it is removed
+* if a factor has less than three items with primary (largest loading of that item) loadings on it, the factor is removed
 
-# https://www.rdocumentation.org/packages/psych/versions/2.1.6/topics/fa
-# explains the different factoring methods, not sure which one would be best for us to use
-# PAF is recommended for nonnormal datasets, ML for "relatively normal"  (Costello & Osborne, 2005)
-# ML gives fit statistics but they are biased in small samples, missing data and may be too sensitive
-# do these points matter if the input is the correlation matrix?
+```{r Run the Factor Analysis, include = FALSE}
 
-# because there are technically ordinal variables here (with less than 10 response options)??
-# https://stats.oarc.ucla.edu/stata/faq/how-can-i-perform-a-factor-analysis-with-categorical-or-categorical-and-continuous-variables/#:~:text = When%20both%20variables%20have%2010,than%2010%20values%20a%20Pearson's
-# When both variables have 10 or fewer observed values, a polychoric correlation is calculated, when only one of the variables takes on 10 or fewer values ( i.e., one variable is continuous and the other categorical) a polyserial correlation is calculated, and if both variables take on more than 10 values a Pearson’s correlation is calculated. Once we have a polychoric correlation matrix, we can use the factormat command to perform an exploratory factor analysis using the matrix as input, rather than raw variables.
-
-# Not spending much time on this since previous chunks indicate that we can't combine tasks and surveys
-# 2, 5, 6, 9
+# All variables (not very relevant, previous analyses indicate that questionnaires and tasks should be analysed separately)
+# EBIC: 6 factors
 EFA_all6 <- fa(all_rho, nfactors = 6, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge") 
+               fm = "minrank", scores = "tenBerge")
 fa.sort(EFA_all6)
+# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): OMean, sci_tru, SDGoRTlog, AMean, FlexSum, sci_impo
+data_efa_sub <- data_efa %>% 
+  select(-c("OMean", "sci_tru", "SDGoRTlog", "AMean", "FlexSum", "sci_impo"))
+all_rho_sub <- mixedCor(data = data_efa_sub,
+                        d = cat,
+                        c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog"))
+all_rho_sub <- all_rho_sub$rho
+EFA_all6_sub <- fa(all_rho_sub, nfactors = 6, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all6_sub)
+# Items to be removed: sci_id, HEscore, Necker, MeanGoRT, AOTSum
 
-# Reveille 2022 "How to use the psych package for factor analysis and data reduction" recommends comparing the fa solution with iclust solutions
-# with no other arguments, default iclust 
-clust_all_rho <- iclust(all_rho)
-clust_all_rho$pattern
-# the solution without specifying number of factors gives 6, but that includes tasks
+data_efa_sub2 <- data_efa_sub %>% 
+  select(-c("sci_id", "HEscore", "NeckerTotalRatelog", "MeanGoRT", "AOTSum"))
+all_rho_sub2 <- mixedCor(data = data_efa_sub2,
+                         d = c("HRscore"),
+                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
+all_rho_sub2 <- all_rho_sub2$rho
+EFA_all6_sub2 <- fa(all_rho_sub2, nfactors = 6, rotate = "oblimin",
+                   fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all6_sub2)
+# Items to be removed: IH2Sum
 
-clust_Q_rho$sorted
-# this is not making much sense now even when specifying 6 factors. on its own, it identifies 3 factors in the Q set
+data_efa_sub3 <- data_efa_sub2 %>% 
+  select(-c("IH2Sum"))
+all_rho_sub3 <- mixedCor(data = data_efa_sub3,
+                         d = c("HRscore"),
+                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
+all_rho_sub3 <- all_rho_sub3$rho
+EFA_all6_sub3 <- fa(all_rho_sub3, nfactors = 6, rotate = "oblimin",
+                   fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all6_sub3)
+# Items to be removed: IH4Sum
 
-#####################################
+data_efa_sub4 <- data_efa_sub3 %>% 
+  select(-c("IH4Sum"))
+all_rho_sub4 <- mixedCor(data = data_efa_sub4,
+                         d = c("HRscore"),
+                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
+all_rho_sub4 <- all_rho_sub4$rho
+EFA_all6_sub4 <- fa(all_rho_sub4, nfactors = 6, rotate = "oblimin",
+                   fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all6_sub4)
+# Items look ok, but three factors have less than three primary loadings -> let's try with fewer factors
 
-# QUESTIONNAIRE SET ONLY
-EFA_Q6 <- fa(Q_rho, nfactors = 6, rotate = "oblimin",
+EFA_all5 <- fa(all_rho_sub4, nfactors = 5, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all5)
+EFA_all4 <- fa(all_rho_sub4, nfactors = 4, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all4)
+EFA_all3 <- fa(all_rho_sub4, nfactors = 3, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all3)
+
+
+# Questionnaires only
+# EBIC: 4 factors
+EFA_Q4 <- fa(Q_rho, nfactors = 4, rotate = "oblimin",
              fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q6)
-fa.diagram(EFA_Q6)
-# at this initial point, the 6 factor model is the best 
-# now to try to optimize it
+fa.sort(EFA_Q4)
+# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): HEscore, sci_impo, DCuriositySum, IH4Mean, sci_tru
 
-########################################
-##### editing the original sets of all_rho with different numbers of factors ##########
-# using complexity, low loadings, and cross-loadings to try getting rid of different items
-# this doesn't give a clear recommendaton for which items to get rid of, and the factors don't seem very stable
+survey_data_sub <- survey_data %>% 
+  select(-c(c("HEscore", "sci_impo", "DCuriositySum", "IH4Sum", "sci_tru")))
+Q_rho_sub <- mixedCor(data = survey_data_sub, 
+                      d = c("HRscore"),
+                      c = c("AMean", "CMean", "EMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
+                      use = "pairwise.complete.obs",
+                      method = "spearman")
+Q_rho_sub <- Q_rho_sub$rho
+EFA_Q4_sub <- fa(Q_rho_sub, nfactors = 4, rotate = "oblimin",
+                 fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q4_sub)
+# Items to be removed: EMean, IH2Sum
 
-########## 3 factors without cross-loaded items sci-tru, HEScore and IH1 ################
-Q_3_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:DCuriositySum, IH2Sum:AOTSum, 
-         HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
-View(Q_3_lowloads)
-
-Q_cor_3 <- mixedCor(data  =  Q_3_lowloads, d = c(14), c = c(1:13,15:19),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-
-Q_rho_3 <- Q_cor_3$rho
-
-EFA_Q3_lowloads <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
-                      fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q3_lowloads)
-fa.diagram(EFA_Q3_lowloads)
-print(EFA_Q3_lowloads$loadings, cut = .3)
-######### 3 without crossloads AOT, IH3, CloSum
-Q_3_xloads <- data_all_sub_cleaned %>%
-  select(AMean:IH2Sum, IH4Sum, CogSum, HEscore:MatrixCorrectCount)
-View(Q_3_xloads)
-
-Q_cor_3 <- mixedCor(data  =  Q_3_xloads, d = c(12:13), c = c(1:11,14:19),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-
-Q_rho_3 <- Q_cor_3$rho
-
-EFA_Q3_xloads <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin", 
-                    fm = "minrank",scores = "tenBerge") 
-fa.sort(EFA_Q3_xloads)
-fa.diagram(EFA_Q3_xloads)
-print(EFA_Q3_xloads$loadings, cut = .3)
-
-######### 3 without high complexity items sci.tru, AOT, IH3, RP
-Q_3_comp <- data_all_sub_cleaned %>%
-  select(AMean:IH2Sum, IH4Sum:CogSum, HEscore:HRscore, Sci.cur_Sum,
-         Sci.impo_Sum:MatrixCorrectCount)
-View(Q_3_comp)
-
-Q_cor_3 <- mixedCor(data  =  Q_3_comp, d = c(13:14), c = c(1:12,15:18), 
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_3 <- Q_cor_3$rho
-
-EFA_Q3_comp <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
+survey_data_sub2 <- survey_data_sub %>% 
+  select(-c("EMean", "IH2Sum"))
+Q_rho_sub2 <- mixedCor(data = survey_data_sub2, 
+                       d = c("HRscore"),
+                       c = c("AMean", "CMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
+                       use = "pairwise.complete.obs",
+                       method = "spearman")
+Q_rho_sub2 <- Q_rho_sub2$rho
+EFA_Q4_sub2 <- fa(Q_rho_sub2, nfactors = 4, rotate = "oblimin",
                   fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q3_comp)
-fa.diagram(EFA_Q3_comp)
-print(EFA_Q3_comp$loadings, cut = .3)
+fa.sort(EFA_Q4_sub2)
+# Items to be removed: AOTSum
 
-######### 3 without high complexity, low loading or crossloading items IH1,IH2, IH3, CloSum, sci.tru, AOT, HEscore, RP
-Q_3_comp <- data_all_sub_cleaned %>%
-  select(AMean:DCuriositySum, IH4Sum, CogSum, HRscore, 
-         Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
-View(Q_3_comp)
-
-Q_cor_3 <- mixedCor(data = Q_3_comp, d = c(10), c = c(1:9, 11:14),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
-                    use = "pairwise.complete.obs", method = "spearman",
-                    weight = NULL)
-Q_rho_3 <- Q_cor_3$rho
-
-EFA_Q3_comp <- fa(Q_rho_3, nfactors = 3, rotate = "oblimin",
+survey_data_sub3 <- survey_data_sub2 %>% 
+  select(-c("AOTSum"))
+Q_rho_sub3 <- mixedCor(data = survey_data_sub3, 
+                       d = c("HRscore"),
+                       c = c("AMean", "CMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
+                       use = "pairwise.complete.obs",
+                       method = "spearman")
+Q_rho_sub3 <- Q_rho_sub3$rho
+EFA_Q4_sub3 <- fa(Q_rho_sub3, nfactors = 4, rotate = "oblimin",
                   fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q3_comp)
-fa.diagram(EFA_Q3_comp)
-print(EFA_Q3_comp$loadings, cut = .3)
-
-############# 4 factor model without the low loadings HEscore and sci.tru
-
-Q_4_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
-View(Q_4_lowloads)
-
-Q_cor_4 <- mixedCor(data  =  Q_4_lowloads, d = c(15), c = c(1:14, 16:20),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_4 <- Q_cor_4$rho
-
-EFA_Q4_lowloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
-                      fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_lowloads)
-fa.diagram(EFA_Q4_lowloads)
-print(EFA_Q4_lowloads$loadings, cut = .3)
-
-############# 4 factor model without the high complexity ESMean, sci.impo, HEscore, sci.tru
-Q_4_comp <- data_all_sub_cleaned %>%
-  select(AMean:EMean, OMean:AOTSum, HRscore:Sci.cur_Sum,
-         Sci.id_Sum:MatrixCorrectCount)
-View(Q_4_comp)
-
-Q_cor_4 <- mixedCor(data  =  Q_4_comp, d = c(14), c = c(1:13, 15:18), 
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_4 <- Q_cor_4$rho
-
-EFA_Q4_comp <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
+fa.sort(EFA_Q4_sub3)
+# All items ok now, but the 4th factor has less than three primary loadings -> run a model with only three factors
+EFA_Q3_sub3 <- fa(Q_rho_sub3, nfactors = 3, rotate = "oblimin",
                   fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_comp)
-fa.diagram(EFA_Q4_comp)
-print(EFA_Q4_comp$loadings, cut = .3)
+fa.sort(EFA_Q3_sub3)
 
-############# 4 factor model without crossloadings AMean, EMean, OMean, Icur, IH4, RP, sciimp
-Q_4_xloads <- data_all_sub_cleaned %>%
-  select(CMean, ESMean, DCuriositySum:IH3Sum, CloSum:HRscore, Sci.cur_Sum,
-         Sci.tru_Sum, Sci.id_Sum:MatrixCorrectCount)
-View(Q_4_xloads)
-
-Q_cor_4 <- mixedCor(data  =  Q_4_xloads, d = c(10:11), c = c(1:9, 12:15),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_4 <- Q_cor_4$rho
-
-EFA_Q4_xloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
-                    fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_xloads)
-fa.diagram(EFA_Q4_xloads)
-print(EFA_Q4_xloads$loadings, cut = .3)
-
-############# 4 factor model without crossloadings, low loadings, high complexity: (all personality),ICur, IH4, HEscore, RP, sci.impo, sci.tru, 
-Q_4_lowloads <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum, HRscore:Sci.cur_Sum, Sci.impo_Sum:MatrixCorrectCount)
-View(Q_4_lowloads)
-
-Q_cor_4 <- mixedCor(data  =  Q_4_lowloads, d = c(15), c = c(1:14, 16:20),
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_4 <- Q_cor_4$rho
-
-EFA_Q4_lowloads <- fa(Q_rho_4, nfactors = 4, rotate = "oblimin",
-                      fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_lowloads)
-fa.diagram(EFA_Q4_lowloads)
-print(EFA_Q4_lowloads$loadings, cut = .3)
-
-
-############################################################
-##############################################
-# in this section I use "a series of intuitive judgments" --this is messy and might not be complete but the idea was that I tried removing low and crossloaded items one by one
-# HEScore is reliably the worst item in the Q set. It has the lowest h2, the lowest loadings and is often weakly cross-loaded 
-# sci-tru also tends to load weakly
-Q_without_HE <- data_all_sub_cleaned %>%
-  select(AMean:AOTSum, HRscore:MatrixCorrectCount)
-
-Q_cor_minusHE <- mixedCor(data  =  Q_without_HE, d = c(15), 
-                          c = c(1:14, 16:21), smooth = TRUE, 
-                          correct = 0, ncat = 3, global = FALSE, 
-                          use = "pairwise.complete.obs", method = "spearman",
-                          weight = NULL)
-Q_rho_2 <- Q_cor_minusHE$rho
-
-EFA_Q6_2 <- fa(Q_rho_2, nfactors = 6, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q6_2)
-fa.diagram(EFA_Q6_2)
-
-# next choosing to remove EMean--could also remove sci.impo but it's only crossloading on two factors and EMean crossloads low on 4 factors 
-# works better to choose the set of variables by selecting from data_all_sub_cleaned
-Q_4 <- data_all_sub_cleaned %>%
-  select(AMean:CMean, ESMean:AOTSum, HRscore:Sci.cur_Sum,
-         Sci.impo_Sum:MatrixCorrectCount)
-View(Q_4)
-
-Q_cor_4 <- mixedCor(data = Q_4, d = c(14), c = c(1:13, 15:19), 
-                    smooth = TRUE, correct = 0, ncat = 3, global = FALSE,
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_4 <- Q_cor_4$rho
-
-EFA_Q6_4 <- fa(Q_rho_4, nfactors = 6, rotate = "oblimin", 
-               fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q6_4)
-fa.diagram(EFA_Q6_4)
-# Cumulative Var         0.11  0.20  0.29  0.37  0.44  0.51
-# The root mean square of the residuals (RMSR) is  0.04 
-# The df corrected root mean square of the residuals is  0.07 
-# Fit based upon off diagonal values = 0.95
-# at this point, Openness is still crossloading on MRFA3, which has AMean and IH3Sum. I think some of these issues are because some personality factors tend to be correlated with each other, so the personality structure is getting in the way. It is interesting that OMean isn't really lumping with AOT etc. 
-# IH3 is crossloading on MRFA5 and MRFA3, 3 is with agreeableness and 5 is with ES, IH1 and need for closure
-
-##########
-# Trying getting rid of Openness
-Q_5 <- data_all_sub_cleaned %>%
-  select(AMean:CMean, ESMean, ICuriositySum:AOTSum, HRscore:Sci.cur_Sum,
-         Sci.impo_Sum:MatrixCorrectCount)
-View(Q_5)
-
-Q_cor_5 <- mixedCor(data = Q_5, d = c(13), c = c(1:12, 14:18), smooth = TRUE,
-                    correct = 0, ncat = 3, global = FALSE, 
-                    use = "pairwise.complete.obs", method = "spearman", 
-                    weight = NULL)
-Q_rho_5 <- Q_cor_5$rho
-
-EFA_Q6_5 <- fa(Q_rho_5, nfactors = 6, rotate = "oblimin", 
-               fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q6_5)
-fa.diagram(EFA_Q6_5)
-# Cumulative Var         0.10  0.20  0.29  0.37  0.44  0.51
-# The root mean square of the residuals (RMSR) is  0.04 
-# The df corrected root mean square of the residuals is  0.07 
-# Fit based upon off diagonal values = 0.96
-# this seems to be the best model yet, and it looks really nice with 3 items on each factor. But now RPsum is crossloading on the science attitudes factor, and conscientiousness is crossloading on the actively openminded thinking factor. Everything else has a better crossloading situation. 
-
-clust_solution <- iclust(Q_rho_5,nclusters = 6, beta = 3)
-# tends to find 3-4 clusters on its own, but fit is better with 6 clusters--not exactly the same as the factors
-
-# https://m-clark.github.io/posts/2020-04-10-psych-explained/
-################################################################
-
-# CONCLUSIONS
-# after initially removing HEscore, EMean, and sci.tru, the structure settled down and it was just a matter of seeing which other personality variables should be taken away. 6 factors generally seems to produce the best structure with the criteria that I have on hand--reducing the number of factors extracted typically makes crossloadings worse, which suggests to me that fewer factors means trying to lump together things that don't really belong. 
-# the unsupervised iclust pulling out 3 overall clusters fits in with the idea that there is some hierarchical thing going on here, and also fits in with the phenomenon that when the number of factors is reduced, typically the first 2 factors lump together. 
-
-#################################################################
-
-# TASK SET
-# this is the best solution possible for task variables. Other solutions don't converge or give heywood cases. This tends to extract factors according to the measure, so not very useful. I think we might as well just use the variables of interest, or is there a reason to try to combine them? 
-EFA_T1 <- fa(T_rho, nfactors = 1, rotate = "oblimin", fm = "minrank",
-             scores = "tenBerge") 
-fa.sort(EFA_T1)
+# Tasks only
+EFA_T3 <- fa(T_rho, nfactors = 3, rotate = "oblimin",
+             fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_T3)
 
 ```
 
-## Extracting factor scores
+## Extract Factor Scores
 
 This section not ready yet
 
