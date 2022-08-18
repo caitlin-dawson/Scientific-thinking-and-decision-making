@@ -1463,7 +1463,6 @@ sort(rowSums(is.na(data_all_sub_cleaned)))
 # As more participants were excluded based on their task data than based on their questionnaire data, there are participants that have more missing variables than they should based on the thresholds set for tasks and questionnaires (7+3=10). These participants are missing all their task data. 
 t_var_log <- t_var_log[-9]
 which(rowSums(is.na(data_all_sub_cleaned[, t_var_log])) == length(t_var_log))
-View(data_all_sub_cleaned[which(rowSums(is.na(data_all_sub_cleaned[, t_var_log])) == length(t_var_log)), ])
 # NOTE: not sure what to do here, I will exclude for now?
 data_all_sub_cleaned <- data_all_sub_cleaned[-which(rowSums(is.na(data_all_sub_cleaned[, t_var_log])) == length(t_var_log)), ]
 
