@@ -198,9 +198,12 @@ mean(abs(Q_rho[lower.tri(Q_rho)]))
 mean(abs(T_rho[lower.tri(T_rho)]))
 
 # Histogram of correlations
-hist(abs(all_rho), breaks = 20, col = sample(colors(), 1))
-hist(abs(Q_rho), breaks = 20, col = sample(colors(), 1))
-hist(abs(T_rho), breaks = 20, col = sample(colors(), 1))
+hist(abs(all_rho[lower.tri(all_rho)]), 
+     breaks = 20, col = sample(colors(), 1))
+hist(abs(Q_rho[lower.tri(Q_rho)]), 
+     breaks = 20, col = sample(colors(), 1))
+hist(abs(T_rho[lower.tri(T_rho)]), 
+     breaks = 20, col = sample(colors(), 1))
 
 ```
 
@@ -210,8 +213,8 @@ hist(abs(T_rho), breaks = 20, col = sample(colors(), 1))
 
 # Bartlett test (p<.05 indicates data are suitable for structure detection)
 cortest.bartlett(all_rho, n = nrow(data_efa))
-cortest.bartlett(Q_rho, n = nrow(data_efa))
-cortest.bartlett(T_rho, n = nrow(data_efa))
+cortest.bartlett(Q_rho, n = nrow(survey_data))
+cortest.bartlett(T_rho, n = nrow(task_data))
 
 # Kaiser-Meyer-Olkin measure (>.7 is good)
 KMO(r = all_rho)
@@ -223,7 +226,7 @@ KMO(r = T_rho)
 
 ## Identify number of factors to extract
 
-For now I used EBIC as the main criterion following Eisenberg et al.
+For now I used EBIC as the main criterion following Eisenberg et al. Zmigrod et al. used scree plots and PA.
 
 ```{r Number of factors, include = FALSE}
 
@@ -257,16 +260,13 @@ nfactors(T_rho, n = 6, n.obs  = nrow(task_data),
 
 # Parallel Analysis
 # All variables
-fa.parallel(all_rho, n.obs = nrow(data_efa), fm = "minrank", 
-            fa = "both", nfactors = 12)
+fa.parallel(all_rho, n.obs = nrow(data_efa), fm = "minrank")
 # cor.plot(all_rho)
 # Questionnaires
-fa.parallel(Q_rho, n.obs = nrow(survey_data), fm = "wls", 
-            fa = "both", nfactors = 6)
+fa.parallel(Q_rho, n.obs = nrow(survey_data), fm = "minrank")
 # cor.plot(Q_rho)
 # Tasks
-fa.parallel(T_rho, n.obs = nrow(task_data), fm = "wls", 
-            fa = "both", nfactors = 6)
+fa.parallel(T_rho, n.obs = nrow(task_data), fm = "minrank")
 # cor.plot(T_rho)
 
 ```
@@ -279,7 +279,9 @@ The criteria used to determine whether to keep items and factors:
 * if an item does not have one and only one salient loading (>=.33) *and* it has high complexity (>=2.0), it is removed
 * if a factor has less than three items with primary (largest loading of that item) loadings on it, the factor is removed
 
-```{r Run the Factor Analysis, include = FALSE}
+### Number of Factors from EBIC
+
+```{r Run the Factor Analysis (EBIC), include = FALSE}
 
 # All variables (not very relevant, previous analyses indicate that questionnaires and tasks should be analysed separately)
 # EBIC: 6 factors
@@ -397,6 +399,84 @@ EFA_T3 <- fa(T_rho, nfactors = 3, rotate = "oblimin",
 fa.sort(EFA_T3)
 
 ```
+
+### Number of Factors from PA + Scree Plot
+
+```{r Run the Factor Analysis (PA + Scree Plot)}
+
+# All variables
+# PA + scree plot: 8 factors
+EFA_all8 <- fa(all_rho, nfactors = 8, rotate = "oblimin",
+               fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_all8)
+# # Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): CogSum, sci_id, IH2Sum
+# 
+# data_efa_sub5 <- data_efa %>% 
+#   select(-c(CogSum, sci_id, IH2Sum))
+# all_rho_sub5 <- mixedCor(data = data_efa_sub5, 
+#                          d = cat,
+#                          c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum"))
+# all_rho_sub5 <- all_rho_sub5$rho
+# EFA_all8_sub5 <- fa(all_rho_sub5, nfactors = 8, rotate = "oblimin",
+#                     fm = "minrank", scores = "tenBerge")
+# fa.sort(EFA_all8_sub5)
+# # Items to be removed: sci_cur, sci_impo, NeckerTotalRate, RPSum, IH3Sum
+# 
+# data_efa_sub6 <- data_efa_sub5 %>% 
+#   select(-c(sci_cur, sci_impo, NeckerTotalRatelog, RPSum, IH3Sum))
+# all_rho_sub6 <- mixedCor(data = data_efa_sub6, 
+#                          d = cat,
+#                          c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH4Sum", "CloSum", "AOTSum", "sci_tru", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "FlexSum"))
+# all_rho_sub6 <- all_rho_sub6$rho
+# EFA_all8_sub6 <- fa(all_rho_sub6, nfactors = 8, rotate = "oblimin",
+#                     fm = "minrank", scores = "tenBerge")
+# fa.sort(EFA_all8_sub6)
+# # Items to be removed: IH4Sum, HEscore, IH1Sum
+# # NOTE: I will stop this here for now. Point is that with the 8-factor solution and the exclusion criteria we end up removing so many items that we end up with factors with too few items loading onto them.
+
+# Questionnaires only
+# PA + scree plot: 5 factors
+EFA_Q5 <- fa(Q_rho, nfactors = 5, rotate = "oblimin",
+             fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q5)
+# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): IH2Sum, EMean, sci_id, ESMean, HEscore
+
+survey_data_sub4 <- survey_data %>% 
+  select(-c(IH2Sum, EMean, sci_id, ESMean, HEscore))
+Q_rho_sub4 <- mixedCor(data = survey_data_sub4,
+                       d = c("HRscore"),
+                       c = c("AMean", "CMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "MatrixCorrectCount"),
+                       use = "pairwise.complete.obs",
+                       method = "spearman")
+Q_rho_sub4 <- Q_rho_sub4$rho
+EFA_Q5_sub4 <- fa(Q_rho_sub4, nfactors = 5, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q5_sub4)
+# Items to be removed: sci_cur, IH4Sum
+
+survey_data_sub5 <- survey_data_sub4 %>% 
+  select(-c(IH4Sum, sci_cur))
+Q_rho_sub5 <- mixedCor(data = survey_data_sub5,
+                       d = c("HRscore"),
+                       c = c("AMean", "CMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_tru", "sci_impo", "MatrixCorrectCount"),
+                       use = "pairwise.complete.obs",
+                       method = "spearman")
+Q_rho_sub5 <- Q_rho_sub5$rho
+EFA_Q5_sub5 <- fa(Q_rho_sub5, nfactors = 5, rotate = "oblimin",
+                  fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q5_sub5)
+# Items to be removed: sci_impo
+# This is problematic though, because then we have 14 items for 3 factors, resulting in too few items per factor; I will not continue with the 5-factor model.
+
+# Tasks
+# PA + scree plot: 3 factors
+EFA_T3 <- fa(T_rho, nfactors = 3, rotate = "oblimin",
+             fm = "minrank", scores = "tenBerge")
+fa.sort(EFA_T3)
+
+```
+
+
 
 ## Extract Factor Scores
 
