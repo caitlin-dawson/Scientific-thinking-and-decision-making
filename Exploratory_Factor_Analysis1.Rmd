@@ -14,8 +14,8 @@ The data are normal (skew<=1). The correlation matrix uses polychoric correlatio
 # library(dplyr) 
 # library(tidyr)
 # library(tidyverse)
-library(caret)
-# library(glmnet)
+# library(caret)
+library(glmnet)
 # library(tidyverse)
 # library(tidyselect)
 # library(psych)
@@ -55,102 +55,153 @@ Instead of splitting data into a training and test set, cross-validation trains 
 
 The aim of this section is to create a model for predicting each DV in the 4 distributions described above. Ridge regression is used because of the type of dataset and because we want to retain all variables when checking the cross- and between-measure type predictions. 
 
-The question here is, can X variable be predicted equally well by surveys vs. tasks? After we get these R2 for each model (there will be 4 models per variable), we can take the mean R2 for each of the 4 distributions and make a plot as in Eisenberg to examine whether the distributions are similar. This helps us decide whether task and survey variables should be clustered or factored together. 
+The question here is, can X variable be predicted equally well by surveys vs. tasks? After we get these R2 for each model (there will be 4 models per variable), we can take the mean R2 for each of the 4 distributions and make a plot as in Eisenberg to examine whether the distributions are similar. This helps us decide whether task and survey variables should be clustered or factored together.  
 
-MILLA: try to understand the cross-method prediction
+```{r Ridge Regression (Cross-Method Prediction)}
 
-```{r Cross-Method Prediction}
+# Survey x survey 
+# NOTE: not sure if the binary items are an issue? not sure if this is the case when they are predictors but I would assume when they are being predicted? I will omit them here just in case
+q_var_sub <- q_var[-c(which(q_var == "HEscore"), which(q_var == "HRscore"))]
+survey_data_sub <- data_efa[, q_var_sub]
 
-# 
-# # Train the model
-# # the first argument is the column (variable) we want to predict, using the other variables
-# # this syntax for AMean and data automatically designates that row as the outcome and leaves it out of the prediction--check this in the summary--there are 23 total variables, 22 of them are being used as predictors
-# # other arguments are the dataset, the method which is ridge regression, preprocessing which scales the data, and it uses the control process
-# 
-# # Define training control
-# # set seed for replicability: can be done a variety of ways, the easiest is to set it before each train. NB: setting a different seed, a random seed, or not setting the seed, will identify different models. See [insert link here] for a good discussion on different sources of variability in machine learning models and what kind of tolerance we should have for them, and what to do about it.
-# # cross-validation will have 10 folds
-# # actually I don't think this first version is even needed because it's just the training algorithm without any tuning hyperparameters set. If I end up using the model with the IDed lambda value, then I can just run the tunegrid version and choose the model there
-# 
-# ctrl <- trainControl(method = "cv", number = 10)
-# 
-# set.seed(123)
-# 
-# model <- train(
-#   IH3Sum ~ .,
-#   data = survey_data,
-#   method = 'ridge',
-#   preProcess = c("center", "scale"),
-#   trControl = ctrl
-# )
-# 
-# # Summarize the results
-# model
-# 
-# # tune different values of lambda
-# # I'm not sure yet how to feed it back to the original model
-# 
-# # these lines for making dfs that include the 1 cross-method outcome and the predictors
-# NeckerTotalRate_target <- data_all_without_binary %>%
-#   select(AMean:MatrixCorrectCount, NeckerTotalRate)
-# NeckerTotalRate_target <- na.omit(NeckerTotalRate_target)
-# View(NeckerTotalRate_target)
-# 
-# tuneGrid <- expand.grid(
-#   .lambda = seq(0, 2, by = 0.01)) # trying to find a lambda value that minimizes RMSE
-#   # R MSE: The root mean squared error. This measures the average difference between the predictions made by the model and the actual observations. The lower the RMSE, the more closely a model can predict the actual observations.) # .lambda = seq(0, .1, by = 0.01)
-# set.seed(123) # have to call this again to ensure reproducibility; but remember, running with a different seed will produce a different model
-# model2 <- train(
-#   NeckerTotalRate ~ .,
-#   data = NeckerTotalRate_target,
-#   method = 'ridge',
-#   preProcess = c("center", "scale"),
-#   trControl = ctrl,
-#   tuneGrid = tuneGrid
-# )
-# 
-# model2
-# plot(model2) # this plot shows the lambda value that minimizes RMSE
-# 
-# # this is an interesting plot showing the importance of the different variables to the model
-# # but remember that this probably doesn't mean much unless it's a well fitting model
-# plot(varImp(model2))
-# 
-# # as I understand this now, the original model uses no tuning hyperparameters at all (default TuneGrid  = NULL)? It uses some reasonable standard tuning parameter (e.g. lambda = 0.1) and estimates the model with that. The second model feeds TuneGrid a selection of possible tuning parameters, and it selects the best one, outputting all the possible models according to those parameters. It finds the best parameter in that possible set, and then you have to find the matching R2 and RMSE given for the model with that parameter. It shouldn't be super different to the original model. The parameter lambda increases with increasing regularization, meaning that the higher lambda should mean a bigger difference between model 1 and model 2, and means that that model needed more regularization (probably a worse fitting model?) I'm not sure why or if you have to do the first step with model 1, or how data leakage fits into all this.
-# # I'm also not sure what set.seed is doing here
-# #the model results and best lambda tend to be slightly different each time, but within a couple of hundredths, generally, in R2
-# 
-# # make a violin plot to show the distributions of R2 for the 4 types of predictions
-# 
-# library(ggplot2)
-# library(dplyr)
-# predictions <- read.csv('4xpredictions.csv', sep = ";")
-# predictions$Method <- as.factor(predictions$Method)
-# 
-# p <- predictions %>%
-# ggplot(aes(x = Method, y = Rsquared, fill = Method)) +
-#   geom_violin() +
-#   coord_flip() +
-#   theme(legend.position = "none") +
-#   xlab("") +
-#   ylab("R-squared")
-# p
-# 
-# library(ggridges)
-# library(viridis)
-# 
-# # ridge plot of all the distributions of the variables
-# # need to install ggridges
-# 
-# library(tidyr)
-# datalong <- gather(data_all_without_binary, task, measurement,
-#                    AMean:NeckerTotalRate, factor_key = TRUE)
-# datalong
-# 
-# ggplot(datalong, aes(x = task, y = measurement)) +
-#   geom_density2d_filled()
-#   labs(title = "All variable distributions") +
-#   scale_fill_viridis_c()
+predicted_SS <- c()
+predicted_type_SS <- rep("survey", length(q_var_sub))
+predictors_SS <- rep("surveys", length(q_var_sub))
+R2_SS <- c()
+
+for (i in 1:length(q_var_sub)) {
+  
+  # Save x and y
+  x_var <- as.matrix(survey_data_sub[, -which(colnames(survey_data_sub) == q_var_sub[i])])
+  y_var <- survey_data_sub[, q_var_sub[i]]
+  predicted_SS <- c(predicted_SS, q_var_sub[i])
+  
+  # Fit the ridge regression model
+  model <- glmnet(x = x_var, y = y_var, alpha = 0)
+  
+  # Perform k-fold cross-validation to find optimal lambda value
+  cv_model <- cv.glmnet(x = x_var, y = y_var, alpha = 0)
+  
+  # Find optimal lambda
+  best_lambda <- cv_model$lambda.min
+  
+  # Find coefficients for the best model
+  best_model <- glmnet(x = x_var, y = y_var, alpha = 0, lambda = best_lambda)
+  
+  # Use fitted best model to make predictions (NOTE: not 100% sure about this)
+  y_predicted <- predict(object = best_model, s = best_lambda, newx = x_var)
+  
+  # Find SST and SSE
+  sst <- sum((y_var - mean(y_var))^2)
+  sse <- sum((y_predicted - y_var)^2)
+  
+  # Find R-squared of the model on the training data
+  rsq <- 1 - sse/sst
+  R2_SS <- c(R2_SS, rsq)
+  
+}
+
+SxS <- data.frame(predicted = predicted_SS, predictors = predictors_SS, 
+                  predicted_type = predicted_type_SS, R2 = R2_SS)
+
+# Task x task
+predicted_TT <- c()
+predicted_type_TT <- rep("task", length(t_var_log))
+predictors_TT <- rep("tasks", length(t_var_log))
+R2_TT <- c()
+for (i in 1:length(t_var_log)) {
+  x_var <- as.matrix(task_data[, -which(colnames(task_data) == t_var_log[i])])
+  y_var <- task_data[, t_var_log[i]]
+  predicted_TT <- c(predicted_TT, t_var_log[i])
+  model <- glmnet(x = x_var, y = y_var, alpha = 0)
+  cv_model <- cv.glmnet(x = x_var, y = y_var, alpha = 0)
+  best_lambda <- cv_model$lambda.min
+  best_model <- glmnet(x = x_var, y = y_var, alpha = 0, lambda = best_lambda)
+  y_predicted <- predict(object = best_model, s = best_lambda, newx = x_var)
+  sst <- sum((y_var - mean(y_var))^2)
+  sse <- sum((y_predicted - y_var)^2)
+  rsq <- 1 - sse/sst
+  R2_TT <- c(R2_TT, rsq)
+}
+TxT <- data.frame(predicted = predicted_TT, predictors = predictors_TT, 
+                  predicted_type = predicted_type_TT, R2 = R2_TT)
+
+# Survey x task (surveys predicted by tasks)
+predicted_ST <- c()
+predicted_type_ST <- rep("survey", length(q_var_sub))
+predictors_ST <- rep("tasks", length(q_var_sub))
+R2_ST <- c()
+for (i in 1:length(q_var_sub)) {
+  x_var <- as.matrix(task_data)
+  y_var <- survey_data_sub[, q_var_sub[i]]
+  predicted_ST <- c(predicted_ST, q_var_sub[i])
+  model <- glmnet(x = x_var, y = y_var, alpha = 0)
+  cv_model <- cv.glmnet(x = x_var, y = y_var, alpha = 0)
+  best_lambda <- cv_model$lambda.min
+  best_model <- glmnet(x = x_var, y = y_var, alpha = 0, lambda = best_lambda)
+  y_predicted <- predict(object = best_model, s = best_lambda, newx = x_var)
+  sst <- sum((y_var - mean(y_var))^2)
+  sse <- sum((y_predicted - y_var)^2)
+  rsq <- 1 - sse/sst
+  R2_ST <- c(R2_ST, rsq)
+}
+SxT <- data.frame(predicted = predicted_ST, predictors = predictors_ST, 
+                  predicted_type = predicted_type_ST, R2 = R2_ST)
+
+# Tasks x surveys (tasks predicted by surveys)
+predicted_TS <- c()
+predicted_type_TS <- rep("task", length(t_var_log))
+predictors_TS <- rep("surveys", length(t_var_log))
+R2_TS <- c()
+for (i in 1:length(t_var_log)) {
+  x_var <- as.matrix(survey_data_sub)
+  y_var <- task_data[, t_var_log[i]]
+  predicted_TS <- c(predicted_TS, t_var_log[i])
+  model <- glmnet(x = x_var, y = y_var, alpha = 0)
+  cv_model <- cv.glmnet(x = x_var, y = y_var, alpha = 0)
+  best_lambda <- cv_model$lambda.min
+  best_model <- glmnet(x = x_var, y = y_var, alpha = 0, lambda = best_lambda)
+  y_predicted <- predict(object = best_model, s = best_lambda, newx = x_var)
+  sst <- sum((y_var - mean(y_var))^2)
+  sse <- sum((y_predicted - y_var)^2)
+  rsq <- 1 - sse/sst
+  R2_TS <- c(R2_TS, rsq)
+}
+TxS <- data.frame(predicted = predicted_TS, predictors = predictors_TS, 
+                  predicted_type = predicted_type_TS, R2 = R2_TS)
+
+# Bind the dataframes
+R2_crossmethod <- rbind(SxS, TxT, SxT, TxS)
+
+# Describe R^2 per group
+R2_crossmethod <- R2_crossmethod %>% 
+  mutate(format = case_when((predicted_type == "task" & predictors == "tasks")  ~ "TxT",
+                            (predicted_type == "survey" & predictors == "surveys")  ~ "SxS",
+                            (predicted_type == "task" & predictors == "surveys")  ~ "TxS",
+                            (predicted_type == "survey" & predictors == "tasks")  ~ "SxT"))
+R2_crossmethod$format <- as.factor(R2_crossmethod$format)
+R2_crossmethod %>% 
+  group_by(format) %>% 
+  summarise(mean(R2), sd(R2))
+
+# Visualize R^2 per group
+# Same plot
+ggplot(R2_crossmethod, aes(x = R2)) +
+  geom_histogram(aes(color = format, fill = format),
+                 position = "identity", bins = 50) +
+  scale_color_manual(values = c("#9AC4F8", "#99EDCC", "#CB958E", "#E36588")) +
+  scale_fill_manual(values = c("#9AC4F8", "#99EDCC", "#CB958E", "#E36588")) +
+  theme_minimal()
+# Separate plots
+par(mfrow = c(2, 2))
+formats <- c("SxS", "SxT", "TxT", "TxS")
+for (i in 1:4) {
+  hist(R2_crossmethod[which(R2_crossmethod$format == formats[i]), "R2"],
+       main = paste0("R2 for ", formats[i]),
+       col = sample(colors(), 1),
+       breaks = 20,
+       xlab = "")
+}
 
 ```
 
@@ -484,17 +535,17 @@ This section not ready yet
 
 ```{r Extracting factor scores, include = FALSE}
 
-# Extracting factor scores per case (ppt), for EFA_6f solution 
-# I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
-# I'm also not sure of all the arguments, particularly rho
-# taking rho out slightly changes if you plot bergescores$scores
-# it's also possible to impute missing data as there is a lot, use "median" or "mean"
-# the four combinations of these arguments give basically the same resulting plot but should check them 
-# the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
-bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"), 
-                             rho = Q_rho, impute = "median")
-# to view as a dataframe
-View(bergescores$scores)
+# # Extracting factor scores per case (ppt), for EFA_6f solution 
+# # I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
+# # I'm also not sure of all the arguments, particularly rho
+# # taking rho out slightly changes if you plot bergescores$scores
+# # it's also possible to impute missing data as there is a lot, use "median" or "mean"
+# # the four combinations of these arguments give basically the same resulting plot but should check them 
+# # the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
+# bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"), 
+#                              rho = Q_rho, impute = "median")
+# # to view as a dataframe
+# View(bergescores$scores)
 
 ```
 
