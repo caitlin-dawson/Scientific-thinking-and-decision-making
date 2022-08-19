@@ -222,6 +222,7 @@ Correlations are mixed because of the binary variables from the heuristics task
 describe(data_efa)
 
 # Create character strings with different classes of variables
+# NOTE: do we actually want to treat ordinals as continuous? I think another option would be polytomous, but I am not sure; at least we should be consistent throughout the analyses 
 con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum")
 q_con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
 cat <- c("HEscore", "HRscore")
@@ -527,24 +528,56 @@ fa.sort(EFA_T3)
 
 ```
 
-
-
 ## Extract Factor Scores
 
-This section not ready yet
+```{r Extract Factor Scores}
+
+# Trying this out with the 4-factor survey solution (n of factors from EBIC)
+survey_4F_scores <- factor.scores(x = survey_data,  # the data
+                                  f = EFA_Q4,  # the factor solution
+                                  method = "tenBerge",  # the method; "the ten Berge method focuses on matching the factor score correlation with correlations among factors themselves, while still maintaining factor score determinacy" (https://osf.io/zcsnv/download/?format=pdf)
+                                  rho = Q_rho)$scores  # specify that we used polychoric correlations by specifying the rho matrix
+
+# And also with the 5-factor solution
+survey_5F_scores <- factor.scores(x = survey_data, f = EFA_Q5,
+                                  method = "tenBerge", rho = Q_rho)$scores
+
+# Visualize the factor scores
+# 4 factors
+par(mfrow = c(2, 2))
+for (i in 1:ncol(survey_4F_scores)) {
+  hist(survey_4F_scores[, i],
+       main = colnames(survey_4F_scores)[i],
+       col = sample(colors(), 1),
+       breaks = 30,
+       xlab = "")
+}
+# 5 factors
+par(mfrow = c(2, 3))
+for (i in 1:ncol(survey_5F_scores)) {
+  hist(survey_5F_scores[, i],
+       main = colnames(survey_5F_scores)[i],
+       col = sample(colors(), 1),
+       breaks = 30,
+       xlab = "")
+}
+
+```
+
+
 
 ```{r Extracting factor scores, include = FALSE}
 
-# # Extracting factor scores per case (ppt), for EFA_6f solution 
-# # I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
-# # I'm also not sure of all the arguments, particularly rho
-# # taking rho out slightly changes if you plot bergescores$scores
-# # it's also possible to impute missing data as there is a lot, use "median" or "mean"
-# # the four combinations of these arguments give basically the same resulting plot but should check them 
-# # the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
-# bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"), 
-#                              rho = Q_rho, impute = "median")
-# # to view as a dataframe
-# View(bergescores$scores)
+# Extracting factor scores per case (ppt), for EFA_6f solution
+# I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
+# I'm also not sure of all the arguments, particularly rho
+# taking rho out slightly changes if you plot bergescores$scores
+# it's also possible to impute missing data as there is a lot, use "median" or "mean"
+# the four combinations of these arguments give basically the same resulting plot but should check them
+# the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
+bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"),
+                             rho = Q_rho, impute = "median")
+# to view as a dataframe
+View(bergescores$scores)
 
 ```
