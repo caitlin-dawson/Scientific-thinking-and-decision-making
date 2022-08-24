@@ -339,7 +339,7 @@ describe(data_Q_total[, epicur])
 psych::alpha(data_Q_total[, epicur[1:5]])
 psych::alpha(data_Q_total[, epicur[6:10]])
 
-# McDonald's omegas
+# McDonald's omegas; NOT 100% SURE ABOUT THESE
 summary(omega(data_Q_total[, epicur[1:5]]))
 summary(omega(data_Q_total[, epicur[6:10]]))
 
