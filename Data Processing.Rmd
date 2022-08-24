@@ -339,6 +339,10 @@ describe(data_Q_total[, epicur])
 psych::alpha(data_Q_total[, epicur[1:5]])
 psych::alpha(data_Q_total[, epicur[6:10]])
 
+# McDonald's omegas
+summary(omega(data_Q_total[, epicur[1:5]]))
+summary(omega(data_Q_total[, epicur[6:10]]))
+
 # Calculate sum scores
 data_Q_total$ICuriositySum <- rowSums(cbind(data_Q_total$Icuriosity1, data_Q_total$Icuriosity2, data_Q_total$Icuriosity3, data_Q_total$Icuriosity4, data_Q_total$Icuriosity5), na.rm = TRUE)
 data_Q_total$DCuriositySum <- rowSums(cbind(data_Q_total$Dcuriosity1, data_Q_total$Dcuriosity2, data_Q_total$Dcuriosity3, data_Q_total$Dcuriosity4, data_Q_total$Dcuriosity5), na.rm = TRUE)
@@ -396,6 +400,12 @@ psych::alpha(data_Q_total[, IH[6:10]])
 psych::alpha(data_Q_total[, IH[11:16]])
 psych::alpha(data_Q_total[, IH[17:22]])
 
+# McDonald's omegas
+summary(omega(data_Q_total[, IH[1:5]]))
+summary(omega(data_Q_total[, IH[6:10]]))
+summary(omega(data_Q_total[, IH[11:16]]))
+summary(omega(data_Q_total[, IH[17:22]]))
+
 # Intellectual Humility Scoring
 # https://seaver.pepperdine.edu/social-science/content/comprehensive-intellectual-humility.pdf -> sum scores
 
@@ -446,6 +456,9 @@ describe(data_Q_total[, need_clo])
 
 # Cronbach's alphas
 psych::alpha(data_Q_total[, need_clo])
+
+# McDonald's omegas
+summary(omega(data_Q_total[, need_clo]))
 
 # Need for Closure Scoring
 # https://www.midss.org/sites/default/files/need_for_closure_scale.pdf
@@ -500,6 +513,9 @@ describe(data_Q_total[, need_cog])
 # Cronbach's alphas
 psych::alpha(data_Q_total[, need_cog])
 
+# McDonald's omegas
+summary(omega(data_Q_total[, need_cog]))
+
 # Need for Cognition Scoring
 # https://centerofinquiry.org/uncategorized/need-for-cognition-scale-wabash-national-study/
 # According to this source you should calculate the sum score for this scale
@@ -548,6 +564,9 @@ describe(data_Q_total[, aot])
 
 # Cronbach's alpha
 psych::alpha(data_Q_total[, aot])
+
+# McDonald's omega
+summary(omega(data_Q_total[, aot]))
 
 # Actively Openminded Thinking Scoring
 # https://www.sciencedirect.com/science/article/pii/S1871187119303700
@@ -600,6 +619,9 @@ describe(data_Q_total[, sci_att])
 # Cronbach's alphas
 psych::alpha(data_Q_total[, sci_att])
 
+# McDonald's omegas
+summary(omega(data_Q_total[, sci_att]))
+
 # Calculate sum score
 data_Q_total$sci_id <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b, data_Q_total$sa.1d, data_Q_total$sa.1g), na.rm = TRUE)
 data_Q_total$sci_impo <- rowSums(cbind(data_Q_total$sa.1c, data_Q_total$sa.1e, data_Q_total$sa.1h, data_Q_total$sa.1f), na.rm = TRUE)
@@ -645,6 +667,9 @@ describe(data_Q_total[, sci_cur])
 
 # Cronbach's alpha
 psych::alpha(data_Q_total[, sci_cur])
+
+# McDonald's omega
+summary(omega(data_Q_total[, sci_cur]))
 
 # Calculate sum score
 data_Q_total$sci_cur <- rowSums(cbind(data_Q_total$sc.1.quantised, data_Q_total$sc.2.quantised, data_Q_total$sc.3.quantised, data_Q_total$sc.4.quantised), na.rm = TRUE)
