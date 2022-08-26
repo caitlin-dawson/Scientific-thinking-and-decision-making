@@ -5,7 +5,19 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
-The data are normal (skew<=1). The correlation matrix uses polychoric correlations (treats data as ordinal).
+# Milla's Factor Analysis Thoughts
+
+* Overall, I think we should have some sort of quantifiable criteria and thresholds for our factor analysis. For example, for choosing the number of factors to include, Zmigrod used scree plots and PA, whereas Eisenberg used BIC. We should also pick 1-2 criteria and stick to that n of factors.
+
+* Same goes for the criteria we use (if any) to evaluate the "role" of each variable in the solution. We need to decide whether we want to just keep everything and ignore how each variable fits into the solution, or if we want to iteratively go through the solutions and omit some variables (based on, for example, the complexity of the variable).
+  + Caitlin had also used a combination of intuitive judgements to arrive at a solution that made the most sense conceptually. I am not sure how common this is in EFA; also, even if it is common in survey building, does it make sense in our situation?
+  
+* The data have some serious limitations when considering FA. Firstly, our sample size is relatively small, which might influence the results (not sure if we should reconsider imputation, although I am not sure how much this would actually change). Secondly, the data are not very well-suited for FA based on the correlations and KMO values. 
+  + These limitations make me wonder if there is another way to "condense" the data, although FA is pretty much the only option if we want to work with latent constructs that we hypothesize to be there.
+
+* I cannot find Zmigrod's or Eisenberg's fit indices anywhere; they only show the factor loadings. I am not sure if we should a) report, or b) even care about these for our purposes?
+
+* The benefits and limitations of **keeping all variables**: we use all data (+), more straightforward to report (+), messy results (-), factors not necessarily interpretable (-); The benefits and limitations of **using some crtieria to delete variables**: probably more easily interpretable factors (+), a cleaner solution (+), not using all data (-), difficult to draw the line in terms fo exclusion criteria (-)
 
 ```{r Load Packages}
 
@@ -257,6 +269,9 @@ hist(abs(Q_rho[lower.tri(Q_rho)]),
 hist(abs(T_rho[lower.tri(T_rho)]), 
      breaks = 20, col = sample(colors(), 1))
 
+# Corrplot without titles
+corrplot(all_rho, tl.pos = "n")
+
 ```
 
 ## Factorability
@@ -269,9 +284,9 @@ cortest.bartlett(Q_rho, n = nrow(survey_data))
 cortest.bartlett(T_rho, n = nrow(task_data))
 
 # Kaiser-Meyer-Olkin measure (>.7 is good)
-KMO(r = all_rho)
-KMO(r = Q_rho)
-KMO(r = T_rho)
+sort(round(KMO(r = all_rho)$MSAi, 2))
+sort(round(KMO(r = Q_rho)$MSAi, 2))
+sort(round(KMO(r = T_rho)$MSAi, 2))
 # NOTE: KMO is not very good for a lot of items?
 
 ```
