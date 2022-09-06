@@ -1,17 +1,11 @@
 ---
-title: "Citizen's Initiative Draft Code"
-author: "Caitlin Dawson"
-date: "15 6 2022"
-output: html_document
+title: "Citizen's Initiative"
+author: "Caitlin Dawson and Milla Pihlajamäki"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
 ---
 
 # Notes
-
-This is a draft version of code to format and process data from the Citizen's Initiative Task, meant to be combined with the full code Notebook after testing.
-
-Notes: 
-Last edited 15.6.2022 by Caitlin. Takes data downloaded from Gorilla in **blinded, semicolon separater, csv format, short form**, versions 22-25.
-
 Version history: 
 *version 23: HJ updated the experiment (a source was deleted from CI task so this version has only 5 sources. The Viiskunta source was taken down so we could not get a stable URL for it.)
 *version 24: HJ updated CI task to include all 6 sources again, Viiskunta source as an image
