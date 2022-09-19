@@ -248,6 +248,7 @@ data_Q_total <- data_Q_total %>%
 
 ```
 
+
 ### TIPI (Big Five)
 
 Reliability are not calculated for TIPI, see Gosling's website for explanation. http://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/ 
@@ -771,11 +772,6 @@ data_Q_total <- data_Q_total %>%
                              total_HR == 1 ~ 1,
                              total_HR == 2 ~ 1))
 
-# Add a measure of total heuristic response, where 1 = at least one mistake in one heuristic category, 2 = at least 1 heuristic mistake in both heuristic categories, 0 = all normative responses
-data_Q_total <- data_Q_total %>%
-  group_by(Participant.Private.ID) %>% 
-  mutate(HEHRscore = HEscore + HRscore)
-
 ```
 
 ### Randomness and Probability
@@ -783,6 +779,8 @@ data_Q_total <- data_Q_total %>%
 New columns are created for each item, specifying whether the participant got the question correct or not (0=incorrect, 1=correct). A sum score is calculated for all the items.
 
 ```{r Randomness and Probability}
+
+sort(rowSums(is.na(data_Q_total)))
 
 # Q1: Sairaala B is the correct answer
 # Create a new column
@@ -806,7 +804,7 @@ data_Q_total <- data_Q_total %>%
   mutate(rp.2.int = case_when((rp.2.1 == "Pyydys 1" & rp.2.2 == "Pyydys 2" & rp.2.3 == "" & rp.2.4 == "" & rp.2.5 == "" & rp.2.6 == "" & rp.2.7 == "" & rp.2.8 == "") ~ 1,
                               is.na(rp.2.8) ~ 2))
 data_Q_total[which(is.na(data_Q_total$rp.2.int)), "rp.2.int"] <- 0
-data_Q_total[which(data_Q_total$rp.2.int == 2), ] <- NA
+data_Q_total[which(data_Q_total$rp.2.int == 2), "rp.2.int"] <- NA
 
 # Q3: Kanava 1; 2 tai 3 is the correct answer
 # Create a new column
@@ -972,7 +970,7 @@ for (i in 1:length(q_var_con)) {
 }
 
 # Describe: mean, skew, kurtosis
-describe(data_Q_sub[, q_var_con])[c("mean", "skew", "kurtosis")]
+describe(data_Q_sub[, q_var_con])
 
 # Correlation matrix
 round(cor(data_Q_sub[, q_var_con], method = "pearson", 
@@ -1429,7 +1427,7 @@ for (i in 1:length(t_var)) {
 }
 
 # Describe: mean, skew, kurtosis
-describe(data_T_sub[, t_var])[c("mean", "skew", "kurtosis")]
+describe(data_T_sub[, t_var])
 
 # Transforming all variables with absolute skew > 1
 data_T_sub$GNGbetalog <- log10(data_T_sub$GNGbeta)
@@ -1442,7 +1440,7 @@ data_T_sub$GlobalToLocalPrecedencelog <- log10(max(data_T_sub$GlobalToLocalPrece
 t_var_log <- c("GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum", "FluencySum")
 
 # Describe
-describe(data_T_sub[, t_var_log])[c("mean", "skew", "kurtosis")]
+describe(data_T_sub[, t_var_log])
 
 # Visualize
 par(mfrow = c(2, 2))
@@ -1485,11 +1483,9 @@ data_all_sub_cleaned <- data_all_sub_cleaned %>%
 # Check missing data
 sort(colSums(is.na(data_all_sub_cleaned)))
 sort(rowSums(is.na(data_all_sub_cleaned)))
-# As more participants were excluded based on their task data than based on their questionnaire data, there are participants that have more missing variables than they should based on the thresholds set for tasks and questionnaires (7+3=10). These participants are missing all their task data. 
-t_var_log <- t_var_log[-9]
-which(rowSums(is.na(data_all_sub_cleaned[, t_var_log])) == length(t_var_log))
-# NOTE: not sure what to do here, I will exclude for now?
-data_all_sub_cleaned <- data_all_sub_cleaned[-which(rowSums(is.na(data_all_sub_cleaned[, t_var_log])) == length(t_var_log)), ]
+# As more participants were excluded based on their task data than based on their questionnaire data, there are participants that have more missing variables than they should based on the thresholds set for tasks and questionnaires (7+3=10). 
+# NOTE: not sure what to do here, will remove them for now
+data_all_sub_cleaned <- data_all_sub_cleaned[-which(rowSums(is.na(data_all_sub_cleaned)) > 10),]
 
 # Rename
 data_efa <- data_all_sub_cleaned
@@ -1502,7 +1498,7 @@ par(mfrow = c(2, 5))
 for (i in 1:ncol(data_efa)) {
   hist(data_efa[, i], col = sample(colors(), 1))
 }
-describe(data_efa)[c("mean", "skew", "kurtosis")]
+describe(data_efa)
 
 ```
 
