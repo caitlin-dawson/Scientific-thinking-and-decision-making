@@ -5,19 +5,9 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
-# Milla's Factor Analysis Thoughts
-
-* Overall, I think we should have some sort of quantifiable criteria and thresholds for our factor analysis. For example, for choosing the number of factors to include, Zmigrod used scree plots and PA, whereas Eisenberg used BIC. We should also pick 1-2 criteria and stick to that n of factors.
-
-* Same goes for the criteria we use (if any) to evaluate the "role" of each variable in the solution. We need to decide whether we want to just keep everything and ignore how each variable fits into the solution, or if we want to iteratively go through the solutions and omit some variables (based on, for example, the complexity of the variable).
-  + Caitlin had also used a combination of intuitive judgements to arrive at a solution that made the most sense conceptually. I am not sure how common this is in EFA; also, even if it is common in survey building, does it make sense in our situation?
-  
-* The data have some serious limitations when considering FA. Firstly, our sample size is relatively small, which might influence the results (not sure if we should reconsider imputation, although I am not sure how much this would actually change). Secondly, the data are not very well-suited for FA based on the correlations and KMO values. 
-  + These limitations make me wonder if there is another way to "condense" the data, although FA is pretty much the only option if we want to work with latent constructs that we hypothesize to be there.
-
-* I cannot find Zmigrod's or Eisenberg's fit indices anywhere; they only show the factor loadings. I am not sure if we should a) report, or b) even care about these for our purposes?
-
-* The benefits and limitations of **keeping all variables**: we use all data (+), more straightforward to report (+), messy results (-), factors not necessarily interpretable (-); The benefits and limitations of **using some crtieria to delete variables**: probably more easily interpretable factors (+), a cleaner solution (+), not using all data (-), difficult to draw the line in terms fo exclusion criteria (-)
+Need to do EFA in lavaan, Caitlin had linked a tutorial + had some code; we need to do this to extract the factor scores
+-> change all FA to lavaan instead of psych
+-> extract factor scores + visualization
 
 ```{r Load Packages}
 
@@ -28,6 +18,7 @@ output: html_notebook
 # library(tidyverse)
 # library(caret)
 library(glmnet)
+library(semPlot)
 # library(tidyverse)
 # library(tidyselect)
 # library(psych)
@@ -43,6 +34,7 @@ library(glmnet)
 # library(glasso)
 
 # Create task- and survey-only sets
+t_var_log <- t_var_log[-9]
 survey_data <- data_efa[, q_var]
 task_data <- data_efa[, t_var_log]
 
@@ -338,6 +330,113 @@ fa.parallel(T_rho, n.obs = nrow(task_data), fm = "minrank")
 
 ```
 
+## Run the Factor Analysis with lavaan
+
+Number of factors is determined with EBIC.
+
+```{r EFA for Questionnaires (4 factors)}
+
+# 4-factor model
+f4 <- '
+efa("efa")*f1 +
+efa("efa")*f2 +
+efa("efa")*f3 +
+efa("efa")*f4 =~ AMean + CMean + EMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HEscore + HRscore + RPSum + sci_cur + sci_tru + sci_impo + sci_id + MatrixCorrectCount'
+
+# Fit the model
+efa_f4 <- cfa(model = f4,
+              data = survey_data,
+              rotation = "oblimin",
+              estimator = "WLSMV",
+              ordered = c("HEscore", "HRscore", "RPSum"))
+summary(efa_f4, fit.measures = TRUE)
+parameterEstimates(efa_f4)
+fitmeasures(efa_f4)
+# Looks like it's a just identified model? Fit measures are too good
+
+# Look at loadings
+loadings_4f <- inspect(efa_f4, what = "std")[["lambda"]]
+fa.diagram(inspect(efa_f4, what = "std")[["lambda"]])
+loadings_4f <- as.data.frame(loadings_4f)
+round(fa.sort(loadings_4f), 2)
+# Remove EMean, sci_tru, HEscore (no loadings >= .33)
+
+# survey_data_sub <- survey_data %>% 
+#   select(-c("EMean", "sci_tru", "HEscore"))
+# f4_sub <- '
+# efa("efa")*f1 +
+# efa("efa")*f2 +
+# efa("efa")*f3 +
+# efa("efa")*f4 =~ AMean + CMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH1Sum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HRscore + RPSum + sci_cur + sci_impo + sci_id + MatrixCorrectCount'
+# 
+# # Fit the model
+# efa_f4_sub <- cfa(model = f4_sub,
+#                   data = survey_data_sub,
+#                   rotation = "oblimin",
+#                   estimator = "WLSMV",
+#                   ordered = c("HRscore", "RPSum"))
+# summary(efa_f4_sub, fit.measures = TRUE)
+# parameterEstimates(efa_f4_sub)
+# fitmeasures(efa_f4_sub)
+# # Still looks not identified, look into degrees of freedom
+# 
+# loadings_4f_sub <- inspect(efa_f4_sub, what = "std")[["lambda"]]
+# fa.diagram(inspect(efa_f4_sub, what = "std")[["lambda"]])
+# loadings_4f_sub <- as.data.frame(loadings_4f_sub)
+# round(fa.sort(loadings_4f_sub), 2)
+
+
+# Visualize
+# 22 items, 4 factors
+# Create layout matrix (42 nodes altogether)
+y <- c(rep(c(-0.9, -0.8), length.out = 22), # items
+       rep(0, 4)) # latents
+x <- c(seq(from = -0.98, to = 0.98, length.out = 22), # items
+       -0.75, -0.25, 0.25, 0.75)
+coord <- matrix(data = c(x, y), nrow = 26, ncol = 2, byrow = FALSE)
+semPaths(efa_f4,
+         what = "est",
+         whatLabels = "no",
+         as.expression = c("nodes", "edges"),
+         theme = "colorblind", 
+         curvePivot = TRUE,
+         sizeMan = 3,
+         sizeLat = 7,
+         edge.label.cex = 1,
+         reorder = FALSE,
+         width = 8,
+         height = 5,
+         groups = "latents",
+         borders = FALSE,
+         residuals = FALSE,
+         intercepts = FALSE,
+         thresholds = FALSE,
+         label.prop = .96,
+         label.scale = TRUE,
+         color = c(rep("#bfbfbf", 4)),
+         layout = coord, 
+         exoCov = FALSE,
+         nodeLabels = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICur", "DCur", "IH1", "IH2", "IH3", "IH4", "Clo ", " Cog", "AOT", "HE", "HR", "RP", "sci_cur", "sci_tru", "sci_impo", "sci_id", "Mat_rea", "F1", "F2", "F3", "F4"),
+         filename = "4f_pathdiagram",
+         filetype = "pdf")
+
+
+```
+
+
+```{r Extract Factor Scores (test)}
+
+scores_4f <- lavPredict(efa_f4, method = "EBM")
+
+```
+
+
+
+
+# NOT RELEVANT (???)
+
+
+
 ## Run the Factor Analysis
 
 Method is "minrank" minimum rank or MRFA. Recommended for polychoric/tetrachoric correlation matrices with Heywood cases https://www.tandfonline.com/doi/pdf/10.1080/10705511.2020.1735393 
@@ -346,7 +445,57 @@ The criteria used to determine whether to keep items and factors:
 * if an item does not have one and only one salient loading (>=.33) *and* it has high complexity (>=2.0), it is removed
 * if a factor has less than three items with primary (largest loading of that item) loadings on it, the factor is removed
 
-### Number of Factors from EBIC
+### Number of Factors from EBIC (Questionnaires)
+
+```{r Factor Analysis (Questionnaires)}
+
+# Questionnaires only
+# EBIC: 4 factors
+EFA_Q4 <- fa(Q_rho, nfactors = 4, rotate = "oblimin",
+             fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q4)
+# Items to be removed: HEscore, IH4Sum, IH1Sum* (items with no loading > .33)
+
+survey_data_sub <- survey_data %>% 
+  select(-c(c("HEscore", "IH4Sum", "IH1Sum")))
+Q_rho_sub <- mixedCor(data = survey_data_sub, 
+                      d = c("HRscore"),
+                      c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH2Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount"),
+                      use = "pairwise.complete.obs",
+                      method = "spearman")
+Q_rho_sub <- Q_rho_sub$rho
+EFA_Q4_sub <- fa(Q_rho_sub, nfactors = 4, rotate = "oblimin",
+                 fm = "minrank", scores = "tenBerge") 
+fa.sort(EFA_Q4_sub)
+
+```
+
+```{r Visualize the 4-Factor Solution}
+
+# Bad visualization
+fa.diagram(EFA_Q4_sub)
+
+# Get factor loadings and add them to data
+
+# THIS DOES NOT WORK FOR US YET! Need to figure out why
+# obtain factor loadings and add them to data
+# factor_scores <- as.data.frame(Ideol_EFA$scores)
+# 
+# combined_data <- add_column(
+#   combined_data,
+#   Ideol_Factor1_Politics = factor_scores$MR1,
+#   Ideol_Factor2_Dogmatism = factor_scores$MR2,
+#   Ideol_Factor3_Religion = factor_scores$MR3
+#   )
+# 
+# corrplot(Ideol_EFA$loadings, method="color",
+#          addCoef.col = "black", number.cex = .75,
+#          tl.col = "black", cl.pos = "b",
+#          cl.length=4)
+
+```
+
+### Number of Factors from EBIC (Rest)
 
 ```{r Run the Factor Analysis (EBIC), include = FALSE}
 
@@ -547,6 +696,8 @@ fa.sort(EFA_T3)
 
 ```{r Extract Factor Scores}
 
+## THESE MIGHT NOT BE GOOD?
+
 # Trying this out with the 4-factor survey solution (n of factors from EBIC)
 survey_4F_scores <- factor.scores(x = survey_data,  # the data
                                   f = EFA_Q4,  # the factor solution
@@ -590,9 +741,9 @@ for (i in 1:ncol(survey_5F_scores)) {
 # it's also possible to impute missing data as there is a lot, use "median" or "mean"
 # the four combinations of these arguments give basically the same resulting plot but should check them
 # the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
-bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"),
-                             rho = Q_rho, impute = "median")
+# bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"),
+                             # rho = Q_rho, impute = "median")
 # to view as a dataframe
-View(bergescores$scores)
+# View(bergescores$scores)
 
 ```
