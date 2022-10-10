@@ -430,12 +430,16 @@ semPaths(efa_f4_sub,
 
 # THIS DOES NOT WORK FOR US YET! Need to figure out why
 # obtain factor loadings and add them to data
-loading_mat <- as.matrix(loadings_4f_sub)
+loading_mat <- as.matrix(fa.sort(loadings_4f_sub))
+loading_mat <- loading_mat[, -ncol(loading_mat)]
+# rownames(loading_mat) <-
+# colnames(loading_mat) <- 
 
 corrplot(loading_mat, method = "color",
-         addCoef.col = "black", 
+         addCoef.col = NULL, 
          number.cex = .75,
-         tl.col = "black", cl.pos = "b",
+         tl.col = "black", 
+         cl.pos = "b",
          cl.length = 4
          )
 # Make this nicer
