@@ -1500,6 +1500,9 @@ for (i in 1:ncol(data_efa)) {
 }
 describe(data_efa)
 
+# Save data
+write.csv(data_efa, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking-and-decision-making/data_efa.csv", row.names = FALSE)
+
 ```
 
 # Data Imputation
