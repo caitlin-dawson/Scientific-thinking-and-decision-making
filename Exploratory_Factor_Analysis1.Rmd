@@ -15,14 +15,15 @@ Need to do EFA in lavaan, Caitlin had linked a tutorial + had some code; we need
 # library(glmnet) 
 # library(dplyr) 
 # library(tidyr)
-# library(tidyverse)
+library(tidyverse)
+library(corrplot)
 # library(caret)
 library(glmnet)
 library(semPlot)
 # library(tidyverse)
 # library(tidyselect)
-# library(psych)
-# library(lavaan)
+library(psych)
+library(lavaan)
 # library(dplyr)
 # library(ggplot2)
 # library(psychTools)
@@ -365,7 +366,7 @@ loadings_4f <- inspect(efa_f4, what = "std")[["lambda"]]
 fa.diagram(inspect(efa_f4, what = "std")[["lambda"]])
 loadings_4f <- as.data.frame(loadings_4f)
 round(fa.sort(loadings_4f), 2)
-# Remove EMean, sci_tru, HEscore (no loadings >= .33)
+# Remove EMean, HEscore (no loadings >= .3)
 
 survey_data_sub <- survey_data %>%
   select(-c("EMean", "HEscore", "IH1Sum"))  # removed EMean and HEscore first, and IH1sum second (here all at once)
@@ -422,9 +423,11 @@ semPaths(efa_f4_sub,
          color = c(rep("#bfbfbf", 4)),
          layout = coord, 
          exoCov = FALSE,
-         nodeLabels = c("AMean", "CMean", "ESMean", "OMean", "ICur", "DCur", "IH2", "IH3", "IH4", "Clo ", " Cog", "AOT", "HR", "RP", "sci_cur", "sci_tru", "sci_impo", "sci_id", "Mat_rea", "F1", "F2", "F3", "F4"),
-         filename = "4f_pathdiagram",
-         filetype = "pdf")
+         nodeLabels = c("AMean", "CMean", "ESMean", "OMean", "ICur", "DCur", "IH2", "IH3", "IH4", "Clo ", " Cog", "AOT", "HR", "RP", "sci_cur", "sci_tru", "sci_impo", "sci_id", "Mat_rea", "F1", "F2", "F3", "F4")
+         # ,
+         # filename = "4f_pathdiagram",
+         # filetype = "pdf"
+         )
 # Omit irrelevant edges??
 
 
@@ -432,15 +435,35 @@ semPaths(efa_f4_sub,
 # obtain factor loadings and add them to data
 loading_mat <- as.matrix(fa.sort(loadings_4f_sub))
 loading_mat <- loading_mat[, -ncol(loading_mat)]
-# rownames(loading_mat) <-
-# colnames(loading_mat) <- 
+rownames(loading_mat) <- c("Respect for Others' Viewpoints (IH)", 
+                           "Agreeableness (B5)", 
+                           "sci_tru",
+                           "sci_impo",
+                           "IcuriositySum",
+                           "Need for Cognition",
+                           "Openness (B5)",
+                           "DcuriositySum",
+                           "sci_id",
+                           "Science Curiosity",
+                           "Need for Closure",
+                           "Conscientiousness (B5)",
+                           "Emotional Stability (B5)",
+                           "Openness to Revising One's Viewpoint (IH)",
+                           "Actively Openminded Thinking",
+                           "Lack of Intellectual Overconfidence (IH)",
+                           "Randomness-Probability", 
+                           "Heuristic-Representativeness", 
+                           "Matrix Reasoning")
+colnames(loading_mat) <- c("Factor 1", "Factor 2", "Factor 3", "Factor 4")
 
 corrplot(loading_mat, method = "color",
          addCoef.col = NULL, 
          number.cex = .75,
+         tl.cex = .75,
          tl.col = "black", 
          cl.pos = "b",
-         cl.length = 4
+         cl.length = 4,
+         cl.cex = .6
          )
 # Make this nicer
 
@@ -449,326 +472,10 @@ corrplot(loading_mat, method = "color",
 ```
 
 
-```{r Extract Factor Scores (test)}
-
-scores_4f <- lavPredict(efa_f4, method = "EBM")
-
-```
-
-
-
-
-# NOT RELEVANT (???)
-
-
-
-## Run the Factor Analysis
-
-Method is "minrank" minimum rank or MRFA. Recommended for polychoric/tetrachoric correlation matrices with Heywood cases https://www.tandfonline.com/doi/pdf/10.1080/10705511.2020.1735393 
-
-The criteria used to determine whether to keep items and factors:
-* if an item does not have one and only one salient loading (>=.33) *and* it has high complexity (>=2.0), it is removed
-* if a factor has less than three items with primary (largest loading of that item) loadings on it, the factor is removed
-
-### Number of Factors from EBIC (Questionnaires)
-
-```{r Factor Analysis (Questionnaires)}
-
-# Questionnaires only
-# EBIC: 4 factors
-EFA_Q4 <- fa(Q_rho, nfactors = 4, rotate = "oblimin",
-             fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4)
-# Items to be removed: HEscore, IH4Sum, IH1Sum* (items with no loading > .33)
-
-survey_data_sub <- survey_data %>% 
-  select(-c(c("HEscore", "IH4Sum", "IH1Sum")))
-Q_rho_sub <- mixedCor(data = survey_data_sub, 
-                      d = c("HRscore"),
-                      c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH2Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount"),
-                      use = "pairwise.complete.obs",
-                      method = "spearman")
-Q_rho_sub <- Q_rho_sub$rho
-EFA_Q4_sub <- fa(Q_rho_sub, nfactors = 4, rotate = "oblimin",
-                 fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_sub)
-
-```
-
-```{r Visualize the 4-Factor Solution}
-
-# Bad visualization
-fa.diagram(EFA_Q4_sub)
-
-# Get factor loadings and add them to data
-
-# THIS DOES NOT WORK FOR US YET! Need to figure out why
-# obtain factor loadings and add them to data
-# factor_scores <- as.data.frame(Ideol_EFA$scores)
-# 
-# combined_data <- add_column(
-#   combined_data,
-#   Ideol_Factor1_Politics = factor_scores$MR1,
-#   Ideol_Factor2_Dogmatism = factor_scores$MR2,
-#   Ideol_Factor3_Religion = factor_scores$MR3
-#   )
-# 
-# corrplot(Ideol_EFA$loadings, method="color",
-#          addCoef.col = "black", number.cex = .75,
-#          tl.col = "black", cl.pos = "b",
-#          cl.length=4)
-
-```
-
-### Number of Factors from EBIC (Rest)
-
-```{r Run the Factor Analysis (EBIC), include = FALSE}
-
-# All variables (not very relevant, previous analyses indicate that questionnaires and tasks should be analysed separately)
-# EBIC: 6 factors
-EFA_all6 <- fa(all_rho, nfactors = 6, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all6)
-# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): OMean, sci_tru, SDGoRTlog, AMean, FlexSum, sci_impo
-data_efa_sub <- data_efa %>% 
-  select(-c("OMean", "sci_tru", "SDGoRTlog", "AMean", "FlexSum", "sci_impo"))
-all_rho_sub <- mixedCor(data = data_efa_sub,
-                        d = cat,
-                        c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog"))
-all_rho_sub <- all_rho_sub$rho
-EFA_all6_sub <- fa(all_rho_sub, nfactors = 6, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all6_sub)
-# Items to be removed: sci_id, HEscore, Necker, MeanGoRT, AOTSum
-
-data_efa_sub2 <- data_efa_sub %>% 
-  select(-c("sci_id", "HEscore", "NeckerTotalRatelog", "MeanGoRT", "AOTSum"))
-all_rho_sub2 <- mixedCor(data = data_efa_sub2,
-                         d = c("HRscore"),
-                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
-all_rho_sub2 <- all_rho_sub2$rho
-EFA_all6_sub2 <- fa(all_rho_sub2, nfactors = 6, rotate = "oblimin",
-                   fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all6_sub2)
-# Items to be removed: IH2Sum
-
-data_efa_sub3 <- data_efa_sub2 %>% 
-  select(-c("IH2Sum"))
-all_rho_sub3 <- mixedCor(data = data_efa_sub3,
-                         d = c("HRscore"),
-                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
-all_rho_sub3 <- all_rho_sub3$rho
-EFA_all6_sub3 <- fa(all_rho_sub3, nfactors = 6, rotate = "oblimin",
-                   fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all6_sub3)
-# Items to be removed: IH4Sum
-
-data_efa_sub4 <- data_efa_sub3 %>% 
-  select(-c("IH4Sum"))
-all_rho_sub4 <- mixedCor(data = data_efa_sub4,
-                         d = c("HRscore"),
-                         c = c("CMean", "EMean", "ESMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog"))
-all_rho_sub4 <- all_rho_sub4$rho
-EFA_all6_sub4 <- fa(all_rho_sub4, nfactors = 6, rotate = "oblimin",
-                   fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all6_sub4)
-# Items look ok, but three factors have less than three primary loadings -> let's try with fewer factors
-
-EFA_all5 <- fa(all_rho_sub4, nfactors = 5, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all5)
-EFA_all4 <- fa(all_rho_sub4, nfactors = 4, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all4)
-EFA_all3 <- fa(all_rho_sub4, nfactors = 3, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all3)
-
-
-# Questionnaires only
-# EBIC: 4 factors
-EFA_Q4 <- fa(Q_rho, nfactors = 4, rotate = "oblimin",
-             fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4)
-# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): HEscore, sci_impo, DCuriositySum, IH4Mean, sci_tru
-
-survey_data_sub <- survey_data %>% 
-  select(-c(c("HEscore", "sci_impo", "DCuriositySum", "IH4Sum", "sci_tru")))
-Q_rho_sub <- mixedCor(data = survey_data_sub, 
-                      d = c("HRscore"),
-                      c = c("AMean", "CMean", "EMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
-                      use = "pairwise.complete.obs",
-                      method = "spearman")
-Q_rho_sub <- Q_rho_sub$rho
-EFA_Q4_sub <- fa(Q_rho_sub, nfactors = 4, rotate = "oblimin",
-                 fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_sub)
-# Items to be removed: EMean, IH2Sum
-
-survey_data_sub2 <- survey_data_sub %>% 
-  select(-c("EMean", "IH2Sum"))
-Q_rho_sub2 <- mixedCor(data = survey_data_sub2, 
-                       d = c("HRscore"),
-                       c = c("AMean", "CMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
-                       use = "pairwise.complete.obs",
-                       method = "spearman")
-Q_rho_sub2 <- Q_rho_sub2$rho
-EFA_Q4_sub2 <- fa(Q_rho_sub2, nfactors = 4, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_sub2)
-# Items to be removed: AOTSum
-
-survey_data_sub3 <- survey_data_sub2 %>% 
-  select(-c("AOTSum"))
-Q_rho_sub3 <- mixedCor(data = survey_data_sub3, 
-                       d = c("HRscore"),
-                       c = c("AMean", "CMean", "ESMean", "OMean",  "ICuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "RPSum", "sci_cur", "sci_id", "MatrixCorrectCount"),
-                       use = "pairwise.complete.obs",
-                       method = "spearman")
-Q_rho_sub3 <- Q_rho_sub3$rho
-EFA_Q4_sub3 <- fa(Q_rho_sub3, nfactors = 4, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q4_sub3)
-# All items ok now, but the 4th factor has less than three primary loadings -> run a model with only three factors
-EFA_Q3_sub3 <- fa(Q_rho_sub3, nfactors = 3, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q3_sub3)
-
-# Tasks only
-EFA_T3 <- fa(T_rho, nfactors = 3, rotate = "oblimin",
-             fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_T3)
-
-```
-
-### Number of Factors from PA + Scree Plot
-
-```{r Run the Factor Analysis (PA + Scree Plot)}
-
-# All variables
-# PA + scree plot: 8 factors
-EFA_all8 <- fa(all_rho, nfactors = 8, rotate = "oblimin",
-               fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_all8)
-# # Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): CogSum, sci_id, IH2Sum
-# 
-# data_efa_sub5 <- data_efa %>% 
-#   select(-c(CogSum, sci_id, IH2Sum))
-# all_rho_sub5 <- mixedCor(data = data_efa_sub5, 
-#                          d = cat,
-#                          c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum"))
-# all_rho_sub5 <- all_rho_sub5$rho
-# EFA_all8_sub5 <- fa(all_rho_sub5, nfactors = 8, rotate = "oblimin",
-#                     fm = "minrank", scores = "tenBerge")
-# fa.sort(EFA_all8_sub5)
-# # Items to be removed: sci_cur, sci_impo, NeckerTotalRate, RPSum, IH3Sum
-# 
-# data_efa_sub6 <- data_efa_sub5 %>% 
-#   select(-c(sci_cur, sci_impo, NeckerTotalRatelog, RPSum, IH3Sum))
-# all_rho_sub6 <- mixedCor(data = data_efa_sub6, 
-#                          d = cat,
-#                          c = c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH4Sum", "CloSum", "AOTSum", "sci_tru", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "FlexSum"))
-# all_rho_sub6 <- all_rho_sub6$rho
-# EFA_all8_sub6 <- fa(all_rho_sub6, nfactors = 8, rotate = "oblimin",
-#                     fm = "minrank", scores = "tenBerge")
-# fa.sort(EFA_all8_sub6)
-# # Items to be removed: IH4Sum, HEscore, IH1Sum
-# # NOTE: I will stop this here for now. Point is that with the 8-factor solution and the exclusion criteria we end up removing so many items that we end up with factors with too few items loading onto them.
-
-# Questionnaires only
-# PA + scree plot: 5 factors
-EFA_Q5 <- fa(Q_rho, nfactors = 5, rotate = "oblimin",
-             fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q5)
-# Items to be removed (!= 1 primary salient loading AND complexity >= 2.0): IH2Sum, EMean, sci_id, ESMean, HEscore
-
-survey_data_sub4 <- survey_data %>% 
-  select(-c(IH2Sum, EMean, sci_id, ESMean, HEscore))
-Q_rho_sub4 <- mixedCor(data = survey_data_sub4,
-                       d = c("HRscore"),
-                       c = c("AMean", "CMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "MatrixCorrectCount"),
-                       use = "pairwise.complete.obs",
-                       method = "spearman")
-Q_rho_sub4 <- Q_rho_sub4$rho
-EFA_Q5_sub4 <- fa(Q_rho_sub4, nfactors = 5, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q5_sub4)
-# Items to be removed: sci_cur, IH4Sum
-
-survey_data_sub5 <- survey_data_sub4 %>% 
-  select(-c(IH4Sum, sci_cur))
-Q_rho_sub5 <- mixedCor(data = survey_data_sub5,
-                       d = c("HRscore"),
-                       c = c("AMean", "CMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH3Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_tru", "sci_impo", "MatrixCorrectCount"),
-                       use = "pairwise.complete.obs",
-                       method = "spearman")
-Q_rho_sub5 <- Q_rho_sub5$rho
-EFA_Q5_sub5 <- fa(Q_rho_sub5, nfactors = 5, rotate = "oblimin",
-                  fm = "minrank", scores = "tenBerge") 
-fa.sort(EFA_Q5_sub5)
-# Items to be removed: sci_impo
-# This is problematic though, because then we have 14 items for 3 factors, resulting in too few items per factor; I will not continue with the 5-factor model.
-
-# Tasks
-# PA + scree plot: 3 factors
-EFA_T3 <- fa(T_rho, nfactors = 3, rotate = "oblimin",
-             fm = "minrank", scores = "tenBerge")
-fa.sort(EFA_T3)
-
-```
-
-## Extract Factor Scores
-
 ```{r Extract Factor Scores}
 
-## THESE MIGHT NOT BE GOOD?
-
-# Trying this out with the 4-factor survey solution (n of factors from EBIC)
-survey_4F_scores <- factor.scores(x = survey_data,  # the data
-                                  f = EFA_Q4,  # the factor solution
-                                  method = "tenBerge",  # the method; "the ten Berge method focuses on matching the factor score correlation with correlations among factors themselves, while still maintaining factor score determinacy" (https://osf.io/zcsnv/download/?format=pdf)
-                                  rho = Q_rho)$scores  # specify that we used polychoric correlations by specifying the rho matrix
-
-# And also with the 5-factor solution
-survey_5F_scores <- factor.scores(x = survey_data, f = EFA_Q5,
-                                  method = "tenBerge", rho = Q_rho)$scores
-
-# Visualize the factor scores
-# 4 factors
-par(mfrow = c(2, 2))
-for (i in 1:ncol(survey_4F_scores)) {
-  hist(survey_4F_scores[, i],
-       main = colnames(survey_4F_scores)[i],
-       col = sample(colors(), 1),
-       breaks = 30,
-       xlab = "")
-}
-# 5 factors
-par(mfrow = c(2, 3))
-for (i in 1:ncol(survey_5F_scores)) {
-  hist(survey_5F_scores[, i],
-       main = colnames(survey_5F_scores)[i],
-       col = sample(colors(), 1),
-       breaks = 30,
-       xlab = "")
-}
+scores_4f <- lavPredict(efa_f4_sub, method = "EBM")
 
 ```
 
 
-
-```{r Extracting factor scores, include = FALSE}
-
-# Extracting factor scores per case (ppt), for EFA_6f solution
-# I'm not sure that this is right, there is some info in factor.scores about polychoric data and I am not sure how the factor scores per ppt are calculated exactly, whether the HR score binary data makes a difference
-# I'm also not sure of all the arguments, particularly rho
-# taking rho out slightly changes if you plot bergescores$scores
-# it's also possible to impute missing data as there is a lot, use "median" or "mean"
-# the four combinations of these arguments give basically the same resulting plot but should check them
-# the plot is MRFA1 against MRFA6, theyr'e the first 2 columns in $scores
-# bergescores <- factor.scores(Q_new, EFA_6f, method = c("tenBerge"),
-                             # rho = Q_rho, impute = "median")
-# to view as a dataframe
-# View(bergescores$scores)
-
-```
