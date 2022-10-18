@@ -463,7 +463,6 @@ summary(omega(data_Q_total[, need_clo]))
 
 # Need for Closure Scoring
 # https://www.midss.org/sites/default/files/need_for_closure_scale.pdf
-# Not entirely sure if this is the correct file but it says to sum so I'll do that here
 
 # Calculate sum score
 data_Q_total$CloSum <- rowSums(cbind(data_Q_total$closure1, data_Q_total$closure2, data_Q_total$closure3, data_Q_total$closure4, data_Q_total$closure5, data_Q_total$closure6, data_Q_total$closure7, data_Q_total$closure8, data_Q_total$closure9, data_Q_total$closure10, data_Q_total$closure11, data_Q_total$closure12, data_Q_total$closure13, data_Q_total$closure14, data_Q_total$closure15), na.rm = TRUE)
@@ -932,8 +931,12 @@ ggplot(data_Q_sub, aes(x = as.factor(Participant.Private.ID), y = q_missingdata)
 plot(sort(data_Q_sub$q_missingdata))
 
 # Correlation between age and amount of missing values
-gg_miss_fct(x = data_Q_sub, fct = Age)
-cor.test(data_Q_sub$Age, data_Q_sub$q_missingdata, 
+#first select only ppts with some missing data
+data_Q_sub_missing <- data_Q_sub %>%
+  filter(q_missingdata > 0)
+
+gg_miss_fct(x = data_Q_sub_missing, fct = Age)
+cor.test(data_Q_sub_missing$Age, data_Q_sub_missing$q_missingdata, 
          method = "spearman", exact = FALSE)
 
 # Visualize missing data by demographics
@@ -1353,8 +1356,6 @@ for (i in 1:length(uut)) {
 
 # Merge task variables
 
-Doesn't yet include the CI task! 
-
 ```{r Combine the Task Dataframes}
 
 # Merge dataframes
@@ -1391,13 +1392,18 @@ table(data_T_sub$t_missingdata)
 plot(sort(data_T_sub$t_missingdata))
 
 # Merge demographic information to investigate missingness
-# NOTE: what to do about the age correlation?
 data_T_all <- data_Q_total %>%
   select(Participant.Private.ID, gender, Age, Country, Language, Education)
 data_T_sub <- merge(data_T_all, data_T_sub, 
                     by = "Participant.Private.ID", all = TRUE)
-gg_miss_fct(x = data_T_sub, fct = Age)
-cor.test(data_T_sub$Age, data_T_sub$t_missingdata, 
+
+#check missing data correlation with age                 
+#first select only ppts with some missing data
+data_T_sub_missing <- data_T_sub %>%
+  filter(q_missingdata > 0)
+
+gg_miss_fct(x = data_T_sub_missing, fct = Age)
+cor.test(data_T_sub_missing$Age, data_T_sub_missing$q_missingdata, 
          method = "spearman", exact = FALSE)
 
 # Remove participants with 4 or more missing task variables
@@ -1509,7 +1515,7 @@ write.csv(data_efa, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thin
 # % of missing data overall
 # sum(is.na(data_efa))/(ncol(data_efa)*nrow(data_efa))*100 # 0.9% of data missing
 
-# NOTE: do we want to impute? 127 participants with no missing data, 139 overall
+# To impute or not to impute? 127 participants with no missing data, 139 overall
 
 ```
 
