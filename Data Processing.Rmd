@@ -2,7 +2,7 @@
 title: "Data Processing"
 author: "Milla Pihlajamaki and Caitlin Dawson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: pdf_document
+output: html_notebook
 ---
 
 # Notes 
@@ -18,6 +18,8 @@ Version history:
 # Load packages
 
 ```{r Load Packages}
+
+setwd("//ad.helsinki.fi/home/c/cdawson/Desktop/Scientific-thinking_copy")
 
 library(corrplot)
 library(dplyr)
@@ -123,6 +125,10 @@ for (j in 1:length(versions)) {
   }
 }
 
+# Save CI task data
+#write.csv(data_citiT, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking/data_citiT.csv", row.names = FALSE)
+write.csv(data_citiT,file='data_citiT.csv', row.names=FALSE)
+
 ``` 
 
 
@@ -219,6 +225,8 @@ rm(data_big5Q, data_epiQ, data_heurQ, data_infoQ, data_inthumQ, data_needcloQ, d
 * stated their data are not valid
 * stated their Finnish is not Äidinkieli, Keskusteleva, or Muu, Mikä.
 
+NB! Strings have changed due to updating to R version  4.2.3 (2023-03-15 ucrt) which reads the characters ä and ö correctly. The original strings are commented out but kept in case of users with other versions of R. 
+
 ## Questionnaire Data Processing
 
 After excluding data in accordance with the exclusion criteria above, the following steps are taken for each questionnaire:
@@ -235,16 +243,26 @@ After excluding data in accordance with the exclusion criteria above, the follow
 ```{r Validity and Language}
  
 # Save data for nonvalid ppts ("älä huomioi aineistoani") in a separate file prior to removal
+#data_nonvalid1 <- data_Q_total %>%
+#  filter(Validity == "Ã„lÃ¤ huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity == "Ã„lÃ¤ huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiÃ¤ kunnolla.")
+#data_nonvalid1 <- data_Q_total %>%
+
 data_nonvalid <- data_Q_total %>%
-  filter(Validity == "Ã„lÃ¤ huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity == "Ã„lÃ¤ huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiÃ¤ kunnolla.")
+  filter(Validity == "Älä huomioi aineistoani. Jokin muu syy esti minua osallistumasta kunnolla." | Validity == "Älä huomioi aineistoani. En suurimmaksi osaksi keskittynyt tai lukenut kysymyksiä kunnolla.")
 
 # Save data for participants with nonvalid language answers in a separate file. One participant who said "muu" but said they were fluent but not native level was included.
+#data_Q_lang_omit <- data_Q_total %>%
+#  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
+
 data_Q_lang_omit <- data_Q_total %>%
-  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
+  filter(Language != "Sujuva / äidinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikä?")
 
 # Remove nonvalid participants
+#data_Q_total <- data_Q_total %>%
+#  filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.", "Muu, mikÃ¤? ", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+
 data_Q_total <- data_Q_total %>%
-  filter(Validity %in% c("Aineistoani voi kÃ¤yttÃ¤Ã¤.", "Muu, mikÃ¤? ", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+  filter(Validity %in% c("Aineistoani voi käyttää.", "Muu, mikä? ", NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva", "Muu, mikä?"))
 
 ```
 
@@ -341,6 +359,7 @@ psych::alpha(data_Q_total[, epicur[1:5]])
 psych::alpha(data_Q_total[, epicur[6:10]])
 
 # McDonald's omegas; NOT 100% SURE ABOUT THESE
+library(GPArotation)
 summary(omega(data_Q_total[, epicur[1:5]]))
 summary(omega(data_Q_total[, epicur[6:10]]))
 
@@ -463,6 +482,7 @@ summary(omega(data_Q_total[, need_clo]))
 
 # Need for Closure Scoring
 # https://www.midss.org/sites/default/files/need_for_closure_scale.pdf
+# it says to sum 
 
 # Calculate sum score
 data_Q_total$CloSum <- rowSums(cbind(data_Q_total$closure1, data_Q_total$closure2, data_Q_total$closure3, data_Q_total$closure4, data_Q_total$closure5, data_Q_total$closure6, data_Q_total$closure7, data_Q_total$closure8, data_Q_total$closure9, data_Q_total$closure10, data_Q_total$closure11, data_Q_total$closure12, data_Q_total$closure13, data_Q_total$closure14, data_Q_total$closure15), na.rm = TRUE)
@@ -617,10 +637,30 @@ for (i in 1:length(sci_att)) {
 describe(data_Q_total[, sci_att])
 
 # Cronbach's alphas
-psych::alpha(data_Q_total[, sci_att])
+#psych::alpha(data_Q_total[, sci_att])
+
+sci_att1 <- data_Q_total %>%
+     select(sa.1a, sa.1b, sa.1d, sa.1g)
+sci_att2 <- data_Q_total %>%
+     select(sa.1c, sa.1e, sa.1h, sa.1f)
+sci_att3 <- data_Q_total %>%
+     select(sa.2a, sa.2b, sa.2c, sa.2d)
+
+
+psych::alpha(sci_att1)
+psych::alpha(sci_att2)
+psych::alpha(sci_att3)
+
+#as character vectors
+sci_att1 <- c("sa.1a", "sa.1b", "sa.1d", "sa.1g")
+sci_att2 <- c("sa.1c", "sa.1e", "sa.1h", "sa.1f")
+sci_att3 <- c("sa.2a", "sa.2b", "sa.2c", "sa.2d")
 
 # McDonald's omegas
-summary(omega(data_Q_total[, sci_att]))
+summary(omega(data_Q_total[, sci_att1]))
+summary(omega(data_Q_total[, sci_att2]))
+summary(omega(data_Q_total[, sci_att3]))
+
 
 # Calculate sum score
 data_Q_total$sci_id <- rowSums(cbind(data_Q_total$sa.1a, data_Q_total$sa.1b, data_Q_total$sa.1d, data_Q_total$sa.1g), na.rm = TRUE)
@@ -687,26 +727,54 @@ hist(data_Q_total$sci_cur,
 
 ### Heuristic Reasoning
 
+NB: Strings in following sections affected by the update. The old version is kept but commented out. 
 ```{r Heuristic Reasoning}
 
 # Q1
+#data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
+#levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" = "Kuudes lapsi on poika")
+
+# Q1
 data_Q_total$hr.1 <- as.factor(data_Q_total$hr.1)
-levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "H-R" = "Kuudes lapsi on tyttÃ¶", "Neither" = "Kuudes lapsi on poika")
+levels(data_Q_total$hr.1) <- list("N" = "Kumpikin on yhtä todennäköistä", "H-R" = "Kuudes lapsi on tyttö", "Neither" = "Kuudes lapsi on poika")
+
+
+# Q2
+#data_Q_total$hr.2 <- as.factor(data_Q_total$hr.2)
+#levels(data_Q_total$hr.2) <- list("N" = "Kummatkin sarjat ovat yhtÃ¤ todennÃ¤kÃ¶isiÃ¤", "H-R" = "THHTHT", "Neither" = "HTHTHT")
 
 # Q2
 data_Q_total$hr.2 <- as.factor(data_Q_total$hr.2)
-levels(data_Q_total$hr.2) <- list("N" = "Kummatkin sarjat ovat yhtÃ¤ todennÃ¤kÃ¶isiÃ¤", "H-R" = "THHTHT", "Neither" = "HTHTHT")
+levels(data_Q_total$hr.2) <- list("N" = "Kummatkin sarjat ovat yhtä todennäköisiä", "H-R" = "THHTHT", "Neither" = "HTHTHT")
+
+# Q3
+# 3.1
+#data_Q_total$hr.3.1 <- as.factor(data_Q_total$hr.3.1)
+#levels(data_Q_total$hr.3.1) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
 
 # Q3
 # 3.1
 data_Q_total$hr.3.1 <- as.factor(data_Q_total$hr.3.1)
-levels(data_Q_total$hr.3.1) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
+levels(data_Q_total$hr.3.1) <- list("b" = "Herra F. sai sydänkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydänkohtauksen", "c" = "Herra F.:llä on suuri perhe")
+
+
+# 3.2
+#data_Q_total$hr.3.2 <- as.factor(data_Q_total$hr.3.2)
+#levels(data_Q_total$hr.3.2) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
+
+
 # 3.2
 data_Q_total$hr.3.2 <- as.factor(data_Q_total$hr.3.2)
-levels(data_Q_total$hr.3.2) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
+levels(data_Q_total$hr.3.2) <- list("b" = "Herra F. sai sydänkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydänkohtauksen", "c" = "Herra F.:llä on suuri perhe")
+
+# 3.3
+#data_Q_total$hr.3.3 <- as.factor(data_Q_total$hr.3.3)
+#levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
+
 # 3.3
 data_Q_total$hr.3.3 <- as.factor(data_Q_total$hr.3.3)
-levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydÃ¤nkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydÃ¤nkohtauksen", "c" = "Herra F.:llÃ¤ on suuri perhe")
+levels(data_Q_total$hr.3.3) <- list("b" = "Herra F. sai sydänkohtauksen", "a" = "Herra F. on yli 55-vuotias ja on saanut sydänkohtauksen", "c" = "Herra F.:llä on suuri perhe")
+
 # Create the variables for the combinations of answers
 # abc / acb / cab = N; bac / bca /cba = H-R
 data_Q_total <- data_Q_total %>%
@@ -717,9 +785,19 @@ data_Q_total <- data_Q_total %>%
 data_Q_total$hr.3.updated <- factor(data_Q_total$hr.3.updated)
 
 # Q4
-data_Q_total$hr.4 <- as.factor(data_Q_total$hr.4)
-levels(data_Q_total$hr.4) <- list("H-E" = "Kumpikin on yhtÃ¤ tehokas", "N" = "Kognitiivis-behavioraalista terapiaa", "Neither" = "LÃ¤Ã¤kehoitoa")
+#data_Q_total$hr.4 <- as.factor(data_Q_total$hr.4)
+#levels(data_Q_total$hr.4) <- list("H-E" = "Kumpikin on yhtÃ¤ tehokas", "N" = "Kognitiivis-behavioraalista terapiaa", "Neither" = "LÃ¤Ã¤kehoitoa")
 # Kognitiivis-behavioraalista terapiaa = N; Yhta tehokas = H-E
+
+# Q4
+data_Q_total$hr.4 <- as.factor(data_Q_total$hr.4)
+levels(data_Q_total$hr.4) <- list("H-E" = "Kumpikin on yhtä tehokas", "N" = "Kognitiivis-behavioraalista terapiaa", "Neither" = "Lääkehoitoa")
+# Kognitiivis-behavioraalista terapiaa = N; Yhta tehokas = H-E
+
+# Q5
+#data_Q_total$hr.5 <- as.factor(data_Q_total$hr.5)
+#levels(data_Q_total$hr.5) <- list("N" = "Huomenna luultavasti sataa", "H-E" = "On mahdotonta sanoa sataako huomenna vai ei", "Neither" = "Huomenna sataa")
+# Huomenna luultavasti sataa = N; On mahdotonta sanoa sataako huomenna vai ei = H-E
 
 # Q5
 data_Q_total$hr.5 <- as.factor(data_Q_total$hr.5)
@@ -727,8 +805,13 @@ levels(data_Q_total$hr.5) <- list("N" = "Huomenna luultavasti sataa", "H-E" = "O
 # Huomenna luultavasti sataa = N; On mahdotonta sanoa sataako huomenna vai ei = H-E
 
 # Q6
+#data_Q_total$hr.6 <- as.factor(data_Q_total$hr.6)
+#levels(data_Q_total$hr.6) <- list("N" = "TyttÃ¶", "H-E" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "Neither" = "Poika")
+# Tytto = N; Kumpikin on yht? todenn?k?ist? = H-E
+
+# Q6
 data_Q_total$hr.6 <- as.factor(data_Q_total$hr.6)
-levels(data_Q_total$hr.6) <- list("N" = "TyttÃ¶", "H-E" = "Kumpikin on yhtÃ¤ todennÃ¤kÃ¶istÃ¤", "Neither" = "Poika")
+levels(data_Q_total$hr.6) <- list("N" = "Tyttö", "H-E" = "Kumpikin on yhtä todennäköistä", "Neither" = "Poika")
 # Tytto = N; Kumpikin on yht? todenn?k?ist? = H-E
 
 # Calculate sums
@@ -762,7 +845,8 @@ for (i in 1:length(heur)) {
        xlab = "")
 }
 
-# Create binary heuristic scores (0=0, 1=everything else)
+# Create binary heuristic scores (0=all normative, 1=at least one heuristic response)
+
 data_Q_total <- data_Q_total %>% 
   mutate(HEscore = case_when(total_HE == 0 ~ 0,
                              total_HE == 1 ~ 1,
@@ -770,6 +854,9 @@ data_Q_total <- data_Q_total %>%
          HRscore = case_when(total_HR == 0 ~ 0,
                              total_HR == 1 ~ 1,
                              total_HR == 2 ~ 1))
+
+#HE: 57.14% make at least one heuristic response
+#HR: 59.45% make at least one heuristic response 
 
 ```
 
@@ -783,10 +870,17 @@ sort(rowSums(is.na(data_Q_total)))
 
 # Q1: Sairaala B is the correct answer
 # Create a new column
+#data_Q_total$rp.1 <- as.factor(data_Q_total$rp.1)
+#data_Q_total <- data_Q_total %>%
+#  mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1,
+ #                             rp.1 %in% c("Sairaalassa A (jossa syntyy 50 lasta pÃ¤ivÃ¤ssÃ¤).", "TÃ¤mÃ¤ on yhtÃ¤ todennÃ¤kÃ¶istÃ¤ kummassakin sairaalassa.") ~ 0)) 
+
+# Q1: Sairaala B is the correct answer
+# Create a new column
 data_Q_total$rp.1 <- as.factor(data_Q_total$rp.1)
 data_Q_total <- data_Q_total %>%
-  mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta pÃ¤ivÃ¤ssÃ¤)." ~ 1,
-                              rp.1 %in% c("Sairaalassa A (jossa syntyy 50 lasta pÃ¤ivÃ¤ssÃ¤).", "TÃ¤mÃ¤ on yhtÃ¤ todennÃ¤kÃ¶istÃ¤ kummassakin sairaalassa.") ~ 0)) 
+  mutate(rp.1.int = case_when(rp.1 == "Sairaalassa B (jossa syntyy 10 lasta päivässä)." ~ 1,
+                              rp.1 %in% c("Sairaalassa A (jossa syntyy 50 lasta päivässä).", "Tämä on yhtä todennäköistä kummassakin sairaalassa.") ~ 0)) 
 
 # Q2: Pyydys1 AND Pyydys 2 is the correct combination
 data_Q_total$rp.2.1 <- as.factor(data_Q_total$rp.2.1)
@@ -836,12 +930,19 @@ For the matrix reasoning task (treated as a questionnaire by Gorilla so included
 * medium reaction time equal to or smaller than 500ms
 * stated they had technical problems or did not understand the task
 
+Update and characters affects this section
+
 ```{r Matrix Reasoning}
+
+# Omit columns that are not relevant (experiment-general columns) + rows that are not relevant (e.g., practice trials)
+#data_matreasT <- data_matreasT %>%
+ # select(Participant.Private.ID, Spreadsheet:ANSWER) %>% 
+ # filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
 
 # Omit columns that are not relevant (experiment-general columns) + rows that are not relevant (e.g., practice trials)
 data_matreasT <- data_matreasT %>%
   select(Participant.Private.ID, Spreadsheet:ANSWER) %>% 
-  filter(display %in% c("TehtÃ¤vÃ¤_6", "TehtÃ¤vÃ¤_8"))
+  filter(display %in% c("Tehtävä_6", "Tehtävä_8"))
 
 # Omit participants who commented that they had technical issues with this task or did not understand the task
 data_matreasT <- data_matreasT %>%
@@ -866,12 +967,20 @@ data_matreasT_final <- merge(data_matreasT_final, data_matrixValidity,
                              all = TRUE)
 
 # Create separate df for nonvalid ppts
+#data_nonvalid_matrix <- data_matreasT_final %>%
+#  filter(Validity.quantised %in% c(2, 3, 4))
+#data_Q_lang_omit_matrix <- data_matreasT_final %>%
+#  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
+#data_matreasT_final <- data_matreasT_final %>%
+#  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+
+# Create separate df for nonvalid ppts
 data_nonvalid_matrix <- data_matreasT_final %>%
   filter(Validity.quantised %in% c(2, 3, 4))
 data_Q_lang_omit_matrix <- data_matreasT_final %>%
-  filter(Language != "Sujuva / Ã¤idinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikÃ¤?")
+  filter(Language != "Sujuva / äidinkieli" & Language != "Keskitaso / keskusteleva" & Language != "Muu, mikä?")
 data_matreasT_final <- data_matreasT_final %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?"))
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva", "Muu, mikä?"))
 
 # Delete the irrelevant columns
 data_matreasT_final <- data_matreasT_final %>%
@@ -931,12 +1040,8 @@ ggplot(data_Q_sub, aes(x = as.factor(Participant.Private.ID), y = q_missingdata)
 plot(sort(data_Q_sub$q_missingdata))
 
 # Correlation between age and amount of missing values
-#first select only ppts with some missing data
-data_Q_sub_missing <- data_Q_sub %>%
-  filter(q_missingdata > 0)
-
-gg_miss_fct(x = data_Q_sub_missing, fct = Age)
-cor.test(data_Q_sub_missing$Age, data_Q_sub_missing$q_missingdata, 
+gg_miss_fct(x = data_Q_sub, fct = Age)
+cor.test(data_Q_sub$Age, data_Q_sub$q_missingdata, 
          method = "spearman", exact = FALSE)
 
 # Visualize missing data by demographics
@@ -956,7 +1061,7 @@ data_Q_sub <- data_Q_sub %>%
 
 This chunk checks distributions of questionnaire variables and correlations between them:
 * If distributions are highly skewed, transformations are applied to decrease skewness (skew > 1)
-* If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r > .85)
+* If two variables are highly correlated, one of them is dropped (Eisenberg et al., 2018) (r > .85)
 
 ```{r Normality and Correlations of Questionnaires}
 
@@ -1010,12 +1115,13 @@ See each chunk.
 ### Go No Go
 
 Trial-level exclusion criteria:
-* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 1025ms (screen time 1000ms + 16.67ms refresh rate + ~8ms latency between computer and mouse -> reaction times higher than this are likely not valid) *or* if it is equal to or lower than 150ms (Jaana's paper).
+* The reaction time for each row is replaced with missing values (NAs) if it is equal to or higher than 1025ms (screen time 1000ms + 16.67ms refresh rate + ~8ms latency between computer and mouse -> reaction times higher than this are likely not valid) *or* if it is equal to or lower than 150ms.
 
 Participant-level exclusion criteria:
 * A participant's data for the Go No-Go task is replaced with missing values (NAs) if their accuracy (% of correct trials out of all trials) was equal to or lower than 60%.
 
 Data processing: for each participant, we calculate the sum of hits/misses/FAs/CRs as well as dprime, beta, c, aprime, and bppd (see the dprime() function help file). These are described and visualized.
+
 
 ```{r Go No-Go}
 
@@ -1101,14 +1207,21 @@ data_nogoT_final <- merge(data_nogoT_final, data_go_RT,
 # Exclude participants with invalid responses
 data_ConsentValidity <- data_Q_total %>%
   select(Participant.Private.ID, Language, Validity.quantised)
- 
+# write.csv(data_ConsentValidity, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking/data_ConsentValidity.csv", row.names = FALSE)
+#write.csv(data_ConsentValidity,file='data_ConsentValidity.csv', row.names=FALSE)
+
 # Final dataset
 data_nogoT_final <- merge(data_nogoT_final, data_ConsentValidity,
                           by = "Participant.Private.ID")
 
 # Exclude participants according to validity + language criteria; exclude the participants who stopped mid-task; exclude participants whose sum score for all hit/miss/cr/fa are 0s
+#data_nogoT_final <- data_nogoT_final %>% 
+  #filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>% 
+  #filter(!Participant.Private.ID %in% c("5201242", "4886650", "5117494", "5282634", "5500754", "5552405", "5635997")) %>% 
+ # filter(!(GNGHitSum == 0 & GNGMissSum == 0 & GNGFASum == 0 & GNGCRSum == 0))
+
 data_nogoT_final <- data_nogoT_final %>% 
-  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>% 
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva", "Muu, mikä?")) %>% 
   filter(!Participant.Private.ID %in% c("5201242", "4886650", "5117494", "5282634", "5500754", "5552405", "5635997")) %>% 
   filter(!(GNGHitSum == 0 & GNGMissSum == 0 & GNGFASum == 0 & GNGCRSum == 0))
 
@@ -1239,8 +1352,14 @@ data_NavonT_final <- merge(data_NavonT_final, data_ConsentValidity,
                            by = "Participant.Private.ID")
 
 # Validity/languege filter + get rid of participants who stopped mid-task + select relevant columns
+#data_NavonT_final <- data_NavonT_final %>%
+ # filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>%  
+  #filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176") %>%
+  #select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
+
+# Validity/languege filter + get rid of participants who stopped mid-task + select relevant columns
 data_NavonT_final <- data_NavonT_final %>%
-  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?")) %>%  
+  filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva","Muu, mikä?")) %>%  
   filter(Participant.Private.ID != "4907987" & Participant.Private.ID != "4960307" & Participant.Private.ID != "5317567" & Participant.Private.ID != "5372338" & Participant.Private.ID != "5526450" & Participant.Private.ID != "5578226" & Participant.Private.ID != "5626669" & Participant.Private.ID != "5808176") %>%
   select(Participant.Private.ID, Consistent_task1, Consistent_task2, Inconsistent_task1, Inconsistent_task2, GlobalToLocalPrecedence, GlobalToLocalInterference)
 
@@ -1263,7 +1382,7 @@ for (i in 1:length(Navon)) {
 
 ### Necker
 
-Exclusion criteria: none for now
+Exclusion criteria: none
 
 Data processing: for each participant, we calculate the average rate of space bar hits (switches the participant experienced) per second. 
 
@@ -1289,8 +1408,14 @@ data_NeckerT_final <- merge(data_NeckerT_final, data_ConsentValidity,
                             by = "Participant.Private.ID")
 
 # Subset by validity and consent info + omit the irrelevant columns
+#data_NeckerT_final <- data_NeckerT_final %>%
+#  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+#  filter(Participant.Private.ID != "5385143") %>% 
+#  select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
+
+# Subset by validity and consent info + omit the irrelevant columns
 data_NeckerT_final <- data_NeckerT_final %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva", "Muu, mikä?")) %>%
   filter(Participant.Private.ID != "5385143") %>% 
   select(Participant.Private.ID, NeckerCountTotal, NeckerTotalRate)
 
@@ -1335,10 +1460,17 @@ data_UUT$FluencySum <- rowMeans(cbind(data_UUT$SFluencySum,
                                 na.rm = TRUE)
 
 # Check validity + extract relevant columns
+#data_UUT <- merge(data_UUT, data_ConsentValidity, 
+ #                 by = "Participant.Private.ID")
+#data_UUT <- data_UUT %>%
+#  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+#  select(Participant.Private.ID, FlexSum, FluencySum)
+
+# Check validity + extract relevant columns
 data_UUT <- merge(data_UUT, data_ConsentValidity, 
                   by = "Participant.Private.ID")
 data_UUT <- data_UUT %>%
-  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva", "Muu, mikÃ¤?")) %>%
+  filter(Validity.quantised %in% c("1", NA, "") & Language %in% c("Sujuva / äidinkieli", "Keskitaso / keskusteleva", "Muu, mikä?")) %>%
   select(Participant.Private.ID, FlexSum, FluencySum)
 
 # Describe
@@ -1355,6 +1487,8 @@ for (i in 1:length(uut)) {
 ```
 
 # Merge task variables
+
+Doesn't yet include the CI task! 
 
 ```{r Combine the Task Dataframes}
 
@@ -1392,18 +1526,13 @@ table(data_T_sub$t_missingdata)
 plot(sort(data_T_sub$t_missingdata))
 
 # Merge demographic information to investigate missingness
+# NOTE: what to do about the age correlation?
 data_T_all <- data_Q_total %>%
   select(Participant.Private.ID, gender, Age, Country, Language, Education)
 data_T_sub <- merge(data_T_all, data_T_sub, 
                     by = "Participant.Private.ID", all = TRUE)
-
-#check missing data correlation with age                 
-#first select only ppts with some missing data
-data_T_sub_missing <- data_T_sub %>%
-  filter(q_missingdata > 0)
-
-gg_miss_fct(x = data_T_sub_missing, fct = Age)
-cor.test(data_T_sub_missing$Age, data_T_sub_missing$q_missingdata, 
+gg_miss_fct(x = data_T_sub, fct = Age)
+cor.test(data_T_sub$Age, data_T_sub$t_missingdata, 
          method = "spearman", exact = FALSE)
 
 # Remove participants with 4 or more missing task variables
@@ -1418,7 +1547,7 @@ data_T_sub <- data_T_sub %>%
 
 This chunk checks distributions of task variables and correlations between them:
 * If distributions are highly skewed (>1), transformations are applied to decrease skewness
-* If two variables are highly correlated, one of them is dropped (Eisenberg et al.) (r>.85)
+* If two variables are highly correlated, one of them is dropped (Eisenberg et al., 2018) (r>.85)
 
 ```{r Normality and Correlations of Tasks}
 
@@ -1482,10 +1611,6 @@ data_all_sub_cleaned <- merge(data_Q_sub, data_T_sub,
 # Ungroup the dataframe
 ungroup(data_all_sub_cleaned)
 
-# Select relevant columns
-data_all_sub_cleaned <- data_all_sub_cleaned %>%
-  select(-Participant.Private.ID)
-
 # Rename
 data_efa <- data_all_sub_cleaned
 
@@ -1500,22 +1625,70 @@ for (i in 1:ncol(data_efa)) {
 describe(data_efa)
 
 # Save data
-write.csv(data_efa, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking-and-decision-making/data_efa.csv", row.names = FALSE)
+# write.csv(data_efa, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking/data_efa.csv", row.names = FALSE)
+
+write.csv(data_efa,file='data_efa.csv', row.names=FALSE)
 
 ```
 
-# Data Imputation
 
-```{r Data Imputation}
+#Correlation table
+```{r Correlation tables}
 
-# Check how much data is missing per row and column
-# sort(table(colSums(is.na(data_efa))))
-# sort(table(rowSums(is.na(data_efa))))
+#subset minus IDs, binary variables, variables we didn't use, and the factor scores if they've been combined
+corset<-data_efa %>%
+  select(-Participant.Private.ID,-HEscore,-HRscore,-MeanGoRT, -SDGoRTlog)
+#  select(-Participant.Private.ID,-HEscore,-HRscore,-MeanGoRT, -SDGoRTlog,-f1,-f2,-f3,-f4)
 
-# % of missing data overall
-# sum(is.na(data_efa))/(ncol(data_efa)*nrow(data_efa))*100 # 0.9% of data missing
+##make a latex table with correlations
+library(xtable)
+#http://myowelt.blogspot.com/2008/04/beautiful-correlation-tables-in-r.html
+corstarsl <- function(corset){
+require(Hmisc)
+corset <- as.matrix(corset)
+R <- rcorr(corset)$r
+p <- rcorr(corset)$P
 
-# To impute or not to impute? 127 participants with no missing data, 139 overall
+## define notions for significance levels; spacing is important.
+mystars <- ifelse(p < .001, "***", ifelse(p < .01, "** ", ifelse(p < .05, "* ", " ")))
+
+## trunctuate the matrix that holds the correlations to two decimals
+R <- format(round(cbind(rep(-1.11, ncol(corset)), R), 2))[,-1]
+
+## build a new matrix that includes the correlations with their appropriate stars
+Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(corset))
+diag(Rnew) <- paste(diag(R), " ", sep="")
+rownames(Rnew) <- colnames(corset)
+colnames(Rnew) <- paste(colnames(corset), "", sep="")
+
+## remove upper triangle
+Rnew <- as.matrix(Rnew)
+Rnew[upper.tri(Rnew, diag = TRUE)] <- ""
+Rnew <- as.data.frame(Rnew)
+
+## remove last column and return the matrix (which is now a data frame)
+Rnew <- cbind(Rnew[1:length(Rnew)-1])
+return(Rnew)
+}
+
+# Combine mean/SD matrix and correlation matrix
+
+means <- colMeans(corset, na.rm = TRUE)
+sds <- apply(corset, 2, sd, na.rm = TRUE)
+means <- round(means, 2)
+sds <- round(sds, 2)
+# Combine means and SD into a matrix
+mean_sd_matrix <- data.frame(means, sds)
+#calculate correlation matrix with stars for significant correlations
+cors<-corstarsl(corset[,1:26])
+#combine the dfs
+output_matrix <- cbind(mean_sd_matrix, cors)
+
+##Save the output as a CSV file
+write.csv(output_matrix, "current_cors.csv")
+
+xtable(corstarsl(corset[,1:26])) #Latex code
+
 
 ```
 

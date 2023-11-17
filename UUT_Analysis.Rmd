@@ -15,7 +15,6 @@ This file contains calculations for Kappa for inter-rater reliability for the Un
 #Remember to set working directory that includes the csv file!
 #Session, set working directory, choose directory etc
 
-#these packages were downloaded, found to the right under "packages"
 library(vcd)
 library(psych)
 
