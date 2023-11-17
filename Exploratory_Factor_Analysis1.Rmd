@@ -5,10 +5,6 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_notebook
 ---
 
-Need to do EFA in lavaan, Caitlin had linked a tutorial + had some code; we need to do this to extract the factor scores
--> change all FA to lavaan instead of psych
--> extract factor scores + visualization
-
 ```{r Load Packages}
 
 # library(ISLR) 
@@ -30,7 +26,6 @@ library(lavaan)
 # library(GPArotation)
 # library(devtools)
 # library(apaTables)
-# library(semPlot)
 # library(sjPlot)
 # library(glasso)
 
@@ -48,15 +43,13 @@ task_data <- data_efa[, t_var_log]
 
 # Cross-method prediction
 
-10-fold cross validated ridge regression to predict survey and task variables *within* and *between* measure types following Eisenberg et al. Intended to help decide whether to factor tasks and surveys together or separately, and also to see if some variables should be left out. 
+10-fold cross validated ridge regression to predict survey and task variables *within* and *between* measure types following Eisenberg et al, 2018. Intended to help decide whether to factor tasks and surveys together or separately, and also to see if some variables should be left out. 
 
 Taking each DV one by one and trying to predict it using its own measurement category (leaving it out) and by the other measurement category. Each DV is the target; the predictors are the other variables in the category. 
 
 4 distributions of predictions: tasks-by-tasks, tasks-by-surveys, surveys-by-tasks, and surveys-by-surveys -> extract the R^2 values and create four distributions
 
-"Prediction success was assessed by 10-fold cross-validated ridge regression using the RidgeCV function from scikit-learn with default parameters (10). Almost all DVs were able to be predicted to some degree by their respective measurement category (mean task-by-tasks R2 mean survey-by-surveys R2  = .45). In contrast, cross-measurement prediction failed: surveys were unable to predict task DVs and vice versa (mean task-by-surveys R2 = -.13, mean survey-by-tasks R2 = -.29). Note that R2 values below 0 are possible when employing  cross-validation and indicate no discoverable linear relationship. The entire distribution of R2  values for each of these predictions is shown is Figure S2b."
-
-Ridge regression differs from lasso regression in that it can reduce coefficients down to near zero but always includes all predictors. Lasso regression can be used to reduce dimensionality as coefficients can be zero. Elastic net regression combines the two. 
+"Note that R2 values below 0 are possible when employing  cross-validation and indicate no discoverable linear relationship. The entire distribution of R2  values for each of these predictions is shown is Figure S2b."
 
 Ridge regression works better than regular linear regression when you have many variables in a model and also collinearity. It is a form of penalized regression that adds a constraint. The constraint constant is defined by *lambda*, which shrinks coefficients. A lambda of 0 is a regular linear regression, and a too large lambda will shrink the coefficients too much to make a usable model. We can identify the best value of lambda by using cross-validation. 
 
@@ -69,7 +62,7 @@ The question here is, can X variable be predicted equally well by surveys vs. ta
 ```{r Ridge Regression (Cross-Method Prediction)}
 
 # Survey x survey 
-# NOTE: not sure if the binary items are an issue? not sure if this is the case when they are predictors but I would assume when they are being predicted? I will omit them here just in case
+# NOTE: omitting the binary variables H-E and H-R
 q_var_sub <- q_var[-c(which(q_var == "HEscore"), which(q_var == "HRscore"))]
 survey_data_sub <- data_efa[, q_var_sub]
 
@@ -212,28 +205,20 @@ for (i in 1:4) {
        xlab = "")
 }
 
-# Nicer visualizations?
-
 ```
 
 # Exploratory Factor Analysis
 
-This section includes three series of EFAs: all variables, surveys only, and tasks only. In the preregistration, we promised to start with these. 
-
-Correlations are mixed because of the binary variables from the heuristics task
+Only using questionnaire variables.
 
 ## Create Correlation Matrices
 
 ```{r Create Correlation Matrices, include = FALSE}
 
-# A general note: we probably need to justify putting a bunch of task and self-report items in the same factor analysis / at least mention it !
-# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3268653/
-
 # Descriptives
 describe(data_efa)
 
 # Create character strings with different classes of variables
-# NOTE: do we actually want to treat ordinals as continuous? I think another option would be polytomous, but I am not sure; at least we should be consistent throughout the analyses 
 con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount", "GNGdprime", "GNGbetalog", "MeanGoRT", "SDGoRTlog", "GlobalToLocalPrecedencelog", "GlobalToLocalInterferencelog", "NeckerTotalRatelog", "FlexSum")
 q_con <- c("AMean", "CMean", "EMean", "ESMean", "OMean", "ICuriositySum", "DCuriositySum", "IH1Sum", "IH2Sum", "IH3Sum", "IH4Sum", "CloSum", "CogSum", "AOTSum", "RPSum", "sci_cur", "sci_tru", "sci_impo", "sci_id", "MatrixCorrectCount")
 cat <- c("HEscore", "HRscore")
@@ -248,7 +233,6 @@ Q_cor <- mixedCor(data = survey_data, d = cat, c = q_con,
 T_cor <- mixedCor(data = task_data, 
                   use = "pairwise.complete.obs",
                   method = "pearson")
-# NOTE: Caitlin had specified other arguments as well but I am not sure how necessary there are?
 
 # Store correlation matrix
 all_rho <- all_cor$rho
@@ -292,7 +276,7 @@ sort(round(KMO(r = T_rho)$MSAi, 2))
 
 ## Identify number of factors to extract
 
-For now I used EBIC as the main criterion following Eisenberg et al. Zmigrod et al. used scree plots and PA.
+EBIC as the main criterion following Eisenberg et al., 2018, but final decision based on theoretical coherence of the factors. Zmigrod et al., 2021 used scree plots and PA.
 
 ```{r Number of factors, include = FALSE}
 
@@ -339,7 +323,7 @@ fa.parallel(T_rho, n.obs = nrow(task_data), fm = "minrank")
 
 ## Run the Factor Analysis with lavaan
 
-Number of factors is determined with EBIC.
+Number of factors is determined with EBIC. Lavaan functions used in order to extract factor scores. 
 
 ```{r EFA for Questionnaires (4 factors according to EBIC)}
 
@@ -359,8 +343,9 @@ efa_f4 <- cfa(model = f4,
 summary(efa_f4, fit.measures = TRUE)
 parameterEstimates(efa_f4)
 fitmeasures(efa_f4)
-# Looks like it's a just identified model? Fit measures are too good
 
+
+#exploring removing some items
 # Look at loadings
 loadings_4f <- inspect(efa_f4, what = "std")[["lambda"]]
 fa.diagram(inspect(efa_f4, what = "std")[["lambda"]])
@@ -369,12 +354,12 @@ round(fa.sort(loadings_4f), 2)
 # Remove EMean, HEscore (no loadings >= .3)
 
 survey_data_sub <- survey_data %>%
-  select(-c("EMean", "HEscore", "IH1Sum"))  # removed EMean and HEscore first, and IH1sum second (here all at once)
+  select(-c("HEscore"))  # removed EMean and HEscore first, and IH1sum second (here all at once)
 f4_sub <- '
 efa("efa")*f1 +
 efa("efa")*f2 +
 efa("efa")*f3 +
-efa("efa")*f4 =~ AMean + CMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HRscore + RPSum + sci_cur + sci_impo + sci_id + sci_tru + MatrixCorrectCount'
+efa("efa")*f4 =~ AMean + CMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HRscore + RPSum + sci_cur + sci_impo + sci_id + sci_tru + MatrixCorrectCount + IH1Sum + EMean'
 
 # Fit the model
 efa_f4_sub <- cfa(model = f4_sub,
@@ -385,7 +370,7 @@ efa_f4_sub <- cfa(model = f4_sub,
 summary(efa_f4_sub, fit.measures = TRUE)
 parameterEstimates(efa_f4_sub)
 fitmeasures(efa_f4_sub)
-# Still looks not identified, look into degrees of freedom
+
 
 loadings_4f_sub <- inspect(efa_f4_sub, what = "std")[["lambda"]]
 fa.diagram(inspect(efa_f4_sub, what = "std")[["lambda"]])
@@ -396,65 +381,66 @@ round(fa.sort(loadings_4f_sub), 2)
 # Visualize
 # 19 items, 4 factors
 # Create layout matrix (23 nodes altogether)
-y <- c(rep(c(-0.9, -0.8), length.out = 19), # items
-       rep(0, 4)) # latents
-x <- c(seq(from = -0.98, to = 0.98, length.out = 19), # items
-       -0.75, -0.25, 0.25, 0.75)
-coord <- matrix(data = c(x, y), nrow = 23, ncol = 2, byrow = FALSE)
-semPaths(efa_f4_sub,
-         what = "est",
-         whatLabels = "no",
-         as.expression = c("nodes", "edges"),
-         theme = "colorblind", 
-         curvePivot = TRUE,
-         sizeMan = 3,
-         sizeLat = 7,
-         edge.label.cex = 1,
-         reorder = FALSE,
-         width = 8,
-         height = 5,
-         groups = "latents",
-         borders = FALSE,
-         residuals = FALSE,
-         intercepts = FALSE,
-         thresholds = FALSE,
-         label.prop = .96,
-         label.scale = TRUE,
-         color = c(rep("#bfbfbf", 4)),
-         layout = coord, 
-         exoCov = FALSE,
-         nodeLabels = c("AMean", "CMean", "ESMean", "OMean", "ICur", "DCur", "IH2", "IH3", "IH4", "Clo ", " Cog", "AOT", "HR", "RP", "sci_cur", "sci_tru", "sci_impo", "sci_id", "Mat_rea", "F1", "F2", "F3", "F4")
-         # ,
-         # filename = "4f_pathdiagram",
-         # filetype = "pdf"
-         )
-# Omit irrelevant edges??
+# y <- c(rep(c(-0.9, -0.8), length.out = 19), # items
+#        rep(0, 4)) # latents
+# x <- c(seq(from = -0.98, to = 0.98, length.out = 19), # items
+#        -0.75, -0.25, 0.25, 0.75)
+# coord <- matrix(data = c(x, y), nrow = 23, ncol = 2, byrow = FALSE)
+# semPaths(efa_f4_sub,
+#          what = "est",
+#          whatLabels = "no",
+#          as.expression = c("nodes", "edges"),
+#          theme = "colorblind", 
+#          curvePivot = TRUE,
+#          sizeMan = 3,
+#          sizeLat = 7,
+#          edge.label.cex = 1,
+#          reorder = FALSE,
+#          width = 8,
+#          height = 5,
+#          groups = "latents",
+#          borders = FALSE,
+#          residuals = FALSE,
+#          intercepts = FALSE,
+#          thresholds = FALSE,
+#          label.prop = .96,
+#          label.scale = TRUE,
+#          color = c(rep("#bfbfbf", 4)),
+#          layout = coord, 
+#          exoCov = FALSE,
+#          nodeLabels = c("AMean", "CMean", "ESMean", "OMean", "ICur", "DCur", "IH2", "IH3", "IH4", "Clo ", " Cog", "AOT", "HR", "RP", "sci_cur", "sci_tru", "sci_impo", "sci_id", "Mat_rea", "F1", "F2", "F3", "F4")
+#          ,
+#          filename = "4f_pathdiagram",
+#          filetype = "pdf"
+#          )
 
 
-# THIS DOES NOT WORK FOR US YET! Need to figure out why
-# obtain factor loadings and add them to data
-loading_mat <- as.matrix(fa.sort(loadings_4f_sub))
+#be careful here with the order of factors, double check
+loading_mat <- as.matrix(fa.sort(loadings_4f))
 loading_mat <- loading_mat[, -ncol(loading_mat)]
-rownames(loading_mat) <- c("Respect for Others' Viewpoints (IH)", 
-                           "Agreeableness (B5)", 
-                           "sci_tru",
-                           "sci_impo",
-                           "IcuriositySum",
-                           "Need for Cognition",
-                           "Openness (B5)",
-                           "DcuriositySum",
-                           "sci_id",
-                           "Science Curiosity",
-                           "Need for Closure",
-                           "Conscientiousness (B5)",
-                           "Emotional Stability (B5)",
+rownames(loading_mat) <- c("Respect for others' viewpoints (IH)", 
+                           "Agreeableness (TIPI)", 
+                           "Openness (TIPI)",
+                           "Need for closure",
+                           "Extraversion (TIPI)",
+                           "Need for cognition",
+                           "Science identity (SA)",
+                           "Interest curiosity (EC)",
+                           "Science curiosity (SA)",
+                           "Deprivation curiosity (EC)",
+                           "Importance of science (SA)",
+                           "Independence of intellect and ego (IH)",
+                           "Trust in science (SA)",
+                           "Randomness-probability", 
+                           "Heuristic-representativeness", 
+                           "Matrix reasoning",
+                           "Heuristic-equiprobability",
+                           "Conscientiousness (TIPI)",
                            "Openness to Revising One's Viewpoint (IH)",
                            "Actively Openminded Thinking",
-                           "Lack of Intellectual Overconfidence (IH)",
-                           "Randomness-Probability", 
-                           "Heuristic-Representativeness", 
-                           "Matrix Reasoning")
-colnames(loading_mat) <- c("Factor 1", "Factor 2", "Factor 3", "Factor 4")
+                           "Emotional Stability (TIPI)",
+                           "Lack of Intellectual Overconfidence (IH)")
+colnames(loading_mat) <- c("Prosociality", "Curiosity", "Cognitive skills", "Openmindedness")
 
 corrplot(loading_mat, method = "color",
          addCoef.col = NULL, 
@@ -465,17 +451,27 @@ corrplot(loading_mat, method = "color",
          cl.length = 4,
          cl.cex = .6
          )
-# Make this nicer
-
 
 
 ```
 
 
 ```{r Extract Factor Scores}
+#using the model with all items retained
+scores_4f <- lavPredict(efa_f4, method = "EBM")
+#scores_4f_sub <- lavPredict(efa_f4_sub, method = "EBM")
 
-scores_4f <- lavPredict(efa_f4_sub, method = "EBM")
-
+#attach factor scores to dataset
+data_efa <- cbind(data_efa, scores_4f)
 ```
 
+#Create Factor loading table in latex
+
+```{r Factor loading table}
+
+#this takes a df or matrix, do not put in the matrix using fa2latex
+#argument 2 is cropping digits
+df2latex(loading_mat, 2)
+
+```
 
