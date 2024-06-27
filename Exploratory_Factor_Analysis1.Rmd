@@ -8,7 +8,6 @@ output: html_notebook
 ```{r Load Packages}
 
 # library(ISLR) 
-# library(glmnet) 
 # library(dplyr) 
 # library(tidyr)
 library(tidyverse)
@@ -16,13 +15,11 @@ library(corrplot)
 # library(caret)
 library(glmnet)
 library(semPlot)
-# library(tidyverse)
 # library(tidyselect)
 library(psych)
 library(lavaan)
-# library(dplyr)
 # library(ggplot2)
-# library(psychTools)
+library(psychTools)
 # library(GPArotation)
 # library(devtools)
 # library(apaTables)
@@ -347,35 +344,35 @@ fitmeasures(efa_f4)
 
 #exploring removing some items
 # Look at loadings
-loadings_4f <- inspect(efa_f4, what = "std")[["lambda"]]
-fa.diagram(inspect(efa_f4, what = "std")[["lambda"]])
-loadings_4f <- as.data.frame(loadings_4f)
-round(fa.sort(loadings_4f), 2)
+#loadings_4f <- inspect(efa_f4, what = "std")[["lambda"]]
+#fa.diagram(inspect(efa_f4, what = "std")[["lambda"]])
+#loadings_4f <- as.data.frame(loadings_4f)
+#round(fa.sort(loadings_4f), 2)
 # Remove EMean, HEscore (no loadings >= .3)
 
-survey_data_sub <- survey_data %>%
-  select(-c("HEscore"))  # removed EMean and HEscore first, and IH1sum second (here all at once)
-f4_sub <- '
-efa("efa")*f1 +
-efa("efa")*f2 +
-efa("efa")*f3 +
-efa("efa")*f4 =~ AMean + CMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH2Sum + IH3Sum + IH4Sum + CloSum  +  CogSum + AOTSum + HRscore + RPSum + sci_cur + sci_impo + sci_id + sci_tru + MatrixCorrectCount + IH1Sum + EMean'
+#survey_data_sub <- survey_data %>%
+#  select(-c("HEscore"))  # removed EMean and HEscore first, and IH1sum second (here all at once)
+#f4_sub <- '
+#efa("efa")*f1 +
+#efa("efa")*f2 +
+#efa("efa")*f3 +
+#efa("efa")*f4 =~ AMean + CMean + ESMean + OMean + ICuriositySum + DCuriositySum + IH2Sum + IH3Sum + #IH4Sum + CloSum  +  CogSum + AOTSum + HRscore + RPSum + sci_cur + sci_impo + sci_id + sci_tru + #MatrixCorrectCount + IH1Sum + EMean'
 
 # Fit the model
-efa_f4_sub <- cfa(model = f4_sub,
-                  data = survey_data_sub,
-                  rotation = "oblimin",
-                  estimator = "WLSMV",
-                  ordered = c("HRscore", "RPSum"))
-summary(efa_f4_sub, fit.measures = TRUE)
-parameterEstimates(efa_f4_sub)
-fitmeasures(efa_f4_sub)
+#efa_f4_sub <- cfa(model = f4_sub,
+#                  data = survey_data_sub,
+#                  rotation = "oblimin",
+#                  estimator = "WLSMV",
+#                  ordered = c("HRscore", "RPSum"))
+#summary(efa_f4_sub, fit.measures = TRUE)
+#parameterEstimates(efa_f4_sub)
+#fitmeasures(efa_f4_sub)
 
 
-loadings_4f_sub <- inspect(efa_f4_sub, what = "std")[["lambda"]]
-fa.diagram(inspect(efa_f4_sub, what = "std")[["lambda"]])
-loadings_4f_sub <- as.data.frame(loadings_4f_sub)
-round(fa.sort(loadings_4f_sub), 2)
+#loadings_4f_sub <- inspect(efa_f4_sub, what = "std")[["lambda"]]
+#fa.diagram(inspect(efa_f4_sub, what = "std")[["lambda"]])
+#loadings_4f_sub <- as.data.frame(loadings_4f_sub)
+#round(fa.sort(loadings_4f_sub), 2)
 
 
 # Visualize
@@ -414,33 +411,35 @@ round(fa.sort(loadings_4f_sub), 2)
 #          filetype = "pdf"
 #          )
 
+#This code can be used to attach row names to create a nice heatmap, but as they are manually ordered, double-check the actual order of variables and the order of the factors!
 
-#be careful here with the order of factors, double check
-loading_mat <- as.matrix(fa.sort(loadings_4f))
-loading_mat <- loading_mat[, -ncol(loading_mat)]
-rownames(loading_mat) <- c("Respect for others' viewpoints (IH)", 
-                           "Agreeableness (TIPI)", 
-                           "Openness (TIPI)",
-                           "Need for closure",
-                           "Extraversion (TIPI)",
-                           "Need for cognition",
-                           "Science identity (SA)",
-                           "Interest curiosity (EC)",
-                           "Science curiosity (SA)",
-                           "Deprivation curiosity (EC)",
-                           "Importance of science (SA)",
-                           "Independence of intellect and ego (IH)",
-                           "Trust in science (SA)",
-                           "Randomness-probability", 
-                           "Heuristic-representativeness", 
-                           "Matrix reasoning",
-                           "Heuristic-equiprobability",
-                           "Conscientiousness (TIPI)",
-                           "Openness to Revising One's Viewpoint (IH)",
-                           "Actively Openminded Thinking",
-                           "Emotional Stability (TIPI)",
-                           "Lack of Intellectual Overconfidence (IH)")
-colnames(loading_mat) <- c("Prosociality", "Curiosity", "Cognitive skills", "Openmindedness")
+#loading_mat <- as.matrix(fa.sort(loadings_4f))
+#loading_mat <- loading_mat[, -ncol(loading_mat)]
+#rownames(loading_mat) <- c("Respect for others' viewpoints (IH)", 
+#                           "Agreeableness (TIPI)", 
+#                           "Openness (TIPI)",
+#                           "Need for closure",
+#                           "Extraversion (TIPI)",
+#                            "Science identity (SA)",
+#                           "Need for cognition",
+#                           "Interest curiosity (EC)",
+#                           "Science curiosity (SA)",
+#                           "Deprivation curiosity (EC)",
+#                           "Importance of science (SA)",
+#                           "Independence of intellect and ego (IH)",
+#                           "Trust in science (SA)",
+#                           "Heuristic-equiprobability",
+#                           "Openness to Revising One's Viewpoint (IH)",
+#                           "Conscientiousness (TIPI)",
+#                           "Actively Openminded Thinking",
+#                           "Emotional Stability (TIPI)",
+#                           "Lack of Intellectual Overconfidence (IH)")
+#                           "Randomness-probability", 
+#                           "Heuristic-representativeness", 
+#                           "Matrix reasoning",
+
+
+#colnames(loading_mat) <- c("Prosociality", "Curiosity", ""Openmindedness", Cognitive skills")
 
 corrplot(loading_mat, method = "color",
          addCoef.col = NULL, 
