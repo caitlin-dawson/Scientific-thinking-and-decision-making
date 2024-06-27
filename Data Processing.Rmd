@@ -15,11 +15,11 @@ Version history:
 * version 24: HJ updated CI task to include all 6 sources again, one of them as image
 * version 25: HJ. Word adult taken off from Study Information and Content
 
+Note about string processing: some versions/packages in R have difficulty with the character encoding of the Finnish characters ä and ö. Where text strings are processed, two versions of the code are given--check which version you need for the character encoding you're using. 
+
 # Load packages
 
 ```{r Load Packages}
-
-setwd("//ad.helsinki.fi/home/c/cdawson/Desktop/Scientific-thinking_copy")
 
 library(corrplot)
 library(dplyr)
@@ -126,8 +126,7 @@ for (j in 1:length(versions)) {
 }
 
 # Save CI task data
-#write.csv(data_citiT, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking/data_citiT.csv", row.names = FALSE)
-write.csv(data_citiT,file='data_citiT.csv', row.names=FALSE)
+#write.csv(data_citiT,file='data_citiT.csv', row.names=FALSE)
 
 ``` 
 
@@ -727,7 +726,7 @@ hist(data_Q_total$sci_cur,
 
 ### Heuristic Reasoning
 
-NB: Strings in following sections affected by the update. The old version is kept but commented out. 
+NB: Notice that there are two versions. Choose the correct one based on string processing. 
 ```{r Heuristic Reasoning}
 
 # Q1
@@ -845,18 +844,21 @@ for (i in 1:length(heur)) {
        xlab = "")
 }
 
-# Create binary heuristic scores (0=all normative, 1=at least one heuristic response)
+# Create binary heuristic scores (0=no heuristic responses (most normative, but includes incorrect), 1=at least one heuristic response) 
 
 data_Q_total <- data_Q_total %>% 
   mutate(HEscore = case_when(total_HE == 0 ~ 0,
                              total_HE == 1 ~ 1,
-                             total_HE == 2 ~ 1),
+                             total_HE == 2 ~ 1,
+                             total_HE == 3 ~ 1),
+         
          HRscore = case_when(total_HR == 0 ~ 0,
                              total_HR == 1 ~ 1,
-                             total_HR == 2 ~ 1))
+                             total_HR == 2 ~ 1,
+                             total_HR == 3 ~ 1))
 
-#HE: 57.14% make at least one heuristic response
-#HR: 59.45% make at least one heuristic response 
+#HE: 61.04% make at least one heuristic response 
+#HR: 59.09% make at least one heuristic response 
 
 ```
 
@@ -1625,7 +1627,6 @@ for (i in 1:ncol(data_efa)) {
 describe(data_efa)
 
 # Save data
-# write.csv(data_efa, "C:/Users/Omistaja/OneDrive/Tiedostot/GitHub/Scientific-thinking/data_efa.csv", row.names = FALSE)
 
 write.csv(data_efa,file='data_efa.csv', row.names=FALSE)
 
