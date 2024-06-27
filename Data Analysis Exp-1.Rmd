@@ -18,7 +18,6 @@ library(ggplot2)
 
 #library(ggpubr)
 #library(sjmisc)
-#library(ggplot2)
 #library(ggeffects)
 #library(sjPlot)
 
@@ -90,7 +89,7 @@ levels(demo$Education)[levels(demo$Education)=="Ei mikään mainituista / ei muo
 #5385143 didn't say anything 
 
 #recoding these as level 1
-#levels(demo$Education)[levels(demo$Education)=="Muu tutkinto, mikÃ¤?"] <- 7
+#levels(demo$Education)[levels(demo$Education)=="Muu tutkinto, mikÃ¤?"] <- 1
 levels(demo$Education)[levels(demo$Education)=="Muu tutkinto, mikä?"] <- 1
 
 #the muu tutkinto one that didn't specify, code it to get rid
@@ -135,14 +134,14 @@ efa_CI <- merge(efa_CI, demo,
 
 #demo info not yet added to wide format
 # Wide format 
-data_citiT_wide <- pivot_wider(data = data_citiT_final,
-                               names_from = src_id,
-                               values_from = c(src_words, src_rt, RT_WPM, source_type, source_quality, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet))
+#data_citiT_wide <- pivot_wider(data = data_citiT_final,
+#                               names_from = src_id,
+#                               values_from = c(src_words, src_rt, RT_WPM, source_authority, source_quality, #Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, #SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet))
 # Omit nonsensical columns (i.e., source words for the source 1, which was just the initial SAM assessment)
-data_citiT_wide <- data_citiT_wide %>% 
-  select(-c(src_words_1, src_rt_1, Shareability_src_1, Convincingness_src_1, Expertise_src_1, Reliability_src_1))
+#data_citiT_wide <- data_citiT_wide %>% 
+#  select(-c(src_words_1, src_rt_1, Shareability_src_1, Convincingness_src_1, Expertise_src_1, #Reliability_src_1))
 # Omit one participant who somehow ended up in the data twice (maybe double check this?)
-data_citiT_wide <- data_citiT_wide[-which(rowSums(is.na(data_citiT_wide)) == max(rowSums(is.na(data_citiT_wide)))), ]
+#data_citiT_wide <- data_citiT_wide[-which(rowSums(is.na(data_citiT_wide)) == #max(rowSums(is.na(data_citiT_wide)))), ]
 
 ```
 
@@ -229,7 +228,7 @@ library(lme4)
 library(lmerTest)
 
 #make sure other factor variables are factors
-data_long$source_type <- as.factor(data_long$source_type)
+data_long$source_authority <- as.factor(data_long$source_authority)
 data_long$source_quality <- as.factor(data_long$source_quality)
 data_long$time <- as.factor(data_long$time)#this is order of the sources
 data_long$src_id <- as.factor(data_long$src_id)#just in case
@@ -247,14 +246,14 @@ str(data_long)
 ```{r Ratings models}
 
 #Convincingness
-m1_conv <- lmer(Convincingness_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
+m1_conv <- lmer(Convincingness_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
 #first refit the model with mixed(), note the change in syntax and include check.contrasts = TRUE, which then automatically changes the categorical variables from treatment contrasts to sum contrasts
 #treatment makes more sense to interpret our levels, but in order to do type III tests where there are interactions, you need sum contrasts
 #https://rpubs.com/monajhzhu/608609
 #http://faculty.nps.edu/sebuttre/home/r/contrasts.html
 library(afex)
-m1_conv_sums <- mixed(Convincingness_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check_contrasts=TRUE)
+m1_conv_sums <- mixed(Convincingness_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check_contrasts=TRUE)
 
 #print the anova table which is stored within the object
 m1_conv_sums$anova_table
@@ -269,13 +268,13 @@ check_collinearity(m1_conv)
 
 library(car)
 #levene's test for homogeneity of variance: alternative hypothesis is that at least two variances differ
-leveneTest(Convincingness_src ~ source_type*source_quality, data = data_long)
+leveneTest(Convincingness_src ~ source_authority*source_quality, data = data_long)
 
 #Expertise
-m1_exp <-lmer(Expertise_src ~ source_type*source_quality + Age + Education +  (1 | Participant.Private.ID),data = data_long) 
+m1_exp <-lmer(Expertise_src ~ source_authority*source_quality + Age + Education +  (1 | Participant.Private.ID),data = data_long) 
 
 #refit
-m1_exp_sums <- mixed(Expertise_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check.contrasts=TRUE)
+m1_exp_sums <- mixed(Expertise_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check.contrasts=TRUE)
 
 #print the anova table which is stored within the object
 m1_exp_sums$anova_table
@@ -291,12 +290,12 @@ check_collinearity(m1_exp)
  qqnorm(resid(m1_exp))
   qqline(residuals(m1_exp))
 
-leveneTest(Expertise_src ~ source_type*source_quality, data = data_long)
+leveneTest(Expertise_src ~ source_authority*source_quality, data = data_long)
 
 #Reliability
-m1_cred <-lmer(Reliability_src ~ source_type*source_quality + Age + Education +  (1 | Participant.Private.ID),data = data_long) 
+m1_cred <-lmer(Reliability_src ~ source_authority*source_quality + Age + Education +  (1 | Participant.Private.ID),data = data_long) 
   
-m1_cred_sums <- mixed(Reliability_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check.contrasts=TRUE)
+m1_cred_sums <- mixed(Reliability_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data_long, check.contrasts=TRUE)
 
 m1_cred_sums$anova_table
 
@@ -308,7 +307,7 @@ r2_nakagawa(m1_cred)
  qqnorm(resid(m1_cred))
   qqline(residuals(m1_cred))
 
-leveneTest(Reliability_src ~ source_type*source_quality, data = data_long)
+leveneTest(Reliability_src ~ source_authority*source_quality, data = data_long)
 
 ```
 
@@ -326,7 +325,7 @@ df <- na.omit(df)
 
 #calculate standard error of the mean
 df %>% 
-  group_by(source_type, source_quality) %>% 
+  group_by(source_authority, source_quality) %>% 
   summarise(df_groups = mean(Convincingness_src),
             df_sem = (sd(Convincingness_src)/sqrt(length(Convincingness_src)))) -> df2
 head(df2)
@@ -337,11 +336,11 @@ convplot <- df2 %>%
   theme(axis.title.x = element_blank()) +
   theme(legend.position="none") +
   scale_x_discrete(labels=c("1" = "Authority", "2" = "Personal")) +
-  aes(x = source_type, y = df_groups, color = source_quality, shape = source_quality) +
+  aes(x = source_authority, y = df_groups, color = source_quality, shape = source_quality) +
   geom_line(aes(group = source_quality)) +
   geom_point() +
   ylim(1, 5) +
-  geom_linerange(aes(x = source_type, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
+  geom_linerange(aes(x = source_authority, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
   labs(title = "Convincingness") +
   theme(plot.title = element_text(hjust = 0.5)) +  # Center the plot title
   ylab("Rating (Likert)") +
@@ -359,7 +358,7 @@ df <- na.omit(df)
 
 #calculate standard error of the mean
 df %>% 
-  group_by(source_type, source_quality) %>% 
+  group_by(source_authority, source_quality) %>% 
   summarise(df_groups = mean(Expertise_src),
             df_sem = (sd(Expertise_src)/sqrt(length(Expertise_src)))) -> df2
 head(df2)
@@ -371,11 +370,11 @@ expplot <- df2 %>%
   theme(legend.position="none") +
   scale_x_discrete(labels=c("1" = "Authority", "2" = "Personal")) +
   theme(axis.title.y = element_blank()) +
-  aes(x = source_type, y = df_groups, color = source_quality, shape = source_quality) +
+  aes(x = source_authority, y = df_groups, color = source_quality, shape = source_quality) +
   geom_line(aes(group = source_quality)) +
   geom_point() +
   ylim(1, 5) +
-  geom_linerange(aes(x = source_type, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
+  geom_linerange(aes(x = source_authority, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
   labs(title = "Expertise") +
   theme(plot.title = element_text(hjust = 0.5)) +  # Center the plot title
   scale_color_discrete(name = "Source quality", 
@@ -392,7 +391,7 @@ df <- na.omit(df)
 
 #calculate standard error of the mean
 df %>% 
-  group_by(source_type, source_quality) %>% 
+  group_by(source_authority, source_quality) %>% 
   summarise(df_groups = mean(Reliability_src),
             df_sem = (sd(Reliability_src)/sqrt(length(Reliability_src)))) -> df2
 head(df2)
@@ -403,11 +402,11 @@ relplot <- df2 %>%
   theme(axis.title.x = element_blank()) +
   scale_x_discrete(labels=c("1" = "Authority", "2" = "Personal")) +
   theme(axis.title.y = element_blank()) +
-  aes(x = source_type, y = df_groups, color = source_quality, shape = source_quality) +
+  aes(x = source_authority, y = df_groups, color = source_quality, shape = source_quality) +
   geom_line(aes(group = source_quality)) +
   geom_point() +
   ylim(1, 5) +
-  geom_linerange(aes(x = source_type, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
+  geom_linerange(aes(x = source_authority, ymin = df_groups - df_sem, ymax = df_groups + df_sem), size = .3) +
   labs(title = "Reliability") +
   theme(plot.title = element_text(hjust = 0.5)) +  # Center the plot title
   scale_color_discrete(name = "Source quality", 
@@ -437,11 +436,11 @@ Questions:
 ```{r Text length investigation}
 
 #define the series of models to compare
-m1_conv_orig <- lmer(Convincingness_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
+m1_conv_orig <- lmer(Convincingness_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
 m1_conv_length <- lmer(Convincingness_src ~ num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
-m1_conv_type <- lmer(Convincingness_src ~ source_type*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
+m1_conv_type <- lmer(Convincingness_src ~ source_authority*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
 
 m1_conv_quality <- lmer(Convincingness_src ~ source_quality*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
@@ -469,11 +468,11 @@ anova(m1_conv_quality,m1_conv_length)
 #first rerun the models with ML: "The reason is that REML estimates the random effects by considering linear combinations of the data that remove the fixed effects. If these fixed effects are changed, the likelihoods of the two models will not be directly comparable" #https://stats.stackexchange.com/questions/116770/reml-or-ml-to-compare-two-mixed-effects-models-with-differing-fixed-effects-but 
 
 #define the series of models to compare
-m1_conv_orig_ML <- lmer(Convincingness_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_conv_orig_ML <- lmer(Convincingness_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_conv_length_ML <- lmer(Convincingness_src ~ num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
-m1_conv_type_ML <- lmer(Convincingness_src ~ source_type*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_conv_type_ML <- lmer(Convincingness_src ~ source_authority*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_conv_quality_ML <- lmer(Convincingness_src ~ source_quality*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
@@ -482,11 +481,11 @@ AIC(m1_conv_orig_ML,m1_conv_length_ML,m1_conv_type_ML, m1_conv_quality_ML)
 #quality and orig both minimize AIC
 
 #For expertise
-m1_exp_orig <- lmer(Expertise_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
+m1_exp_orig <- lmer(Expertise_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
 m1_exp_length <- lmer(Expertise_src ~ num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
-m1_exp_type <- lmer(Expertise_src ~ source_type*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
+m1_exp_type <- lmer(Expertise_src ~ source_authority*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
 
 m1_exp_quality <- lmer(Expertise_src ~ source_quality*num_words + Age + Education + (1|Participant.Private.ID),data = data_long) 
 	
@@ -499,11 +498,11 @@ anova(m1_exp_type,m1_exp_length)
 anova(m1_exp_quality,m1_exp_length)
 
 #define the series of models to compare
-m1_exp_orig_ML <- lmer(Expertise_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_exp_orig_ML <- lmer(Expertise_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_exp_length_ML <- lmer(Expertise_src ~ num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
-m1_exp_type_ML <- lmer(Expertise_src ~ source_type*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_exp_type_ML <- lmer(Expertise_src ~ source_authority*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_exp_quality_ML <- lmer(Expertise_src ~ source_quality*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
@@ -512,16 +511,16 @@ AIC(m1_exp_orig_ML,m1_exp_length_ML,m1_exp_type_ML, m1_exp_quality_ML)
 #quality, type and orig all minimize AIC--type is actually slightly the best
 
 #Reliability
-m1_cred_mod1 <-lmer(Reliability_src ~ source_type*source_quality + text_length + Age + Education + (1 | Participant.Private.ID),data = data_long) 
+m1_cred_mod1 <-lmer(Reliability_src ~ source_authority*source_quality + text_length + Age + Education + (1 | Participant.Private.ID),data = data_long) 
 
 summary(m1_cred_mod1)
 
 #define the series of models to compare
-m1_cred_orig_ML <- lmer(Reliability_src ~ source_type*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_cred_orig_ML <- lmer(Reliability_src ~ source_authority*source_quality + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_cred_length_ML <- lmer(Reliability_src ~ num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
-m1_cred_type_ML <- lmer(Reliability_src ~ source_type*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
+m1_cred_type_ML <- lmer(Reliability_src ~ source_authority*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
 m1_cred_quality_ML <- lmer(Reliability_src ~ source_quality*num_words + Age + Education + (1|Participant.Private.ID),data = data_long,REML=FALSE) 
 
@@ -536,7 +535,7 @@ AIC(m1_cred_orig_ML,m1_cred_length_ML,m1_cred_type_ML, m1_cred_quality_ML)
 library(psychTools)
 #basic summary style--this works but only for demo descriptives etc. or for EITHER type or quality but not both
 #https://cran.r-project.org/web/packages/compareGroups/vignettes/compareGroups_vignette.html#performing-the-descritive-table
-res<-compareGroups(source_type ~ source_quality + RT_WPM + gender + scale_Age + Education, data=data_long)
+res<-compareGroups(source_authority ~ source_quality + RT_WPM + gender + scale_Age + Education, data=data_long)
 restab<-createTable(res)
 print(restab,which.table='descr')
 
@@ -544,7 +543,7 @@ print(restab,which.table='descr')
 #https://sparkbyexamples.com/r-programming/group-by-summarise-in-r/
 #make sure to add na.rm or the summarize function won't work
 agg_tbl <- data_long %>% 
-  group_by(source_type, source_quality) %>% 
+  group_by(source_authority, source_quality) %>% 
   summarise(mean_conv=mean(Convincingness_src,na.rm = TRUE),
             sd_conv= sd(Convincingness_src,na.rm = TRUE),
             mean_exp= mean(Expertise_src,na.rm = TRUE),
@@ -573,12 +572,12 @@ https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html#cont
 library(emmeans)
 
 #start by visualizing
-emmip(m1_conv, source_quality ~ source_type)
+emmip(m1_conv, source_quality ~ source_authority)
 
 #calculate estimated marginal means for each combination of source type and quality
-conv.emm <- emmeans(m1_conv, ~ source_type * source_quality,weights = "proportional")
-exp.emm <- emmeans(m1_exp, ~ source_type * source_quality,weights = "proportional")
-cred.emm <- emmeans(m1_cred, ~ source_type * source_quality,weights = "proportional")
+conv.emm <- emmeans(m1_conv, ~ source_authority * source_quality,weights = "proportional")
+exp.emm <- emmeans(m1_exp, ~ source_authority * source_quality,weights = "proportional")
+cred.emm <- emmeans(m1_cred, ~ source_authority * source_quality,weights = "proportional")
 #add this argument "proportional" when there are unbalanced levels. There are unbalanced levels here, but there are only a couple of very slightly different numbers for cred, otherwise it's the same as the raw descriptives
 
 #this way combines everything into one "family" meaning the P value adjustments are different because there are 7 comparisons instead of 3. It doesn't change the results or the estimates, just the exact P values and t ratios. 
@@ -615,7 +614,7 @@ https://stats.stackexchange.com/questions/77313/why-cant-i-match-glmer-family-bi
 #possibly not necessary
 data_long$scale_Age<-as.numeric(scale(data_long$Age))
 
-m1_read <- glmer(formula = RT_WPM ~ source_type*source_quality + scale_Age + Education + (1 | Participant.Private.ID),
+m1_read <- glmer(formula = RT_WPM ~ source_authority*source_quality + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                           data = data_long,
                           glmerControl(optimizer="bobyqa"))
@@ -623,7 +622,7 @@ summary(m1_read)
 
 library(afex)
 
-m_sums <- mixed(RT_WPM ~ source_type*source_quality + scale_Age + Education + (1 | Participant.Private.ID),
+m_sums <- mixed(RT_WPM ~ source_authority*source_quality + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                 control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)),
                           data_long,
@@ -668,11 +667,11 @@ A series of models with dependent variables (DVs): ratings of topic familiarity,
 ```{r Evidence accumulation }
 
 ##Topic familiarity
-m1_fam <- lmer(Familiarity_pet ~ time*source_type*source_quality + Age + Education + (1 | Participant.Private.ID),data = data_long)
+m1_fam <- lmer(Familiarity_pet ~ time*source_authority*source_quality + Age + Education + (1 | Participant.Private.ID),data = data_long)
 
 summary(m1_fam)
 
-m1_fam_sums <- mixed(Familiarity_pet ~ time*source_type*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
+m1_fam_sums <- mixed(Familiarity_pet ~ time*source_authority*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
 
 m1_fam_sums$anova_table
 
@@ -681,28 +680,28 @@ m1_fam_sums$anova_table
 quality_labels <- as_labeller(
      c(`1` = "Credible", `2` = "Non-credible", `3` = "Irrelevant"))
 
-emmip(m1_fam, source_type ~ time|source_quality, type = "response") +
-  aes(color = source_type) +
+emmip(m1_fam, source_authority ~ time|source_quality, type = "response") +
+  aes(color = source_authority) +
     ylim(2,3) + #cropped for visibility!
   scale_color_discrete(labels = c("Authority", "Personal")) + 
   labs(x = "Time point", y = "Familiarity Rating (predicted values)", color="Source type") + 
   facet_wrap(~source_quality,labeller = quality_labels)
 
 #Topic interest
-m1_int <- lmer(Interest_pet ~ time*source_type*source_quality + Age +  Education + (1 | Participant.Private.ID),data = data_long)
+m1_int <- lmer(Interest_pet ~ time*source_authority*source_quality + Age +  Education + (1 | Participant.Private.ID),data = data_long)
 
 summary(m1_int)
 
-m1_int_sums <- mixed(Interest_pet ~ time*source_type*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
+m1_int_sums <- mixed(Interest_pet ~ time*source_authority*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
 
 m1_int_sums$anova_table
 
 #Topic curiosity
-m1_cur <- lmer(Curiosity_pet ~ time*source_type*source_quality + Age +  Education + (1 | Participant.Private.ID),data = data_long)
+m1_cur <- lmer(Curiosity_pet ~ time*source_authority*source_quality + Age +  Education + (1 | Participant.Private.ID),data = data_long)
 
 summary(m1_cur)
 
-m1_cur_sums <- mixed(Curiosity_pet ~ time*source_type*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
+m1_cur_sums <- mixed(Curiosity_pet ~ time*source_authority*source_quality + Age + Education + (1 | Participant.Private.ID),data_long, check_contrasts=TRUE)
 
 m1_cur_sums$anova_table
 
@@ -787,7 +786,7 @@ Individual factor scores for the four factors identified from the first phase (c
 ```{r Data prep efa_CI dataset}
 
 #make sure factor variables are factors
-efa_CI$source_type <- as.factor(efa_CI$source_type)
+efa_CI$source_authority <- as.factor(efa_CI$source_authority)
 efa_CI$source_quality <- as.factor(efa_CI$source_quality)
 efa_CI$time <- as.factor(efa_CI$time)#this is order of the sources
 efa_CI$src_id <- as.factor(efa_CI$src_id)#just in case
@@ -806,18 +805,18 @@ levels(efa_CI$Education)
 
 ###Curiosity factor
 
-2.1. High curiosity factor scores will interact with source_type and source quality to predict longer reading times and higher ratings of expertise and reliability for authority and reliable sources, higher ratings of topic interest and topic curiosity, and more positive emotional valence for all sources.  
+2.1. High curiosity factor scores will interact with source_authority and source quality to predict longer reading times and higher ratings of expertise and reliability for authority and reliable sources, higher ratings of topic interest and topic curiosity, and more positive emotional valence for all sources.  
 
 A series of models with dependent variables: ratings of source expertise, source reliability; RT_WPM; topic interest, topic curiosity, and emotional valence 
 
 ```{r Mixed Linear Models: curiosity factor}
 
 #on expertise
-m_cur_exp <- lmer(Expertise_src ~ source_type*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
+m_cur_exp <- lmer(Expertise_src ~ source_authority*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
 
 summary(m_cur_exp)
 
-m_cur_exp_sums <- mixed(Expertise_src ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_exp_sums <- mixed(Expertise_src ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_exp_sums$anova_table
 
@@ -826,15 +825,15 @@ check_collinearity(m_cur_exp)
  qqnorm(resid(m_cur_exp))
   qqline(residuals(m_cur_exp))
 
-leveneTest(Expertise_src ~ source_type*source_quality*f2 + Age + gender + Education +  (1 | Participant.Private.ID), data = data_long)
+leveneTest(Expertise_src ~ source_authority*source_quality*f2 + Age + gender + Education +  (1 | Participant.Private.ID), data = data_long)
 
 #on reliability
-m_cur_rel <- lmer(Reliability_src ~ source_type*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
+m_cur_rel <- lmer(Reliability_src ~ source_authority*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
 
 summary(m_cur_rel)
 
 
-m_cur_rel_sums <- mixed(Reliability_src ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_rel_sums <- mixed(Reliability_src ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_rel_sums$anova_table
  
@@ -850,39 +849,39 @@ mtab_df <- sjtable2df::mtab2df(
  tab1<-df2latex(mtab_df)
  
 #on emotional valence
-m_cur_val <- lmer(SAMvalence_final ~ source_type*source_quality*f2 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_cur_val <- lmer(SAMvalence_final ~ source_authority*source_quality*f2 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_cur_val)
 
-m_cur_val_sums <- mixed(SAMvalence_final ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_val_sums <- mixed(SAMvalence_final ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_val_sums$anova_table
  
  #exploratory non-prereg model 
  #on emotional AROUSAL
-m_cur_aro <- lmer(SAMintensity_final ~ source_type*source_quality*f2 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_cur_aro <- lmer(SAMintensity_final ~ source_authority*source_quality*f2 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_cur_aro)
 
-m_cur_aro_sums <- mixed(SAMintensity_final ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_aro_sums <- mixed(SAMintensity_final ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_aro_sums$anova_table
 
 #on topic interest
-m_cur_int <- lmer(Interest_pet ~ source_type*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_cur_int <- lmer(Interest_pet ~ source_authority*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_cur_int)
 
-m_cur_int_sums <- mixed(Interest_pet ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_int_sums <- mixed(Interest_pet ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_int_sums$anova_table
 
 #on topic curiosity
-m_cur_cur <- lmer(Curiosity_pet ~ source_type*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_cur_cur <- lmer(Curiosity_pet ~ source_authority*source_quality*f2 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_cur_cur)
 
-m_cur_cur_sums <- mixed(Curiosity_pet ~ source_type*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cur_cur_sums <- mixed(Curiosity_pet ~ source_authority*source_quality*f2 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cur_cur_sums$anova_table
  
@@ -894,7 +893,7 @@ efa_CI$scale_Age<-as.numeric(scale(efa_CI$Age))
 efa_CI$scale_f2<-as.numeric(scale(efa_CI$f2))
 
 #trying the code found here works to identify an optimizer that works https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html 
-m_cur_read <- glmer(formula = RT_WPM ~ source_type*source_quality*f2 + scale_Age + Education + (1 | Participant.Private.ID),
+m_cur_read <- glmer(formula = RT_WPM ~ source_authority*source_quality*f2 + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                           data = efa_CI,
                           glmerControl(optimizer="nlminbwrap",
@@ -903,7 +902,7 @@ m_cur_read <- glmer(formula = RT_WPM ~ source_type*source_quality*f2 + scale_Age
 summary(m_cur_read)
 
 #but this doesn't converge when trying different optimizers
-m_sums <- mixed(RT_WPM ~ source_type*source_quality*scale_f2 + scale_Age + Education + (1 | Participant.Private.ID),
+m_sums <- mixed(RT_WPM ~ source_authority*source_quality*scale_f2 + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                       control=glmerControl(optimizer="nloptwrap",                         optCtrl=list(maxfun=2e4)),
                           efa_CI,
@@ -967,29 +966,29 @@ A series of models with dependent variables: ratings of source convincingness, s
 ```{r Mixed Linear Models: Prosociality factor}
 
 #on convincingness
-m_pers_conv <- lmer(Convincingness_src ~ source_type*source_quality*f1 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_pers_conv <- lmer(Convincingness_src ~ source_authority*source_quality*f1 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_pers_conv)
 
-m_pers_conv_sums <- mixed(Convincingness_src ~ source_type*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_pers_conv_sums <- mixed(Convincingness_src ~ source_authority*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_pers_conv_sums$anova_table
 
 #on shareability
-m_pers_share <- lmer(Shareability_src ~ source_type*source_quality*f1 + Age  + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_pers_share <- lmer(Shareability_src ~ source_authority*source_quality*f1 + Age  + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_pers_share)
 
-m_pers_share_sums <- mixed(Shareability_src ~ source_type*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_pers_share_sums <- mixed(Shareability_src ~ source_authority*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_pers_share_sums$anova_table
 
 #on arousal
-m_pers_aro <- lmer(SAMintensity_final ~ source_type*source_quality*f1 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_pers_aro <- lmer(SAMintensity_final ~ source_authority*source_quality*f1 + Age +  Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_pers_aro)
 
-m_pers_aro_sums <- mixed(SAMintensity_final ~ source_type*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_pers_aro_sums <- mixed(SAMintensity_final ~ source_authority*source_quality*f1 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
  
 m_pers_aro_sums$anova_table
  
@@ -1014,17 +1013,17 @@ A series of models with dependent variables: ratings of source expertise, source
 ```{r Mixed Linear Models: Openness factor}
 
 #on expertise
-m_open_expert <- lmer(Expertise_src ~ source_type*source_quality*f4 + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
+m_open_expert <- lmer(Expertise_src ~ source_authority*source_quality*f3 + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_open_expert)
 
 #on reliability
-m_open_reliab <- lmer(Reliability_src ~ source_type*source_quality*f4 + Age + Education + (1 | Participant.Private.ID), data = efa_CI)
+m_open_reliab <- lmer(Reliability_src ~ source_authority*source_quality*f3 + Age + Education + (1 | Participant.Private.ID), data = efa_CI)
 
 summary(m_open_reliab)
 
 #on reading times
-m_open_read <- glmer(formula = RT_WPM ~ source_type*source_quality*f4 + scale_Age + Education + (1 | Participant.Private.ID),
+m_open_read <- glmer(formula = RT_WPM ~ source_authority*source_quality*f3 + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                           data = efa_CI,
                           #nAGQ = 0,
@@ -1046,20 +1045,20 @@ A series of models with dependent variables: ratings of source expertise, source
 ```{r Mixed Linear Models: Cognitive skills factor}
 
 ##on expertise
-m_cog_exp <- lmer(Expertise_src ~ source_type*source_quality*f3 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
+m_cog_exp <- lmer(Expertise_src ~ source_authority*source_quality*f4 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI)
 
 summary(m_cog_exp)
 
-m_cog_exp_sums <- mixed(Expertise_src ~ source_type*source_quality*f3 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cog_exp_sums <- mixed(Expertise_src ~ source_authority*source_quality*f4 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cog_exp_sums$anova_table
 
 ###on reliability
-m_cog_rel <- lmer(Reliability_src ~ source_type*source_quality*f3 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_cog_rel <- lmer(Reliability_src ~ source_authority*source_quality*f4 + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_cog_rel)
 
-m_cog_rel_sums <- mixed(Reliability_src ~ source_type*source_quality*f3 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_cog_rel_sums <- mixed(Reliability_src ~ source_authority*source_quality*f4 + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_cog_rel_sums$anova_table
 ```
@@ -1073,27 +1072,27 @@ A series of models with dependent variables: ratings of source expertise, source
 ```{r Mixed Linear Models: cognitive flexibility, UUT}
 
 #UUt on expertise
-m_uut_exp <- lmer(Expertise_src ~ source_type*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
+m_uut_exp <- lmer(Expertise_src ~ source_authority*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_uut_exp)
 
-m_uut_exp_sums <- mixed(Expertise_src ~ source_type*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_uut_exp_sums <- mixed(Expertise_src ~ source_authority*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
 m_uut_exp_sums$anova_table
 
 #uut on reliability
-m_uut_rel <- lmer(Reliability_src ~ source_type*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
+m_uut_rel <- lmer(Reliability_src ~ source_authority*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_uut_rel)
 
-m_uut_rel_sums <- mixed(Reliability_src ~ source_type*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_uut_rel_sums <- mixed(Reliability_src ~ source_authority*source_quality*FlexSum + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
 m_uut_rel_sums$anova_table
 
 #uut on reading times
 efa_CI$scale_Age<-as.numeric(scale(efa_CI$Age))
 
-m_uut_read <- glmer(formula = RT_WPM ~ source_type*source_quality*FlexSum + scale_Age + Education + (1 | Participant.Private.ID),
+m_uut_read <- glmer(formula = RT_WPM ~ source_authority*source_quality*FlexSum + scale_Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                           data = efa_CI,
                           nAGQ = 0,
@@ -1117,20 +1116,20 @@ A series of models with dependent variables: ratings of source convincingness, s
 ```{r Mixed Linear Models: cognitive flexibility, dprime}
 
 #expertise
-m_d_exp <- lmer(Expertise_src ~ source_type*source_quality*GNGdprime + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_d_exp <- lmer(Expertise_src ~ source_authority*source_quality*GNGdprime + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_d_exp)
 
-m_d_exp_sums <- mixed(Expertise_src ~ source_type*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_d_exp_sums <- mixed(Expertise_src ~ source_authority*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
  m_d_exp_sums$anova_table
 
 #reliability
-m_d_rel <- lmer(Reliability_src ~ source_type*source_quality*GNGdprime + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_d_rel <- lmer(Reliability_src ~ source_authority*source_quality*GNGdprime + Age + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_d_rel)
 
-m_d_rel_sums <- mixed(Reliability_src ~ source_type*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
+m_d_rel_sums <- mixed(Reliability_src ~ source_authority*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),efa_CI, check_contrasts=TRUE)
 
 m_d_rel_sums$anova_table
 
@@ -1142,7 +1141,7 @@ m_d_rel_sums$anova_table
 #there may be convergence issues
 #even increasing the iterations it keeps sending convergence warnings
 #trying the code found here works to identify an optimizer that works https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html 
-m_d_read <- glmer(formula = RT_WPM ~ source_type*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),
+m_d_read <- glmer(formula = RT_WPM ~ source_authority*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                           data = efa_CI,
                           #nAGQ = 0, careful with this!
@@ -1152,7 +1151,7 @@ m_d_read <- glmer(formula = RT_WPM ~ source_type*source_quality*GNGdprime + Age 
 summary(m_d_read)
 
 #this one works
-m_d_read_sums <- mixed(RT_WPM ~ source_type*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),
+m_d_read_sums <- mixed(RT_WPM ~ source_authority*source_quality*GNGdprime + Age + Education + (1 | Participant.Private.ID),
                           family = Gamma(link = "log"),
                 control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e4)),
                           efa_CI,
@@ -1177,12 +1176,12 @@ r2_nakagawa(m_d_read)
 icc(m_d_read)
 
 #bias
-m_bias_conv <- lmer(Convincingness_src ~ source_type*source_quality*GNGbetalog + Age + gender + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_bias_conv <- lmer(Convincingness_src ~ source_authority*source_quality*GNGbetalog + Age + gender + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_bias_conv)
 
 #shareability
-m_GNGbetalog_share <- lmer(Shareability_src ~ source_type*source_quality*GNGbetalog + Age + gender + Education +  (1 | Participant.Private.ID), data = efa_CI) 
+m_GNGbetalog_share <- lmer(Shareability_src ~ source_authority*source_quality*GNGbetalog + Age + gender + Education +  (1 | Participant.Private.ID), data = efa_CI) 
 
 summary(m_GNGbetalog_share)
 
@@ -1231,8 +1230,8 @@ theme_set(
   theme_light() + theme(legend.position = "right")
   )
 
-ggplot(plotdata,aes(x=f2,y=RT_WPM,color=source_type))+geom_point()+
-  aes(color = source_type) +
+ggplot(plotdata,aes(x=f2,y=RT_WPM,color=source_authority))+geom_point()+
+  aes(color = source_authority) +
 stat_smooth(method="lm",se=TRUE) +
   scale_color_discrete(labels = c("Authority", "Personal")) + 
   labs(x = "Curiosity factor score", y = "Reading rates (WPM)", color="Source type") + 
@@ -1251,13 +1250,33 @@ theme_set(
         strip.text = element_text(color = "black"))  # Change the color of facet labels to black
 )
 
-ggplot(plotdata,aes(x=GNGdprime,y=RT_WPM,color=source_type))+geom_point()+
-  aes(color = source_type) +
+ggplot(plotdata,aes(x=GNGdprime,y=RT_WPM,color=source_authority))+geom_point()+
+  aes(color = source_authority) +
 stat_smooth(method="lm",se=TRUE) +
   scale_color_discrete(labels = c("Authority", "Personal")) + 
   labs(x = "Sensitivity (d')", y = "Reading rate (WPM)", color="Source type") + 
   ylim(0,1000) +
 facet_grid(.~source_quality,labeller = quality_labels)
+
+#plot for curiosity and emotional arousal
+plotdata <- na.omit(efa_CI)
+
+quality_labels <- as_labeller(
+     c(`1` = "Credible", `2` = "Non-credible", `3` = "Irrelevant"))
+
+theme_set(
+  theme_light() + theme(legend.position = "right",
+        strip.text = element_text(color = "black"))  # Change the color of facet labels to black
+)
+
+ggplot(plotdata,aes(x=f2,y=SAMintensity_final,color=source_authority))+geom_point()+
+  aes(color = source_authority) +
+stat_smooth(method="lm",se=TRUE) +
+  scale_color_discrete(labels = c("Authority", "Personal")) + 
+  labs(x = "Curiosity factor score", y = "Emotional arousal", color="Source type") + 
+  ylim(1,9) +
+facet_grid(.~source_quality,labeller = quality_labels) + 
+   scale_y_continuous(breaks=seq(1, 9, by=1))  # Set y-axis tick labels to whole numbers
 
 ```
 
