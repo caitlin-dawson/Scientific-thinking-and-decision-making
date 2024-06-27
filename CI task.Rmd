@@ -16,6 +16,8 @@ Version history:
 - version 23 has fewer rows per ppt because of only 5 sources. All sources are links. 
 - versions 24 and 25 have all sources but one source as a PDF. Find the source implementation in the column 'display'
 
+#Again be careful of the choice of string processing
+
 # Extract Overall RTs
 
 ```{r Extract Overall RTs}
@@ -38,6 +40,16 @@ data_citiT <- data_citiT %>%
 ```{r Add Order Column}
 
 # Baseline SAM and 4 baseline topic questions (about the petition) coded as order = 1; Rest of the trials coded based on Source_topic so that order numbers always refer to the same source
+
+#data_citiT <- data_citiT %>% 
+#  mutate(src_id = case_when((Source_topic == "") ~ 1,
+#                            (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlähtöön – mikä se on?") ~ 2,
+#                            (Source_topic == "Palaako peltoviljely pääosin kangasmaille?") ~ 3,
+#                            (Source_topic == "Punnittua puhetta turpeesta") ~ 4,
+#                            (Source_topic == "Suo syntyy uudestaan") ~ 5,
+#                            (Source_topic == "Turve on uusiutuva luonnonvara") ~ 6,
+#                            (Source_topic == "Turvetuotanto on ajettava alas – oikeudenmukaisesti") ~ 7))
+
 data_citiT <- data_citiT %>% 
   mutate(src_id = case_when((Source_topic == "") ~ 1,
                             (Source_topic == "Auttaa akneen, reumaan, selluliittiin ja hiustenlÃ¤htÃ¶Ã¶n â€“ mikÃ¤ se on?") ~ 2,
@@ -67,6 +79,44 @@ for (i in 1:length(id)) {
 }
 order_citiT <- data.frame(Participant.Private.ID = id,
                           order = order_vector)
+
+#sets aside a minimal df. When src.id indicates that a trial has an article, assign the Trial Number which SHOULD be in chronological order
+
+order_df2 <- data_citiT %>%
+  mutate(time = case_when(
+    src_id == 2 ~ Trial.Number,
+    src_id == 3 ~ Trial.Number,
+    src_id == 4 ~ Trial.Number,
+    src_id == 5 ~ Trial.Number,
+    src_id == 6 ~ Trial.Number,
+    src_id == 7 ~ Trial.Number
+  ))
+ 
+#then this
+order_df2 <- order_df2 %>%
+  mutate(time = case_when(
+    display == "PDF" ~ "6",
+    TRUE ~ time
+  ))
+
+#double check that the distribution is about the same between different sources
+#table(order_df2$time)
+
+#check how likely it is for each source to appear in each order
+ #source 5 (src_id 6) is the one we had to convert to PDF and fix the position
+ #boxplot(as.numeric(order_df2$time)~order_df2$src_id)
+
+#get rid of duplicates, meaning keep only rows with unique combinations of ppt and time 
+#now time is the ordered list of trials that needs to be associated with src.id and both of those need to stay in the same order as "order" which will double check that it's correct
+
+ time <- order_df2 %>%
+      select(Participant.Private.ID, src_id, time)
+ 
+ time <- time %>%
+      group_by(Participant.Private.ID, time) %>%
+      slice(1)  %>%
+   ungroup()
+
 
 ```
 
@@ -138,16 +188,6 @@ hist(data_citiT_likertRTs$Reaction.Time/1000, # in seconds
 plot(sort(data_citiT_likertRTs$Reaction.Time/1000)) # in seconds
 
 ```
-
-From Caitlin: RT data has issues for outlier removal due to the distribution, not sure yet the best method for this kind of task. We don't set an automatic upper limit and we cannot assume that the reading times represent a single cognitive process. However, I don't think we can keep all times in, since they range from one second to over an hour, with the mean around 3 minutes. The goal should be to capture as much valid data as possible, with the acknowledgement that times e.g. 1 second are valid but mean something different than longer times, e.g. someone has skimmed or skipped that source. 
-* should we look into the thresholds for skimming and reading comprehension to make a point about which times we can expect to mean actually reading and which are skipping? 
-* it is clear where obviously meaningless long outliers are in this data, but the question is how to justify their removal 
-* can reading times be analyzed like reaction times, or is there another way? 
-
-From Milla: I think we need separate exclusion criteria (possibly) for the overall RT (i.e., if someone went through the entire task super quickly), the reading times for each source (i.e., if someone went through a particular source very quickly), and for the Likert RTs (i.e., if someone was so quick at responsing to the questions that it can be assumed they didn't even read the question, although this might actually be true as participants might memorize the questions quickly)
-* also need to think about whether we want to set maximum time limits (and if so, what these would reflect) -> NO
-* can we have some missing data on a participant-level for this task (from an analysis point of view)?
-
 
 # Code Source Types
 
@@ -304,7 +344,7 @@ data_citiT_final <- merge(data_citiT_ratings, order_citiT,
                           by = "Participant.Private.ID")
 
 # Replace NaNs with NAs
-data_citiT_final[is.nan(data_citiT_final)] <- NA
+data_citiT_final[is.na(data_citiT_final)] <- NA
 
 # Check row sum NAs
 colSums(is.na(data_citiT_final))
@@ -324,7 +364,15 @@ data_citiT_final$overall_rt <- rep(unique(data_citiT_final$overall_rt)[which(!is
 
 # Rearrange columns
 data_citiT_final <- data_citiT_final %>% 
-  select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+  select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt,source_authority,source_quality, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+
+#calculate reading rates controlling for source length, in words per minute
+#words read divided by minutes spent reading, row-wise (for each source)
+data_citiT_final$RT_WPM <- data_citiT_final$src_words/(data_citiT_final$src_rt/60000)
+
+#double check that the median is in the range of 200-300 WPM
+#median is 224wpm which is deep reading for English
+summary(data_citiT_final$RT_WPM) 
 
 ```
 
@@ -337,10 +385,16 @@ data_citiT_final <- merge(data_citiT_final, data_ConsentValidity,
                           by = "Participant.Private.ID",
                           all.x = TRUE)
 
+#this adds the column "time" without duplicating rows, but it also changes the order of the rows. check that the time, src_id and order columns match info!
+data_citiT_final <- merge(data_citiT_final,time,by=c("Participant.Private.ID","src_id"),all = TRUE)
+
+###added time and RT_WPM here, also source_authority and source_quality
 # Validity/language filter; Exclude invalid participant
 data_citiT_final <- data_citiT_final %>%
   filter(Validity.quantised %in% c(1, NA, "") & Language %in% c("Sujuva / Ã¤idinkieli", "Keskitaso / keskusteleva","Muu, mikÃ¤?") & Participant.Private.ID != "4887029") %>% 
-  select(Participant.Private.ID, order, src_id, src_words, src_rt, overall_rt, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+  select(Participant.Private.ID, order, time, src_id, src_words, src_rt, overall_rt,RT_WPM,source_authority,source_quality, Shareability_src, Convincingness_src, Expertise_src, Reliability_src, SAMintensity_final, SAMvalence_final, Curiosity_pet, Interest_pet, Familiarity_pet, Support_pet)
+
+data_citiT_final <- data_citiT_final %>% mutate_all(~ifelse(is.nan(.), NA, .))
 
 ```
 
@@ -348,7 +402,3 @@ Potentially problematic ppts for CI:
 ri0gfe1h	5767733	skipped reading at least one article
 vu1mvwkd	5691188	didn't focus on the first CI text
 8zz2teyh	5629594	is dyslexic
-
-NOTE: I didn't remove anyone so far, I think it's better to apply a threshold for when we think someone paid no attention to the source (and omit all source-related data for that participant) than handpick the participants that were honest about not concentrating.
-
-NOTE: wide format?
